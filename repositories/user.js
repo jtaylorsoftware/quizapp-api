@@ -18,7 +18,7 @@ exports.UserRepository = class UserRepository {
   async insert(user) {
     try {
       const { ops } = await this.store.insertOne(user)
-      return omit({ ...ops[0] }, 'password')
+      return ops[0]
     } catch (error) {
       throw error
     }
@@ -39,7 +39,7 @@ exports.UserRepository = class UserRepository {
           }
         }
       )
-      return omit({ ...ops[0] }, 'password')
+      return ops[0]
     } catch (error) {
       throw error
     }
@@ -76,10 +76,6 @@ exports.UserRepository = class UserRepository {
   }
 
   async _findOne(query) {
-    return await this.store.findOne(query, { projection: { password: 0 } })
-  }
-
-  async _findAll() {
-    return await this.store.find({}, { projection: { password: 0 } })
+    return await this.store.findOne(query)
   }
 }
