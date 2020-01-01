@@ -8,5 +8,21 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "config": "^3.2.4",
+    "deep-equal": "^2.0.1",
+    "express": "^4.17.1",
+    "express-validator": "^6.3.1",
+    "moment": "^2.24.0",
+    "mongodb": "^3.4.1",
+    "object.omit": "^3.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
+    "mocha": "^6.2.2",
+    "nodemon": "^2.0.2",
+    "sinon": "^8.0.2"
+  }
 }
