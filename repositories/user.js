@@ -19,14 +19,50 @@ exports.UserRepository = class UserRepository {
   }
 
   /**
+   * Adds a user to the repository
+   * @param {User} user
+   * @returns {Object} User data without sensitive information
+   */
+  async insert(user) {
+    try {
+      const { ops } = await this.store.insertOne(user)
+      return omit({ ...ops[0] }, 'password')
+    } catch (error) {
+      throw error
+    }
+  }
+
+  /**
+   * Updates a user in the repository
+   * @param {User} user User with existing id to modify
+   * @returns {Object} User data without sensitive information
+   */
+  async update(user) {
+    try {
+      const { ops } = await this.store.updateOne(
+        { _id: new ObjectId(user._id) },
+        {
+          $set: {
+            user
+          }
+        }
+      )
+      return omit({ ...ops[0] }, 'password')
+    } catch (error) {
+      throw error
+    }
+  }
+
+  /**
    * Finds a single user by id
+   * @param {String} id
    * @returns {User} User entity without sensitive information
    */
   async findById(id) {
     if (!ObjectId.isValid(id)) {
       return null
     }
-    return await this._findOne({ id })
+    return await this._findOne({ _id: new ObjectId(id) })
   }
 
   /**
