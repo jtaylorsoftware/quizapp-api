@@ -17,7 +17,7 @@ module.exports = async (req, res, next) => {
       }
     })
   } catch (error) {
-    console.error('Error in JWT authorization middleware\n', error)
+    console.error('Error in JWT authorization middleware\n', error.message)
     res.status(500).json({ msg: 'Internal server error' })
   }
 }
