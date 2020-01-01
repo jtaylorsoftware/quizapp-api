@@ -35,7 +35,7 @@ exports.UserRepository = class UserRepository {
         { _id: new ObjectId(user._id) },
         {
           $set: {
-            user
+            ...omit(user, '_id')
           }
         }
       )
