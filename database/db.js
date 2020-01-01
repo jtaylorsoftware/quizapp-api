@@ -5,5 +5,5 @@ exports.connectToDb = async config => {
     useUnifiedTopology: true,
     useNewUrlParser: true
   })
-  return { client, db: client.db(config.name) }
+  return { client, db: client.db() }
 }
