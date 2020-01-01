@@ -11,14 +11,6 @@ exports.UserRepository = class UserRepository {
   }
 
   /**
-   * Gets all Users
-   * @returns {[User]} All Users without sensitive information
-   */
-  async getAll() {
-    return await this._findAll()
-  }
-
-  /**
    * Adds a user to the repository
    * @param {User} user
    * @returns {Object} User data without sensitive information
