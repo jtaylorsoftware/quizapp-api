@@ -10,15 +10,18 @@ let userRepository
 
 const router = require('express').Router()
 
-router.get('/', auth, async (req, res) => {
-  try {
-    const user = await userRepository.findById(req.user._id)
-    res.json(user)
-  } catch (error) {
-    console.error(error.message)
-    res.status(500).send({ errors: [{ msg: 'Internal server error ' }] })
-  }
-})
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/', auth, async (req, res) => {
+    try {
+      const user = await userRepository.findById(req.user.id)
+      console.log(req.user)
+      res.json(user)
+    } catch (error) {
+      console.error(error.message)
+      res.status(500).send({ errors: [{ msg: 'Internal server error ' }] })
+    }
+  })
+}
 
 router.post(
   '/',
