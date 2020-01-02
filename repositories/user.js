@@ -16,12 +16,8 @@ exports.UserRepository = class UserRepository {
    * @returns {Object} User data without sensitive information
    */
   async insert(user) {
-    try {
-      const { ops } = await this.store.insertOne(user)
-      return ops[0]
-    } catch (error) {
-      throw error
-    }
+    const { ops } = await this.store.insertOne(user)
+    return ops[0]
   }
 
   /**
@@ -30,19 +26,15 @@ exports.UserRepository = class UserRepository {
    * @returns {Object} User data without sensitive information
    */
   async update(user) {
-    try {
-      const { ops } = await this.store.updateOne(
-        { _id: new ObjectId(user._id) },
-        {
-          $set: {
-            ...omit(user, '_id')
-          }
+    const { ops } = await this.store.updateOne(
+      { _id: new ObjectId(user._id) },
+      {
+        $set: {
+          ...omit(user, '_id')
         }
-      )
-      return ops[0]
-    } catch (error) {
-      throw error
-    }
+      }
+    )
+    return ops[0]
   }
 
   /**
