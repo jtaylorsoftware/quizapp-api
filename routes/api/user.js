@@ -87,3 +87,16 @@ router.post(
     }
   }
 )
+
+exports.userRouter = db => {
+  // only initialize once
+  if (!userRepository) {
+    db.collection('user', (error, collection) => {
+      if (error) {
+        throw error
+      }
+      userRepository = new UserRepository(collection)
+    })
+  }
+  return router
+}

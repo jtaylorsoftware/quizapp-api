@@ -76,7 +76,7 @@ router.post(
 exports.authRouter = db => {
   // only initialize once
   if (!userRepository) {
-    db.collection('user', (err, collection) => {
+    db.collection('user', (error, collection) => {
       if (error) {
         throw error
       }
