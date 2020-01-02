@@ -3,6 +3,7 @@ const { checkErrors } = require('../../middleware/checkerrors')
 const { UserRepository } = require('../../repositories/user')
 const { User } = require('../../models/user')
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 const auth = require('../../middleware/auth')
 const omit = require('object.omit')
 
@@ -60,7 +61,7 @@ router.post(
       let user = new User(username, email, password)
 
       const salt = await bcrypt.genSalt(10)
-      user.password = await bcrypt.hash(pass, salt)
+      user.password = await bcrypt.hash(password, salt)
 
       user = await userRepository.insert(user)
 
