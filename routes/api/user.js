@@ -11,6 +11,16 @@ let userRepository
 
 const router = require('express').Router()
 
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await userRepository.findById(req.user.id)
+    res.json(omit(user, 'password'))
+  } catch (error) {
+    console.error(error.message)
+    res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+  }
+})
+
 router.get('/:username', async (req, res) => {
   try {
     const user = await userRepository.findByUsername(req.params.username)
@@ -26,20 +36,13 @@ router.get('/:username', async (req, res) => {
   }
 })
 
-router.get('/me', auth, async (req, res) => {
-  try {
-    const user = await userRepository.findById(req.user._id)
-    res.json(omit(user, 'password'))
-  } catch (error) {
-    console.error(error.message)
-    res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
-  }
-})
-
 router.post(
   '/',
   [
-    check('username', 'Username is required').notEmpty(),
+    check('username', 'Username is required')
+      .notEmpty()
+      .not()
+      .equals('me'),
     check('email', 'A valid email is required').isEmail(),
     check(
       'password',
