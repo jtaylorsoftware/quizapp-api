@@ -1,7 +1,7 @@
 const { check } = require('express-validator')
 const { checkErrors } = require('../../middleware/checkerrors')
 const { UserRepository } = require('../../repositories/user')
-const auth = require('../../middleware/auth')
+const { authenticate } = require('../../middleware/auth')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const omit = require('object.omit')
@@ -11,13 +11,12 @@ let userRepository
 const router = require('express').Router()
 
 if (process.env.NODE_ENV !== 'production') {
-  router.get('/', auth, async (req, res) => {
+  router.get('/', authenticate({ required: true }), async (req, res) => {
     try {
       const user = await userRepository.findById(req.user.id)
-      console.log(req.user)
       res.json(user)
     } catch (error) {
-      console.error(error.message)
+      console.error(error)
       res.status(500).send({ errors: [{ msg: 'Internal server error ' }] })
     }
   })
@@ -35,7 +34,7 @@ router.post(
 
     try {
       // try to find a user with a matching email
-      const user = userRepository.findByEmail(email)
+      const user = await userRepository.findByEmail(email)
       if (!user) {
         return res
           .status(400)
@@ -70,7 +69,7 @@ router.post(
         }
       )
     } catch (error) {
-      console.error(error.message)
+      console.error(error)
       res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
     }
   }

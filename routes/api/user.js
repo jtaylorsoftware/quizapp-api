@@ -4,19 +4,19 @@ const { UserRepository } = require('../../repositories/user')
 const { User } = require('../../models/user')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const auth = require('../../middleware/auth')
+const { authenticate } = require('../../middleware/auth')
 const omit = require('object.omit')
 
 let userRepository
 
 const router = require('express').Router()
 
-router.get('/me', auth, async (req, res) => {
+router.get('/me', authenticate({ required: true }), async (req, res) => {
   try {
     const user = await userRepository.findById(req.user.id)
     res.json(omit(user, 'password'))
   } catch (error) {
-    console.error(error.message)
+    console.error(error)
     res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
   }
 })
@@ -31,7 +31,7 @@ router.get('/:username', async (req, res) => {
     }
     res.json(omit(user, ['email', 'password']))
   } catch (error) {
-    console.error(error.message)
+    console.error(error)
     res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
   }
 })
@@ -86,7 +86,7 @@ router.post(
         }
       )
     } catch (error) {
-      console.error(error.message)
+      console.error(error)
       res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
     }
   }
