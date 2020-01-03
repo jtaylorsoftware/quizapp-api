@@ -1,4 +1,5 @@
 const { ObjectId } = require('mongodb')
+const { Repository } = require('./repository')
 
 const MIN_QUESTIONS = 1
 const MIN_ANSWERS = 2
@@ -6,13 +7,12 @@ const MIN_ANSWERS = 2
 exports.MIN_QUESTIONS = MIN_QUESTIONS
 exports.MIN_ANSWERS = MIN_ANSWERS
 
-exports.QuizRepository = class QuizRepository {
+exports.QuizRepository = class QuizRepository extends Repository {
   constructor(store) {
-    this.store = store
+    super(store)
   }
-
   /**
-   * Adds a user to the repository
+   * Adds a quiz to the repository
    * @param {Quiz} quiz
    * @returns {Object} Quiz data
    * @throws Throws Error if Quiz has no questions or any allowedUser is not an ObjectId
@@ -21,14 +21,11 @@ exports.QuizRepository = class QuizRepository {
     if (!QuizRepository.validateQuiz(quiz)) {
       throw Error('One or more parts of the quiz are invalid')
     }
-    const { ops } = await this.store.insertOne(quiz)
-    return ops[0]
+    return await super.insert(quiz)
   }
 
   async updateTitle(quiz, title) {
-    if (!(title instanceof String) && title.length <= 0) {
-      throw Error('Text must be a String')
-    }
+    QuizRepository._assertIsValidText(title)
     await this.store.updateOne(
       { _id: quiz._id },
       {
@@ -106,77 +103,12 @@ exports.QuizRepository = class QuizRepository {
     )
   }
 
-  async updateQuestionText(quiz, questionIndex, text) {
-    this._assertQuestionIndexInRange(quiz.questions, questionIndex)
-    await this.store.updateOne(
-      { _id: quiz._id },
-      {
-        $set: {
-          [`questions.${questionIndex}.text`]: text
-        }
-      }
-    )
-  }
-
-  async updateQuestionAnswerText(quiz, questionIndex, answerIndex, text) {
-    this._assertQuestionIndexInRange(quiz.questions, questionIndex)
-    this._assertAnswerIndexInRange(
-      quiz.questions[questionIndex].answers,
-      answerIndex
-    )
-
-    await this.store.updateOne(
-      { _id: quiz._id },
-      {
-        $set: {
-          [`questions.${questionIndex}.answers.${answerIndex}.text`]: text
-        }
-      }
-    )
-  }
-
-  async incrementQuestionAnswerCount(quiz, questionIndex, answerIndex) {
-    this._assertQuestionIndexInRange(quiz.questions, questionIndex)
-    this._assertAnswerIndexInRange(
-      quiz.questions[questionIndex].answers,
-      answerIndex
-    )
-    await this.store.updateOne(
-      { _id: quiz._id },
-      {
-        $inc: {
-          [`questions.${questionIndex}.answers.${answerIndex}.count`]: 1
-        }
-      }
-    )
-  }
-
   /**
    * Finds and returns all quizzes that aren't private
    * @returns {Object[]} Quiz data
    */
   async getAllPublicQuizzes() {
     return await this.store.find({ isPublic: true }).toArray()
-  }
-
-  /**
-   * Finds a single quiz by id
-   * @param {String} id
-   * @returns {Object} Quiz data
-   */
-  async findById(id) {
-    if (!ObjectId.isValid(id)) {
-      return null
-    }
-    return await this._findOne({ _id: new ObjectId(id) })
-  }
-
-  /**
-   * Deletes a quiz
-   * @param {Object} Quiz to delete
-   */
-  async delete(quiz) {
-    await this.store.deleteOne({ _id: quiz._id })
   }
 
   static validateQuiz(quiz) {
@@ -192,42 +124,19 @@ exports.QuizRepository = class QuizRepository {
     return (
       allowedUsers instanceof Array &&
       allowedUsers.length > 0 &&
-      allowedUsers.every(userId => this.validateUser(userId))
+      allowedUsers.every(userId => ObjectId.isValid(userId))
     )
-  }
-
-  static validateUser(userId) {
-    return ObjectId.isValid(userId)
   }
 
   static validateQuestions(questions) {
     return (
       questions instanceof Array &&
       questions.length > MIN_QUESTIONS &&
-      questions.every(question => this.validateQuestion(question))
+      questions.every(q => ObjectId.isValid(q))
     )
   }
 
-  static validateQuestion(question) {
-    return (
-      typeof question.text === 'string' &&
-      question.text.length > 0 &&
-      Number.isInteger(question.answer) &&
-      question.answers instanceof Array &&
-      question.answers.length >= MIN_ANSWERS &&
-      question.answers.every(answer => this.validateAnswer(answer))
-    )
-  }
-
-  static validateAnswer(answer) {
-    return typeof answer.text === 'string'
-  }
-
-  async _findOne(query) {
-    return await this.store.findOne(query)
-  }
-
-  _assertQuestionIndexInRange(questions, questionIndex) {
+  static _assertQuestionIndexInRange(questions, questionIndex) {
     if (!Number.isInteger(questionIndex) || questionIndex < 0) {
       throw Error('questionIndex must be a non-negative integer')
     }
@@ -236,12 +145,9 @@ exports.QuizRepository = class QuizRepository {
     }
   }
 
-  _assertAnswerIndexInRange(answers, answerIndex) {
-    if (!Number.isInteger(answerIndex) || answerIndex < 0) {
-      throw Error('answerIndex must be a non-negative integer')
-    }
-    if (answerIndex > answers.length) {
-      throw Error('answerIndex must be less than number of questions')
+  static _assertIsValidText(text) {
+    if (!(text instanceof String) && text.length <= 0) {
+      throw Error('Text must be a String')
     }
   }
 }
