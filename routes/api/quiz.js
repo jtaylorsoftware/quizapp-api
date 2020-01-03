@@ -1,15 +1,19 @@
-const validators = require('../../middleware/validation/quiz')
+const quizValidators = require('../../middleware/validation/quiz')
+const questionValidators = require('../../middleware/validation/question')
 const { checkErrors } = require('../../middleware/checkerrors')
 const { UserRepository } = require('../../repositories/user')
 const { QuizRepository } = require('../../repositories/quiz')
+const { QuestionRepository } = require('../../repositories/question')
 const { User } = require('../../models/user')
 const { Quiz } = require('../../models/quiz')
+const { Question } = require('../../models/question')
 const { authenticate } = require('../../middleware/auth')
 
 const omit = require('object.omit')
 
 let userRepository
 let quizRepository
+let questionRepository
 
 const getRequestedQuiz = async (req, res, next) => {
   try {
@@ -81,24 +85,29 @@ router.post(
   '/',
   authenticate({ required: false }),
   [
-    validators.checkQuizTitle,
-    validators.checkPublic,
-    validators.checkExpiresIn,
-    validators.checkAllowedUsers,
-    validators.checkQuestions
+    quizValidators.checkQuizTitle,
+    quizValidators.checkPublic,
+    quizValidators.checkExpiresIn,
+    quizValidators.checkAllowedUsers,
+    questionValidators.checkQuestions
   ],
   checkErrors,
   async (req, res) => {
     const userId = req.user.id || null // if undefined, will set to null
-    const { title, allowedUsers, questions, isPublic } = req.body
+    const { title, allowedUsers, isPublic } = req.body
     const expiresIn = Number.parseInt(req.body.expiresIn)
     try {
-      const quiz = await quizRepository.insert(
-        new Quiz(userId, title, questions, allowedUsers, expiresIn, isPublic)
+      const questions = await Promise.all(
+        req.body.questions.map(
+          async q => (await questionRepository.insert(q))._id
+        )
       )
-      if (userId) {
-        await userRepository.addQuiz(userId, quiz)
-      }
+
+      const quiz = await quizRepository.insert(
+        new Quiz(userId, title, expiresIn, isPublic, questions, allowedUsers)
+      )
+
+      await userRepository.addQuiz(userId, quiz)
       res.status(200).json({ id: quiz._id })
     } catch (error) {
       console.error(error)
@@ -115,7 +124,7 @@ router.delete(
   '/:id',
   authenticate({ required: true }),
   getRequestedQuiz,
-  validators.requireQuizOwner,
+  quizValidators.requireQuizOwner,
   async (req, res) => {
     const { quiz } = req
     const userId = req.user.id
@@ -138,8 +147,8 @@ router.put(
   '/:id/title',
   authenticate({ required: true }),
   getRequestedQuiz,
-  validators.requireQuizOwner,
-  [validators.checkQuizTitle],
+  quizValidators.requireQuizOwner,
+  [quizValidators.checkQuizTitle],
   checkErrors,
   async (req, res) => {
     const { quiz } = req
@@ -162,8 +171,8 @@ router.put(
   '/:id/questions/:questionIndex/text',
   authenticate({ required: true }),
   getRequestedQuiz,
-  validators.requireQuizOwner,
-  [validators.checkQuestionIndex, validators.checkQuestionText],
+  quizValidators.requireQuizOwner,
+  [quizValidators.checkQuestionIndex, questionValidators.checkQuestionText],
   checkErrors,
   async (req, res) => {
     const { text } = req.body
@@ -198,11 +207,11 @@ router.put(
   '/:id/questions/:questionIndex/answers/:answerIndex/text',
   authenticate({ required: true }),
   getRequestedQuiz,
-  validators.requireQuizOwner,
+  quizValidators.requireQuizOwner,
   [
-    validators.checkQuestionIndex,
-    validators.checkAnswerIndex,
-    validators.checkAnswerText
+    quizValidators.checkQuestionIndex,
+    questionValidators.checkAnswerIndex,
+    questionValidators.checkAnswerText
   ],
   checkErrors,
   async (req, res) => {
@@ -263,6 +272,14 @@ exports.quizRouter = db => {
         throw error
       }
       quizRepository = new QuizRepository(collection)
+    })
+  }
+  if (!questionRepository) {
+    db.collection('question', (error, collection) => {
+      if (error) {
+        throw error
+      }
+      questionRepository = new QuestionRepository(collection)
     })
   }
   return router
