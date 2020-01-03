@@ -10,6 +10,13 @@ exports.startServer = (port, routes) => {
   const app = express()
 
   app.use(express.json({ extended: false }))
+  app.use((error, req, res, next) => {
+    if (error instanceof SyntaxError) {
+      res.status(400).json({ errors: [{ msg: 'Invalid JSON format' }] })
+    } else {
+      next()
+    }
+  })
 
   routes.forEach(route => {
     app.use(route.path, route.router)
