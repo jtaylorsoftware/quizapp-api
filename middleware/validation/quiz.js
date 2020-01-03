@@ -4,7 +4,7 @@ const { body, param } = require('express-validator')
 
 exports.checkQuizTitle = body(
   'title',
-  'Question must have a non-empty title'
+  'Quiz must have a non-empty title'
 ).custom(value => typeof value === 'string' && value.length > 0)
 
 exports.checkPublic = body(
@@ -24,29 +24,10 @@ exports.checkAllowedUsers = body(
     (value instanceof Array && value.length === 0) ||
     QuizRepository.validateAllowedUsers(value)
 )
-exports.checkQuestions = body(
-  'questions',
-  'Questions must be a valid array of question objects'
-).custom(value => QuizRepository.validateQuestions(value))
-
-exports.checkQuestionText = body('text', 'Text must not be empty')
-  .isString()
-  .isLength({ min: 1 })
-
-exports.checkAnswerText = body('text', 'Text must not be empty')
-  .isString()
-  .isLength({ min: 1 })
 
 exports.checkQuestionIndex = param(
   'questionIndex',
   'questionIndex must be a positive integer'
-).isInt({
-  min: 0
-})
-
-exports.checkAnswerIndex = param(
-  'answerIndex',
-  'answerIndex must be a positive integer'
 ).isInt({
   min: 0
 })
