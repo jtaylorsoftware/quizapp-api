@@ -54,11 +54,17 @@ router.post(
     const { username, email, password } = req.body
 
     try {
-      const existingUser = await userRepository.findByEmail(email)
+      let existingUser = await userRepository.findByEmail(email)
       if (existingUser) {
         return res
           .status(400)
           .json({ errors: [{ msg: 'Email is already in use' }] })
+      }
+      existingUser = await userRepository.findByUsername(username)
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({ errors: [{ msg: 'Username is already in use' }] })
       }
 
       let user = new User(username, email, password)
