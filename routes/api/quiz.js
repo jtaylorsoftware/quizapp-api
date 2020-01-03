@@ -89,13 +89,17 @@ router.post(
   ],
   checkErrors,
   async (req, res) => {
-    const user = req.user.id || null // if undefined, will set to null
+    const userId = req.user.id || null // if undefined, will set to null
     const { title, allowedUsers, questions, isPublic } = req.body
     const expiresIn = Number.parseInt(req.body.expiresIn)
     try {
       const quiz = await quizRepository.insert(
-        new Quiz(user, title, questions, allowedUsers, expiresIn, isPublic)
+        new Quiz(userId, title, questions, allowedUsers, expiresIn, isPublic)
       )
+      if (userId) {
+        console.log('adding quiz to user')
+        await userRepository.addQuiz(userId, quiz._id)
+      }
       res.status(200).json({ id: quiz._id })
     } catch (error) {
       console.error(error)
