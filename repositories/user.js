@@ -12,7 +12,7 @@ exports.UserRepository = class UserRepository {
 
   /**
    * Adds a user to the repository
-   * @param {User} user
+   * @param {User} user User model object to insert
    * @returns {Object} User data without sensitive information
    */
   async insert(user) {
@@ -22,19 +22,24 @@ exports.UserRepository = class UserRepository {
 
   /**
    * Updates a user in the repository
-   * @param {User} user User with existing id to modify
+   * @param {User|string|ObjectId} user User or ID of User to modify
+   * @param {Object} quizId ObjectId of a Quiz to add
    * @returns {Object} User data without sensitive information
    */
-  async update(user) {
-    const { ops } = await this.store.updateOne(
-      { _id: new ObjectId(user._id) },
+  async addQuiz(user, quizId) {
+    const _id = user._id || (ObjectId.isValid(user) ? new ObjectId(user) : '')
+    if (!_id) {
+      return null
+    }
+    const { result } = await this.store.updateOne(
+      { _id },
       {
-        $set: {
-          ...omit(user, '_id')
+        $addToSet: {
+          quizzes: quizId
         }
       }
     )
-    return ops[0]
+    console.log(result)
   }
 
   /**
