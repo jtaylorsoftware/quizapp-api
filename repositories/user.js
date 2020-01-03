@@ -31,7 +31,7 @@ exports.UserRepository = class UserRepository {
     if (!_id) {
       return null
     }
-    const { result } = await this.store.updateOne(
+    await this.store.updateOne(
       { _id },
       {
         $addToSet: {
@@ -39,7 +39,6 @@ exports.UserRepository = class UserRepository {
         }
       }
     )
-    console.log(result)
   }
 
   /**
