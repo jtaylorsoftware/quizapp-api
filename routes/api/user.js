@@ -26,7 +26,7 @@ router.get('/:username', async (req, res) => {
     const user = await userRepository.findByUsername(req.params.username)
     if (!user) {
       return res
-        .status(400)
+        .status(404)
         .json({ errors: [{ msg: 'There is no matching user found' }] })
     }
     res.json(omit(user, ['email', 'password']))
