@@ -47,7 +47,7 @@ router.post(
     check(
       'password',
       'A password with 8 or more characters is required'
-    ).isLength({ min: 8 })
+    ).custom(value => typeof value === 'string' && value.length >= 8)
   ],
   checkErrors,
   async (req, res) => {
