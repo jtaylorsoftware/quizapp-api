@@ -5,6 +5,7 @@ if (process.env.NODE_ENV !== 'production') {
 const { startServer } = require('./server')
 const { userRouter } = require('./routes/api/user')
 const { authRouter } = require('./routes/api/auth')
+const { quizRouter } = require('./routes/api/quiz')
 
 const { connectToDb } = require('./database/db')
 
@@ -21,7 +22,8 @@ const start = async () => {
 
   await startServer(process.env.PORT, [
     { path: '/user', router: userRouter(db) },
-    { path: '/auth', router: authRouter(db) }
+    { path: '/auth', router: authRouter(db) },
+    { path: '/quiz', router: quizRouter(db) }
   ])
 }
 
