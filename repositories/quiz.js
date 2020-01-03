@@ -1,5 +1,11 @@
 const { ObjectId } = require('mongodb')
 
+const MIN_QUESTIONS = 1
+const MIN_ANSWERS = 2
+
+exports.MIN_QUESTIONS = MIN_QUESTIONS
+exports.MIN_ANSWERS = MIN_ANSWERS
+
 exports.QuizRepository = class QuizRepository {
   constructor(store) {
     this.store = store
@@ -19,25 +25,24 @@ exports.QuizRepository = class QuizRepository {
     return ops[0]
   }
 
-  async updateText(quiz, text) {
-    if (!(text instanceof String) || !text.length) {
+  async updateTitle(quiz, title) {
+    if (!(title instanceof String) && title.length <= 0) {
       throw Error('Text must be a String')
     }
-    const { ops } = await this.store.updateOne(
-      { _id: new ObjectId(quiz._id) },
+    await this.store.updateOne(
+      { _id: quiz._id },
       {
         $set: {
-          text
+          title
         }
       }
     )
-    return ops[0]
   }
 
   async updateOptions(quiz, options) {
     const { expiresIn, isPublic } = options
-    const { ops } = await this.store.updateOne(
-      { _id: new ObjectId(quiz._id) },
+    await this.store.updateOne(
+      { _id: quiz._id },
       {
         $set: {
           expiresIn,
@@ -45,7 +50,17 @@ exports.QuizRepository = class QuizRepository {
         }
       }
     )
-    return ops[0]
+  }
+
+  async incrementResponseCount(quiz) {
+    await this.store.updateOne(
+      { _id: quiz._id },
+      {
+        $inc: {
+          responses: 1
+        }
+      }
+    )
   }
 
   /**
@@ -61,37 +76,79 @@ exports.QuizRepository = class QuizRepository {
     ) {
       throw Error('Invalid User Id in quiz.allowedUsers')
     }
-    const { ops } = await this.store.updateOne(
-      { _id: new ObjectId(quiz._id) },
+    await this.store.updateOne(
+      { _id: quiz._id },
       {
         $set: {
           allowedUsers
         }
       }
     )
-    return ops[0]
   }
 
   /**
    * Updates and replaces the questions of a quiz in the repository
    * @param {Quiz} quiz Quiz with existing id to modify
    * @param {Object[]} questions Array of Questions
-   * @param {String} question.text
    * @returns {Quiz} Quiz data
    */
   async updateQuestions(quiz, questions) {
     if (!QuizRepository.validateQuestions(questions)) {
       throw Error('Questions are invalid')
     }
-    const { ops } = await this.store.updateOne(
-      { _id: new ObjectId(quiz._id) },
+    await this.store.updateOne(
+      { _id: quiz._id },
       {
         $set: {
           questions
         }
       }
     )
-    return ops[0]
+  }
+
+  async updateQuestionText(quiz, questionIndex, text) {
+    this._assertQuestionIndexInRange(quiz.questions, questionIndex)
+    await this.store.updateOne(
+      { _id: quiz._id },
+      {
+        $set: {
+          [`questions.${questionIndex}.text`]: text
+        }
+      }
+    )
+  }
+
+  async updateQuestionAnswerText(quiz, questionIndex, answerIndex, text) {
+    this._assertQuestionIndexInRange(quiz.questions, questionIndex)
+    this._assertAnswerIndexInRange(
+      quiz.questions[questionIndex].answers,
+      answerIndex
+    )
+
+    await this.store.updateOne(
+      { _id: quiz._id },
+      {
+        $set: {
+          [`questions.${questionIndex}.answers.${answerIndex}.text`]: text
+        }
+      }
+    )
+  }
+
+  async incrementQuestionAnswerCount(quiz, questionIndex, answerIndex) {
+    this._assertQuestionIndexInRange(quiz.questions, questionIndex)
+    this._assertAnswerIndexInRange(
+      quiz.questions[questionIndex].answers,
+      answerIndex
+    )
+    await this.store.updateOne(
+      { _id: quiz._id },
+      {
+        $inc: {
+          [`questions.${questionIndex}.answers.${answerIndex}.count`]: 1
+        }
+      }
+    )
   }
 
   /**
@@ -114,10 +171,18 @@ exports.QuizRepository = class QuizRepository {
     return await this._findOne({ _id: new ObjectId(id) })
   }
 
+  /**
+   * Deletes a quiz
+   * @param {Object} Quiz to delete
+   */
+  async delete(quiz) {
+    await this.store.deleteOne({ _id: quiz._id })
+  }
+
   static validateQuiz(quiz) {
     return (
-      typeof quiz.text === 'string' &&
-      quiz.text.length > 0 &&
+      typeof quiz.title === 'string' &&
+      quiz.title.length > 0 &&
       this.validateQuestions(quiz.questions) &&
       (!quiz.private || this.validateAllowedUsers(quiz.allowedUsers))
     )
@@ -138,7 +203,7 @@ exports.QuizRepository = class QuizRepository {
   static validateQuestions(questions) {
     return (
       questions instanceof Array &&
-      questions.length > 0 &&
+      questions.length > MIN_QUESTIONS &&
       questions.every(question => this.validateQuestion(question))
     )
   }
@@ -149,7 +214,7 @@ exports.QuizRepository = class QuizRepository {
       question.text.length > 0 &&
       Number.isInteger(question.answer) &&
       question.answers instanceof Array &&
-      question.answers.length >= 2 &&
+      question.answers.length >= MIN_ANSWERS &&
       question.answers.every(answer => this.validateAnswer(answer))
     )
   }
@@ -160,5 +225,23 @@ exports.QuizRepository = class QuizRepository {
 
   async _findOne(query) {
     return await this.store.findOne(query)
+  }
+
+  _assertQuestionIndexInRange(questions, questionIndex) {
+    if (!Number.isInteger(questionIndex) || questionIndex < 0) {
+      throw Error('questionIndex must be a non-negative integer')
+    }
+    if (questionIndex > questions.length) {
+      throw Error('questionIndex must be less than number of questions')
+    }
+  }
+
+  _assertAnswerIndexInRange(answers, answerIndex) {
+    if (!Number.isInteger(answerIndex) || answerIndex < 0) {
+      throw Error('answerIndex must be a non-negative integer')
+    }
+    if (answerIndex > answers.length) {
+      throw Error('answerIndex must be less than number of questions')
+    }
   }
 }
