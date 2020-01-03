@@ -97,8 +97,7 @@ router.post(
         new Quiz(userId, title, questions, allowedUsers, expiresIn, isPublic)
       )
       if (userId) {
-        console.log('adding quiz to user')
-        await userRepository.addQuiz(userId, quiz._id)
+        await userRepository.addQuiz(userId, quiz)
       }
       res.status(200).json({ id: quiz._id })
     } catch (error) {
@@ -119,8 +118,10 @@ router.delete(
   validators.requireQuizOwner,
   async (req, res) => {
     const { quiz } = req
+    const userId = req.user.id
     try {
       await quizRepository.delete(quiz)
+      await userRepository.removeQuiz(userId, quiz)
       res.status(204).end()
     } catch (error) {
       console.error(error)
