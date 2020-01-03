@@ -1,23 +1,14 @@
 const omit = require('object.omit')
 const { ObjectId } = require('mongodb')
+const { Repository } = require('./repository')
 
-exports.UserRepository = class UserRepository {
+exports.UserRepository = class UserRepository extends Repository {
   /**
    * Create a repository with a User collection as backing store
    * @param {collection} store Mongodb collection containing User docs
    */
   constructor(store) {
-    this.store = store
-  }
-
-  /**
-   * Adds a user to the repository
-   * @param {User} user User model object to insert
-   * @returns {Object} User data without sensitive information
-   */
-  async insert(user) {
-    const { ops } = await this.store.insertOne(user)
-    return ops[0]
+    super(store)
   }
 
   /**
@@ -68,23 +59,11 @@ exports.UserRepository = class UserRepository {
 
   /**
    * Finds a single user by id
-   * @param {String} id
-   * @returns {User} User entity without sensitive information
-   */
-  async findById(id) {
-    if (!ObjectId.isValid(id)) {
-      return null
-    }
-    return await this._findOne({ _id: new ObjectId(id) })
-  }
-
-  /**
-   * Finds a single user by id
    * @param {String} email
    * @returns {User} User entity without sensitive information
    */
   async findByEmail(email) {
-    return await this._findOne({ email })
+    return await this.store.findOne({ email })
   }
 
   /**
@@ -93,10 +72,6 @@ exports.UserRepository = class UserRepository {
    * @returns {User} User entity without sensitive information
    */
   async findByUsername(username) {
-    return await this._findOne({ username })
-  }
-
-  async _findOne(query) {
-    return await this.store.findOne(query)
+    return await this.store.findOne({ username })
   }
 }
