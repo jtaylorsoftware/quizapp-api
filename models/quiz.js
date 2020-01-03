@@ -1,7 +1,9 @@
+const { ObjectId } = require('mongodb')
+
 exports.Quiz = class Quiz {
-  constructor(user, text, questions, allowedUsers, expiresIn, isPublic) {
-    this.user = user
-    this.text = text
+  constructor(user, title, questions, allowedUsers, expiresIn, isPublic) {
+    this.user = ObjectId.isValid(user) ? new ObjectId(user) : null
+    this.title = title
     this.allowedUsers = allowedUsers
     this.questions = questions
     this.responses = 0
