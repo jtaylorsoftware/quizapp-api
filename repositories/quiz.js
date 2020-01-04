@@ -24,6 +24,19 @@ exports.QuizRepository = class QuizRepository extends Repository {
     return await super.insert(quiz)
   }
 
+  /**
+   * Finds and returns all quizzes that aren't private
+   * @returns {Object[]} Quiz data
+   */
+  async getAllPublicQuizzes() {
+    return await this.store.find({ isPublic: true }).toArray()
+  }
+
+  /**
+   * Updates the title of a quiz
+   * @param {Quiz} quiz quiz object
+   * @param {string} title
+   */
   async updateTitle(quiz, title) {
     QuizRepository._assertIsValidText(title)
     await this.store.updateOne(
@@ -36,6 +49,11 @@ exports.QuizRepository = class QuizRepository extends Repository {
     )
   }
 
+  /**
+   * Updates the options of a quiz
+   * @param {Quiz} quiz quiz object
+   * @param {Object} options object containing relevant options (expiresIn, isPublic)
+   */
   async updateOptions(quiz, options) {
     const { expiresIn, isPublic } = options
     await this.store.updateOne(
@@ -44,17 +62,6 @@ exports.QuizRepository = class QuizRepository extends Repository {
         $set: {
           expiresIn,
           isPublic
-        }
-      }
-    )
-  }
-
-  async incrementResponseCount(quiz) {
-    await this.store.updateOne(
-      { _id: quiz._id },
-      {
-        $inc: {
-          responses: 1
         }
       }
     )
@@ -101,14 +108,6 @@ exports.QuizRepository = class QuizRepository extends Repository {
         }
       }
     )
-  }
-
-  /**
-   * Finds and returns all quizzes that aren't private
-   * @returns {Object[]} Quiz data
-   */
-  async getAllPublicQuizzes() {
-    return await this.store.find({ isPublic: true }).toArray()
   }
 
   static validateQuiz(quiz) {
