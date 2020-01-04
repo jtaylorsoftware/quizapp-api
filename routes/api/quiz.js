@@ -1,5 +1,6 @@
 const quizValidators = require('../../middleware/validation/quiz')
 const questionValidators = require('../../middleware/validation/question')
+const { query } = require('express-validator')
 const { checkErrors } = require('../../middleware/checkerrors')
 const { UserRepository } = require('../../repositories/user')
 const { QuizRepository } = require('../../repositories/quiz')
@@ -14,6 +15,22 @@ const omit = require('object.omit')
 let userRepository
 let quizRepository
 let questionRepository
+
+const router = require('express').Router()
+
+/**
+ * GET /
+ * Returns all public quizzes
+ */
+router.get('/', async (req, res) => {
+  try {
+    const quizzes = await quizRepository.getAllPublicQuizzes()
+    res.json(quizzes)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+  }
+})
 
 const getRequestedQuiz = async (req, res, next) => {
   try {
@@ -35,22 +52,6 @@ const canViewQuiz = (id, quiz) =>
   quiz.isPublic ||
   quiz.user.toString() === id ||
   !quiz.allowedUsers.some(userId => userId.toString() === id)
-
-const router = require('express').Router()
-
-/**
- * GET /
- * Returns all public quizzes
- */
-router.get('/', async (req, res) => {
-  try {
-    const quizzes = await quizRepository.getAllPublicQuizzes()
-    res.json(quizzes)
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
-  }
-})
 
 /**
  * GET /:id
@@ -79,11 +80,18 @@ router.get(
 
 /**
  * GET /:id
- * Returns just the questions from the quiz
+ * Returns just the question from the quiz
  */
 router.get(
   '/:id/questions',
   authenticate({ required: false }),
+  [
+    query('page', 'Page must be at least 1').isInt({ min: 1 }),
+    query('size', 'Size must be at least 1')
+      .optional()
+      .isInt({ min: 1 })
+  ],
+  checkErrors,
   getRequestedQuiz,
   async (req, res) => {
     const { quiz, user } = req
@@ -98,7 +106,21 @@ router.get(
         errors: [{ msg: 'You must be logged in to view this quiz' }]
       })
     }
-    res.json(req.quiz.questions)
+
+    const { questions } = req.quiz
+    const page = req.query.page
+    const DEFAULT_PAGESIZE = 10
+    const size = req.query.size || DEFAULT_PAGESIZE
+
+    const start = (page - 1) * size
+    const end = Math.min(start + size, questions.length)
+    if (start >= questions.length) {
+      return res.status(404).json({
+        errors: [{ msg: `Could not get page ${page}` }]
+      })
+    }
+
+    res.json(questions.slice(start, end))
   }
 )
 
