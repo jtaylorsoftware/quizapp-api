@@ -78,6 +78,31 @@ router.get(
 )
 
 /**
+ * GET /:id
+ * Returns just the questions from the quiz
+ */
+router.get(
+  '/:id/questions',
+  authenticate({ required: false }),
+  getRequestedQuiz,
+  async (req, res) => {
+    const { quiz, user } = req
+    if (user) {
+      if (!canViewQuiz(user.id, quiz)) {
+        return res.status(403).json({
+          errors: [{ msg: 'You are not allowed to view this quiz' }]
+        })
+      }
+    } else if (!quiz.isPublic) {
+      return res.status(401).json({
+        errors: [{ msg: 'You must be logged in to view this quiz' }]
+      })
+    }
+    res.json(req.quiz.questions)
+  }
+)
+
+/**
  * POST /
  * Saves a quiz
  */
