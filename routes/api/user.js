@@ -38,10 +38,18 @@ router.put(
     const { email, password } = req.body
     try {
       if (email) {
+        const existingUser = await userRepository.findByEmail(email)
+        if (existingUser) {
+          return res
+            .status(400)
+            .json({ errors: [{ msg: 'Email is already in use' }] })
+        }
         await userRepository.updateEmail(user, email)
       }
       if (password) {
-        await userRepository.updatePassword(user, password)
+        const salt = await bcrypt.genSalt(10)
+        const encryptedPass = await bcrypt.hash(password, salt)
+        await userRepository.updatePassword(user, encryptedPass)
       }
       res.status(204).end()
     } catch (error) {
