@@ -1,4 +1,3 @@
-const omit = require('object.omit')
 const { ObjectId } = require('mongodb')
 const { Repository } = require('./repository')
 
@@ -15,14 +14,12 @@ exports.UserRepository = class UserRepository extends Repository {
    * Updates a user's quizzes
    * @param {User|string|ObjectId} user User or ID of User to modify
    * @param {Quiz|string|ObjectId} quiz Quiz or ID a Quiz to add
-   * @returns {Object} User data without sensitive information
    */
   async addQuiz(user, quiz) {
-    const _id = user._id || (ObjectId.isValid(user) ? new ObjectId(user) : '')
-    const quizId =
-      quiz._id || (ObjectId.isValid(quiz) ? new ObjectId(quiz) : '')
+    const _id = Repository._getObjectIdFromEntity(user)
+    const quizId = Repository._getObjectIdFromEntity(quiz)
     if (!_id || !quizId) {
-      return null
+      return
     }
     await this.store.updateOne(
       { _id },
@@ -38,14 +35,12 @@ exports.UserRepository = class UserRepository extends Repository {
    * Remove a quiz from User's quizzes
    * @param {User|string|ObjectId} user User or ID of User to modify
    * @param {Quiz|string|ObjectId} quiz Quiz or ID a Quiz to remove
-   * @returns {Object} User data without sensitive information
    */
   async removeQuiz(user, quiz) {
-    const _id = user._id || (ObjectId.isValid(user) ? new ObjectId(user) : '')
-    const quizId =
-      quiz._id || (ObjectId.isValid(quiz) ? new ObjectId(quiz) : '')
+    const _id = Repository._getObjectIdFromEntity(user)
+    const quizId = Repository._getObjectIdFromEntity(quiz)
     if (!_id || !quizId) {
-      return null
+      return
     }
     await this.store.updateOne(
       { _id },
@@ -73,5 +68,25 @@ exports.UserRepository = class UserRepository extends Repository {
    */
   async findByUsername(username) {
     return await this.store.findOne({ username })
+  }
+
+  /**
+   * Updates a user's email
+   * @param {User|string|ObjectId} user User or User ID to update
+   * @param {string} email Email to replace current
+   */
+  async updateEmail(user, email) {
+    const _id = Repository._getObjectIdFromEntity(user)
+    await this.store.findOneAndUpdate({ _id }, { $set: { email } })
+  }
+
+  /**
+   * Updates a user's password
+   * @param {User|string|ObjectId} user User or User ID to update
+   * @param {string} password password to replace current
+   */
+  async updatePassword(user, password) {
+    const _id = Repository._getObjectIdFromEntity(user)
+    await this.store.findOneAndUpdate({ _id }, { $set: { password } })
   }
 }
