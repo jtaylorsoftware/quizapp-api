@@ -51,6 +51,16 @@ router.put(
   }
 )
 
+router.delete('/me', authenticate({ required: true }), async (req, res) => {
+  try {
+    await userRepository.delete(req.user.id)
+    res.status(204).end()
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+  }
+})
+
 router.get('/:username', async (req, res) => {
   try {
     const user = await userRepository.findByUsername(req.params.username)
