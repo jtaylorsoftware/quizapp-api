@@ -23,16 +23,16 @@ router.get('/', authenticate({ required: true }), async (req, res) => {
 router.post(
   '/',
   [
-    check('email', 'A valid email is required').isEmail(),
+    check('username', 'A username is required').exists(),
     check('password', 'A password is required').exists()
   ],
   checkErrors,
   async (req, res) => {
-    const { email, password } = req.body
+    const { username, password } = req.body
 
     try {
       // try to find a user with a matching email
-      const user = await userRepository.findByEmail(email)
+      const user = await userRepository.findByUsername(username)
       if (!user) {
         return res
           .status(400)
