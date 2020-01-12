@@ -34,4 +34,8 @@ exports.Repository = class Repository {
   async delete(id) {
     await this.store.deleteOne({ _id: id })
   }
+
+  static _getObjectIdFromEntity(entity) {
+    return entity._id || (ObjectId.isValid(entity) ? new ObjectId(entity) : '')
+  }
 }
