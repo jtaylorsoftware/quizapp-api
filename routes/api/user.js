@@ -21,6 +21,36 @@ router.get('/me', authenticate({ required: true }), async (req, res) => {
   }
 })
 
+router.put(
+  '/me',
+  authenticate({ required: true }),
+  [
+    check('email', 'Email must be valid if present')
+      .isEmail()
+      .optional(),
+    check('password', 'Password must be 8 characters if present')
+      .custom(value => typeof value === 'string' && value.length >= 8)
+      .optional()
+  ],
+  checkErrors,
+  async (req, res) => {
+    const user = req.user.id
+    const { email, password } = req.body
+    try {
+      if (email) {
+        await userRepository.updateEmail(user, email)
+      }
+      if (password) {
+        await userRepository.updatePassword(user, password)
+      }
+      res.status(204).end()
+    } catch (error) {
+      console.error(error)
+      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+    }
+  }
+)
+
 router.get('/:username', async (req, res) => {
   try {
     const user = await userRepository.findByUsername(req.params.username)
