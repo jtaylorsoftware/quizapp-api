@@ -32,7 +32,10 @@ exports.Repository = class Repository {
    * @param {Object} ID
    */
   async delete(id) {
-    await this.store.deleteOne({ _id: id })
+    if (!ObjectId.isValid(id)) {
+      return
+    }
+    await this.store.deleteOne({ _id: new ObjectId(id) })
   }
 
   static _getObjectIdFromEntity(entity) {
