@@ -21,9 +21,9 @@ const start = async () => {
   // })
 
   await startServer(process.env.PORT, [
-    { path: '/user', router: userRouter(db) },
-    { path: '/auth', router: authRouter(db) },
-    { path: '/quiz', router: quizRouter(db) }
+    { path: '/api/user', router: userRouter(db) },
+    { path: '/api/auth', router: authRouter(db) },
+    { path: '/api/quiz', router: quizRouter(db) }
   ])
 }
 
