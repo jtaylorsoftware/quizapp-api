@@ -1,24 +1,12 @@
 const { check } = require('express-validator')
 const { checkErrors } = require('../../middleware/checkerrors')
 const { UserRepository } = require('../../repositories/user')
-const { authenticate } = require('../../middleware/auth')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
-const omit = require('object.omit')
 
 let userRepository
 
 const router = require('express').Router()
-
-router.get('/', authenticate({ required: true }), async (req, res) => {
-  try {
-    const user = await userRepository.findById(req.user.id)
-    res.json(omit(user, 'password'))
-  } catch (error) {
-    console.error(error)
-    res.status(500).send({ errors: [{ msg: 'Internal server error ' }] })
-  }
-})
 
 router.post(
   '/',
