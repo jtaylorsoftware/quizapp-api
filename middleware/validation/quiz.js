@@ -13,8 +13,8 @@ exports.checkPublic = body(
 ).isBoolean()
 exports.checkExpiresIn = body(
   'expiresIn',
-  'expiresIn must be an integer >= 0'
-).isInt({ min: 0 })
+  'expiresIn must be a valid date'
+).isISO8601({ strict: true })
 exports.checkAllowedUsers = body(
   'allowedUsers',
   'Allowed users must be null or empty or only contain user IDs'
