@@ -137,7 +137,7 @@ router.post(
   async (req, res) => {
     const userId = req.user.id || null // if undefined, will set to null
     const { title, allowedUsers, isPublic, questions } = req.body
-    const expiresIn = Number.parseInt(req.body.expiresIn)
+    const expiresIn = new Date(req.body.expiresIn)
     try {
       const allowedUserIds = []
       for (const username of allowedUsers) {
@@ -156,7 +156,7 @@ router.post(
           })
         }
       }
-      console.log(isPublic, allowedUsers, allowedUserIds)
+      // console.log(isPublic, allowedUsers, allowedUserIds)
 
       const quiz = await quizRepository.insert(
         new Quiz(userId, title, expiresIn, isPublic, questions, allowedUserIds)
