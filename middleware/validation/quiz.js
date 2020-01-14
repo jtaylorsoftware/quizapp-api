@@ -32,6 +32,28 @@ exports.checkQuestionIndex = param(
   min: 0
 })
 
+exports.checkQuestions = body(
+  'questions',
+  'Questions must be a valid array of question objects'
+)
+  .isArray()
+  .custom(values => values.every(q => QuizRepository.validateQuestion(q)))
+
+exports.checkQuestionText = body('text', 'Text must not be empty')
+  .isString()
+  .isLength({ min: 1 })
+
+exports.checkAnswerText = body('text', 'Text must not be empty')
+  .isString()
+  .isLength({ min: 1 })
+
+exports.checkAnswerIndex = param(
+  'answerIndex',
+  'answerIndex must be a positive integer'
+).isInt({
+  min: 0
+})
+
 exports.requireQuizOwner = async (req, res, next) => {
   if (req.quiz.user.toString() !== req.user.id) {
     return res

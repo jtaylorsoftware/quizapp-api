@@ -131,8 +131,32 @@ exports.QuizRepository = class QuizRepository extends Repository {
     return (
       questions instanceof Array &&
       questions.length >= MIN_QUESTIONS &&
-      questions.every(q => ObjectId.isValid(q))
+      questions.every(q => this.validateQuestion(q))
     )
+  }
+
+  static validateQuestion(question) {
+    return (
+      typeof question.text === 'string' &&
+      question.text.length > 0 &&
+      Number.isInteger(question.correctAnswer) &&
+      question.answers instanceof Array &&
+      question.answers.length >= MIN_ANSWERS &&
+      question.answers.every(answer => this.validateAnswer(answer))
+    )
+  }
+
+  static validateAnswer(answer) {
+    return typeof answer.text === 'string'
+  }
+
+  static _assertAnswerIndexInRange(answers, answerIndex) {
+    if (!Number.isInteger(answerIndex) || answerIndex < 0) {
+      throw Error('answerIndex must be a non-negative integer')
+    }
+    if (answerIndex > answers.length) {
+      throw Error('answerIndex must be less than number of questions')
+    }
   }
 
   static _assertQuestionIndexInRange(questions, questionIndex) {

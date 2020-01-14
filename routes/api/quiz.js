@@ -1,20 +1,14 @@
 const quizValidators = require('../../middleware/validation/quiz')
-const questionValidators = require('../../middleware/validation/question')
-const { query } = require('express-validator')
 const { checkErrors } = require('../../middleware/checkerrors')
 const { UserRepository } = require('../../repositories/user')
 const { QuizRepository } = require('../../repositories/quiz')
-const { QuestionRepository } = require('../../repositories/question')
-const { User } = require('../../models/user')
 const { Quiz } = require('../../models/quiz')
-const { Question } = require('../../models/question')
 const { authenticate } = require('../../middleware/auth')
 
 const omit = require('object.omit')
 
 let userRepository
 let quizRepository
-let questionRepository
 
 const router = require('express').Router()
 
@@ -85,13 +79,13 @@ router.get(
 router.get(
   '/:id/questions',
   authenticate({ required: false }),
-  [
-    query('page', 'Page must be at least 1').isInt({ min: 1 }),
-    query('size', 'Size must be at least 1')
-      .optional()
-      .isInt({ min: 1 })
-  ],
-  checkErrors,
+  // [
+  //   query('page', 'Page must be at least 1').isInt({ min: 1 }),
+  //   query('size', 'Size must be at least 1')
+  //     .optional()
+  //     .isInt({ min: 1 })
+  // ],
+  // checkErrors,
   getRequestedQuiz,
   async (req, res) => {
     const { quiz, user } = req
@@ -108,25 +102,26 @@ router.get(
     }
 
     const { questions } = req.quiz
-    const page = req.query.page
-    const DEFAULT_PAGESIZE = 10
-    const size = req.query.size || DEFAULT_PAGESIZE
+    // const page = req.query.page
+    // const DEFAULT_PAGESIZE = 10
+    // const size = req.query.size || DEFAULT_PAGESIZE
 
-    const start = (page - 1) * size
-    const end = Math.min(start + size, questions.length)
-    if (start >= questions.length) {
-      return res.status(404).json({
-        errors: [{ msg: `Could not get page ${page}` }]
-      })
-    }
+    // const start = (page - 1) * size
+    // const end = Math.min(start + size, questions.length)
+    // if (start >= questions.length) {
+    //   return res.status(404).json({
+    //     errors: [{ msg: `Could not get page ${page}` }]
+    //   })
+    // }
 
-    res.json(questions.slice(start, end))
+    // res.json(questions.slice(start, end))
+    res.json(questions)
   }
 )
 
 /**
  * POST /
- * Saves a quiz
+ * Saves a quiz to db
  */
 router.post(
   '/',
@@ -135,23 +130,36 @@ router.post(
     quizValidators.checkQuizTitle,
     quizValidators.checkPublic,
     quizValidators.checkExpiresIn,
-    quizValidators.checkAllowedUsers,
-    questionValidators.checkQuestions
+    // quizValidators.checkAllowedUsers,
+    quizValidators.checkQuestions
   ],
   checkErrors,
   async (req, res) => {
     const userId = req.user.id || null // if undefined, will set to null
-    const { title, allowedUsers, isPublic } = req.body
+    const { title, allowedUsers, isPublic, questions } = req.body
     const expiresIn = Number.parseInt(req.body.expiresIn)
     try {
-      const questions = await Promise.all(
-        req.body.questions.map(
-          async q => (await questionRepository.insert(q))._id
-        )
-      )
+      const allowedUserIds = []
+      for (const username of allowedUsers) {
+        const user = await userRepository.findByUsername(username)
+        if (user) {
+          allowedUserIds.push(user._id)
+        } else {
+          return res.status(400).json({
+            errors: [
+              {
+                location: 'body',
+                param: 'allowedUsers',
+                msg: `${username} does not exist`
+              }
+            ]
+          })
+        }
+      }
+      console.log(isPublic, allowedUsers, allowedUserIds)
 
       const quiz = await quizRepository.insert(
-        new Quiz(userId, title, expiresIn, isPublic, questions, allowedUsers)
+        new Quiz(userId, title, expiresIn, isPublic, questions, allowedUserIds)
       )
 
       await userRepository.addQuiz(userId, quiz)
@@ -219,7 +227,7 @@ router.put(
   authenticate({ required: true }),
   getRequestedQuiz,
   quizValidators.requireQuizOwner,
-  [quizValidators.checkQuestionIndex, questionValidators.checkQuestionText],
+  [quizValidators.checkQuestionIndex, quizValidators.checkQuestionText],
   checkErrors,
   async (req, res) => {
     const { text } = req.body
@@ -257,8 +265,8 @@ router.put(
   quizValidators.requireQuizOwner,
   [
     quizValidators.checkQuestionIndex,
-    questionValidators.checkAnswerIndex,
-    questionValidators.checkAnswerText
+    quizValidators.checkAnswerIndex,
+    quizValidators.checkAnswerText
   ],
   checkErrors,
   async (req, res) => {
@@ -321,13 +329,6 @@ exports.quizRouter = db => {
       quizRepository = new QuizRepository(collection)
     })
   }
-  if (!questionRepository) {
-    db.collection('question', (error, collection) => {
-      if (error) {
-        throw error
-      }
-      questionRepository = new QuestionRepository(collection)
-    })
-  }
+
   return router
 }
