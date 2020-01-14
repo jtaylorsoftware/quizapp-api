@@ -11,6 +11,10 @@ let userRepository
 
 const router = require('express').Router()
 
+/**
+ * GET /me
+ * Returns the authenticated user's info without sensitive info
+ */
 router.get('/me', authenticate({ required: true }), async (req, res) => {
   try {
     const user = await userRepository.findById(req.user.id)
@@ -21,6 +25,10 @@ router.get('/me', authenticate({ required: true }), async (req, res) => {
   }
 })
 
+/**
+ * PUT /me
+ * Updates the authenticated user's email or password
+ */
 router.put(
   '/me',
   authenticate({ required: true }),
@@ -59,6 +67,10 @@ router.put(
   }
 )
 
+/**
+ * DELETE /me
+ * Deletes a user's account
+ */
 router.delete('/me', authenticate({ required: true }), async (req, res) => {
   try {
     await userRepository.delete(req.user.id)
@@ -69,6 +81,10 @@ router.delete('/me', authenticate({ required: true }), async (req, res) => {
   }
 })
 
+/**
+ * GET /:username
+ * Returns a user by their username
+ */
 router.get('/:username', async (req, res) => {
   try {
     const user = await userRepository.findByUsername(req.params.username)
@@ -84,6 +100,10 @@ router.get('/:username', async (req, res) => {
   }
 })
 
+/**
+ * POST /
+ * Registers a user
+ */
 router.post(
   '/',
   [
