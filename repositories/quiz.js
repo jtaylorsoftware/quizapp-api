@@ -130,7 +130,7 @@ exports.QuizRepository = class QuizRepository extends Repository {
   static validateQuestions(questions) {
     return (
       questions instanceof Array &&
-      questions.length > MIN_QUESTIONS &&
+      questions.length >= MIN_QUESTIONS &&
       questions.every(q => ObjectId.isValid(q))
     )
   }
