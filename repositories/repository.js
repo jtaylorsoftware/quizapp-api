@@ -38,6 +38,22 @@ exports.Repository = class Repository {
     await this.store.deleteOne({ _id: new ObjectId(id) })
   }
 
+  /**
+   * Updates an entire entity
+   * @param {Object} id
+   * @param {Object} entity document to replace current values
+   */
+  async update(id, entity) {
+    if (!ObjectId.isValid(id)) {
+      return
+    }
+    const { _id, ...doc } = entity
+    await this.store.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { ...doc } }
+    )
+  }
+
   static _getObjectIdFromEntity(entity) {
     return entity._id || (ObjectId.isValid(entity) ? new ObjectId(entity) : '')
   }
