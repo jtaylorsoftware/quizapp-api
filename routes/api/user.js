@@ -1,5 +1,5 @@
 const { check } = require('express-validator')
-const { checkErrors } = require('../../middleware/checkerrors')
+const { checkErrors } = require('../../middleware/validation/checkerrors')
 const { UserRepository } = require('../../repositories/user')
 const { User } = require('../../models/user')
 const bcrypt = require('bcryptjs')
