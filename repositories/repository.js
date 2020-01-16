@@ -10,8 +10,8 @@ exports.Repository = class Repository {
    * @param {Object} doc entity document
    * @returns {Object} Inserted document
    */
-  async insert(quiz) {
-    const { ops } = await this.store.insertOne(quiz)
+  async insert(doc) {
+    const { ops } = await this.store.insertOne(doc)
     return ops[0]
   }
 
