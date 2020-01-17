@@ -21,7 +21,7 @@ exports.checkAllowedUsers = body(
 ).custom(
   value =>
     (value && value instanceof Array && value.length === 0) ||
-    QuizRepository.validateAllowedUsers(value)
+    value.every(user => typeof user === 'string')
 )
 
 exports.checkQuestionIndex = param(
