@@ -23,19 +23,8 @@ class QuizController {
    */
   async getQuizFromId(quizId) {
     const quiz = await this.quizRepository.findById(quizId)
+    quiz.allowedUsers = await this._getUsernames(quiz.allowedUsers)
     return quiz
-  }
-
-  /**
-   * Gets a quiz as a listing (excludes questions list)
-   * @param {string} quizId
-   * @returns {{_id, user, title, isPublic, expiresIn, date}}
-   */
-  async getQuizListing(quizId) {
-    const quiz = await this.quizRepository.findById(quizId)
-    const { questions, ...listing } = quiz
-    listing.questionCount = questions.length
-    return listing
   }
 
   /**
@@ -79,13 +68,12 @@ class QuizController {
     { title, expiresIn, isPublic, questions, allowedUsers }
   ) {
     const allowedUserIds = await this._getUserIds(allowedUsers)
-
     await this.quizRepository.update(quizId, {
       title,
       isPublic,
       questions,
       expiresIn,
-      allowedUserIds
+      allowedUsers: allowedUserIds
     })
   }
 
