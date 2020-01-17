@@ -30,9 +30,9 @@ const configUsers = (userRepository, quizRepository) => {
     '/me/quizzes',
     authenticate({ required: true }),
     [
-      query('format', 'Valid formats: listing, full').custom(
-        format => format === 'listing' || format === 'full'
-      )
+      query('format', 'Valid formats: listing, full')
+        .custom(format => format === 'listing' || format === 'full')
+        .optional()
     ],
     checkErrors,
     userRouter.getUsersQuizzes.bind(userRouter)
@@ -101,9 +101,9 @@ const configQuizzes = (userRepository, quizRepository) => {
   quizzes.get(
     '/:id',
     [
-      query('format', 'Valid formats: listing, full').custom(
-        format => format === 'listing' || format === 'full'
-      )
+      query('format', 'Valid formats: listing, full')
+        .custom(format => format === 'listing' || format === 'full')
+        .optional()
     ],
     checkErrors,
     authenticate({ required: false }),
