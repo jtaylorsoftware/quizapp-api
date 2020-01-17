@@ -41,7 +41,7 @@ class UserController {
    */
   async getUserQuizzes(userId) {
     const user = await this._userRepository.findById(userId)
-    if (user.quizzes.length > 0) {
+    if (user && user.quizzes.length > 0) {
       const quizzes = []
 
       for (const quizId of user.quizzes) {
@@ -63,7 +63,7 @@ class UserController {
    */
   async getUserQuizListings(userId) {
     const user = await this._userRepository.findById(userId)
-    if (user.quizzes.length > 0) {
+    if (user && user.quizzes.length > 0) {
       const listings = []
 
       for (const quizId of user.quizzes) {
