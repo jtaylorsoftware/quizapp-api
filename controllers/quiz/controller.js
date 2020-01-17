@@ -34,6 +34,7 @@ class QuizController {
   async getQuizListing(quizId) {
     const quiz = await this.quizRepository.findById(quizId)
     const { questions, ...listing } = quiz
+    listing.questionCount = questions.length
     return listing
   }
 

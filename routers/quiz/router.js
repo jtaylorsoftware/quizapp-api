@@ -65,7 +65,7 @@ class QuizRouter extends Router {
    */
   async editQuiz(req, res, next) {
     const { user } = req
-    const { quiz } = req.body
+    const quiz = req.body
     const { id: quizId } = req.params
     if (!this._userOwnsQuiz(user.id, quizId)) {
       return res

@@ -70,9 +70,8 @@ class UserController {
         const quiz = await this._quizRepository.findById(quizId)
         if (quiz) {
           const { questions, allowedUsers, ...listing } = quiz
-          listings.push({
-            listing
-          })
+          listing.questionCount = questions.length
+          listings.push(listing)
         }
       }
       return listings
