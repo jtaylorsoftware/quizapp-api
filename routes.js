@@ -20,7 +20,7 @@ const configUsers = (userRepository, quizRepository) => {
   const userRouter = new UserRouter(userController)
 
   const users = express.Router()
-  users.use(debugRequests(debug('routes')))
+  users.use(debugRequests(debug('routes:user')))
   users.get(
     '/me',
     authenticate({ required: true }),
