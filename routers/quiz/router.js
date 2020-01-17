@@ -1,13 +1,4 @@
 const debug = require('debug')('routes:quiz')
-const quizValidators = require('../../middleware/validation/quiz')
-const { checkErrors } = require('../../middleware/validation/checkerrors')
-const { Quiz } = require('../../models/quiz')
-const { authenticate } = require('../../middleware/auth')
-const {
-  getRequestedQuiz,
-  authorizeQuizAccess,
-  requireQuizOwner
-} = require('../../middleware/quiz')
 
 const { Router } = require('../router')
 
