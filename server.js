@@ -1,12 +1,18 @@
+const debug = require('debug')('server')
 const express = require('express')
+
+const routes = require('./routes')
+
+const { connectToDb } = require('./database/db')
 
 /**
  * Starts the server
  * @param {Number} port Port that server will listen on
- * @param {[{string, Router}]} routes Array of base router URL strings and associated express.Router
- * @returns {Express} Express application object with server property containing result of listen()
  */
-exports.startServer = (port, routes) => {
+exports.startServer = async port => {
+  const { db } = await connectToDb({ url: process.env.DB_URL })
+  console.log('Connected to Mongodb')
+
   const app = express()
 
   app.use(express.json({ extended: false }))
@@ -14,13 +20,15 @@ exports.startServer = (port, routes) => {
     if (error instanceof SyntaxError) {
       res.status(400).json({ errors: [{ msg: 'Invalid JSON format' }] })
     } else {
-      next()
+      debug(error)
+      return next()
     }
   })
 
-  routes.forEach(route => {
-    app.use(route.path, route.router)
-  })
+  const { users, quizzes } = routes.config(db)
+
+  app.use('/api/users', users)
+  app.use('/api/quizzes', quizzes)
 
   app.server = app.listen(port)
 

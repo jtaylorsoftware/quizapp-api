@@ -17,11 +17,10 @@ exports.checkExpiresIn = body(
 ).isISO8601({ strict: true })
 exports.checkAllowedUsers = body(
   'allowedUsers',
-  'Allowed users must be null or empty or only contain user IDs'
+  'Allowed users must be empty array or only contain user IDs'
 ).custom(
   value =>
-    value == null ||
-    (value instanceof Array && value.length === 0) ||
+    (value && value instanceof Array && value.length === 0) ||
     QuizRepository.validateAllowedUsers(value)
 )
 
@@ -53,12 +52,3 @@ exports.checkAnswerIndex = param(
 ).isInt({
   min: 0
 })
-
-exports.requireQuizOwner = async (req, res, next) => {
-  if (req.quiz.user.toString() !== req.user.id) {
-    return res
-      .status(403)
-      .json({ errors: [{ msg: 'You are not the owner of this quiz' }] })
-  }
-  next()
-}
