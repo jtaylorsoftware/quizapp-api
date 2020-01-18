@@ -1,6 +1,6 @@
 const debug = require('debug')('routes:quiz')
 
-const { Router } = require('../router')
+const { Router } = require('./router')
 
 class QuizRouter extends Router {
   /**

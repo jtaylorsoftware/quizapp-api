@@ -11,9 +11,9 @@ const { UserRepository } = require('./repositories/user')
 const { QuizRepository } = require('./repositories/quiz')
 
 const { UserController } = require('./controllers/user/controller')
-const { QuizController } = require('./controllers/quiz/controller')
-const { UserRouter } = require('./routers/user/router')
-const { QuizRouter } = require('./routers/quiz/router')
+const { QuizController } = require('./controllers/quiz')
+const { UserRouter } = require('./routers/user')
+const { QuizRouter } = require('./routers/quiz')
 
 const configUsers = (userRepository, quizRepository) => {
   const userController = new UserController(userRepository, quizRepository)

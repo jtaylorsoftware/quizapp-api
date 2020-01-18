@@ -1,7 +1,7 @@
 const debug = require('debug')('routes:user')
 const jwt = require('jsonwebtoken')
 
-const { Router } = require('../router')
+const { Router } = require('./router')
 
 class UserRouter extends Router {
   /**
