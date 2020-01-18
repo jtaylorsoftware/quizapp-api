@@ -114,7 +114,8 @@ class UserRouter extends Router {
     try {
       const userData = await this._controller.getUserFromId(req.params.id)
       if (!userData) {
-        return res.status(404).end()
+        res.status(404).end()
+        return next()
       }
       const { email, date, ...user } = userData
       res.json(user)
@@ -149,17 +150,10 @@ class UserRouter extends Router {
       }
 
       // use jwt to sign the payload with the secret
-      jwt.sign(
-        payload,
-        process.env.JWT_SECRET,
-        { expiresIn: 3600 * 24 },
-        (error, token) => {
-          if (error) {
-            throw error
-          }
-          res.json({ token })
-        }
-      )
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: 3600 * 24
+      })
+      res.json({ token })
     } catch (error) {
       debug(error)
       res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
@@ -185,7 +179,8 @@ class UserRouter extends Router {
       })
 
       if (!userId) {
-        return res.status(400).json({ errors: [...errors] })
+        res.status(400).json({ errors: [...errors] })
+        return next()
       }
 
       const payload = {
@@ -194,17 +189,10 @@ class UserRouter extends Router {
         }
       }
 
-      jwt.sign(
-        payload,
-        process.env.JWT_SECRET,
-        { expiresIn: 3600 * 24 },
-        (error, token) => {
-          if (error) {
-            throw error
-          }
-          res.json({ token })
-        }
-      )
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: 3600 * 24
+      })
+      res.json({ token })
     } catch (error) {
       debug(error)
       res.status(500).json({ errors: [{ msg: 'Internal server error' }] })

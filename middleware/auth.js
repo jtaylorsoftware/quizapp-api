@@ -1,27 +1,28 @@
+const debug = require('debug')('middleware:auth')
 const jwt = require('jsonwebtoken')
 
-const verifyToken = async token => {
-  let user = {}
-  await jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
-    if (!error) {
-      user = decoded.user
-    }
-  })
+const verifyToken = token => {
+  let user = null
+  try {
+    debug('verifying user token')
+    const payload = jwt.verify(token, process.env.JWT_SECRET)
+    user = payload.user
+  } catch (error) {
+    debug('verify token error: ', error)
+  }
+
   return user
 }
 
 exports.authenticate = options => async (req, res, next) => {
   const token = req.header('x-auth-token')
-  try {
-    const user = await verifyToken(token)
-    if (!user && options.required) {
-      res.status(401).json({ errors: [{ msg: 'Authorization denied' }] })
-    } else {
-      req.user = user
-      return next()
-    }
-  } catch (error) {
-    console.error('Error in JWT authorization middleware\n', error.message)
-    res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+  debug('authenticating user')
+  const user = verifyToken(token)
+  debug(user ? `user token received: ${user.id}` : 'no user token')
+  if (!user && options.required) {
+    res.status(401).json({ errors: [{ msg: 'Authorization denied' }] })
+  } else {
+    req.user = user
+    return next()
   }
 }
