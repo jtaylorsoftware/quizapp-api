@@ -11,24 +11,24 @@ const { UserRepository } = require('./repositories/user')
 const { QuizRepository } = require('./repositories/quiz')
 const { ResultRepository } = require('./repositories/result')
 
+const { UserService } = require('./services/user')
+const { QuizService } = require('./services/quiz')
+const { ResultService } = require('./services/result')
+
 const { UserController } = require('./controllers/user')
 const { QuizController } = require('./controllers/quiz')
 const { ResultController } = require('./controllers/result')
 
-const { UserRouter } = require('./routers/user')
-const { QuizRouter } = require('./routers/quiz')
-const { ResultRouter } = require('./routers/result')
-
 const configUsers = (userRepository, quizRepository) => {
-  const userController = new UserController(userRepository, quizRepository)
-  const userRouter = new UserRouter(userController)
+  const userService = new UserService(userRepository, quizRepository)
+  const userController = new UserController(userService)
 
   const users = express.Router()
   users.use(debugRequests(debug('routes:user')))
   users.get(
     '/me',
     authenticate({ required: true }),
-    userRouter.getUserData.bind(userRouter)
+    userController.getUserData.bind(userController)
   )
   users.get(
     '/me/quizzes',
@@ -39,14 +39,14 @@ const configUsers = (userRepository, quizRepository) => {
         .optional()
     ],
     checkErrors,
-    userRouter.getUsersQuizzes.bind(userRouter)
+    userController.getUsersQuizzes.bind(userController)
   )
   users.put(
     '/me/email',
     authenticate({ required: true }),
     [check('email', 'Email must be valid if present').isEmail()],
     checkErrors,
-    userRouter.changeUserEmail.bind(userRouter)
+    userController.changeUserEmail.bind(userController)
   )
   users.put(
     '/me/password',
@@ -57,14 +57,14 @@ const configUsers = (userRepository, quizRepository) => {
       )
     ],
     checkErrors,
-    userRouter.changeUserPassword.bind(userRouter)
+    userController.changeUserPassword.bind(userController)
   )
   users.delete(
     '/me',
     authenticate({ required: true }),
-    userRouter.deleteUser.bind(userRouter)
+    userController.deleteUser.bind(userController)
   )
-  users.get('/:id', userRouter.getUserById.bind(userRouter))
+  users.get('/:id', userController.getUserById.bind(userController))
   users.post(
     '/',
     [
@@ -79,7 +79,7 @@ const configUsers = (userRepository, quizRepository) => {
       ).custom(value => typeof value === 'string' && value.length >= 8)
     ],
     checkErrors,
-    userRouter.registerUser.bind(userRouter)
+    userController.registerUser.bind(userController)
   )
 
   users.post(
@@ -89,15 +89,15 @@ const configUsers = (userRepository, quizRepository) => {
       check('password', 'A password is required').exists()
     ],
     checkErrors,
-    userRouter.authorizeUser.bind(userRouter)
+    userController.authorizeUser.bind(userController)
   )
 
   return users
 }
 
 const configQuizzes = (userRepository, quizRepository) => {
-  const quizController = new QuizController(userRepository, quizRepository)
-  const quizRouter = new QuizRouter(quizController)
+  const quizService = new QuizService(userRepository, quizRepository)
+  const quizController = new QuizController(quizService)
 
   const quizzes = express.Router()
   quizzes.use(debugRequests(debug('routes:quiz')))
@@ -111,7 +111,7 @@ const configQuizzes = (userRepository, quizRepository) => {
     ],
     checkErrors,
     authenticate({ required: false }),
-    quizRouter.getQuiz.bind(quizRouter)
+    quizController.getQuiz.bind(quizController)
   )
   quizzes.post(
     '/',
@@ -124,7 +124,7 @@ const configQuizzes = (userRepository, quizRepository) => {
       quizValidators.checkQuestions
     ],
     checkErrors,
-    quizRouter.createQuiz.bind(quizRouter)
+    quizController.createQuiz.bind(quizController)
   )
   quizzes.put(
     '/:id/edit',
@@ -137,25 +137,25 @@ const configQuizzes = (userRepository, quizRepository) => {
       quizValidators.checkQuestions
     ],
     checkErrors,
-    quizRouter.editQuiz.bind(quizRouter)
+    quizController.editQuiz.bind(quizController)
   )
 
   quizzes.delete(
     '/:id',
     authenticate({ required: true }),
-    quizRouter.deleteQuiz.bind(quizRouter)
+    quizController.deleteQuiz.bind(quizController)
   )
 
   return quizzes
 }
 
 const configResults = (resultRepository, userRepository, quizRepository) => {
-  const resultController = new ResultController(
+  const resultService = new ResultService(
     resultRepository,
     userRepository,
     quizRepository
   )
-  const resultRouter = new ResultRouter(resultController)
+  const resultController = new ResultController(resultService)
 
   const results = express.Router()
   results.use(debugRequests(debug('routes:result')))
@@ -173,7 +173,7 @@ const configResults = (resultRepository, userRepository, quizRepository) => {
     ],
     checkErrors,
     authenticate({ required: true }),
-    resultRouter.getResult.bind(resultRouter)
+    resultController.getResult.bind(resultController)
   )
   results.post(
     '/',
@@ -191,7 +191,7 @@ const configResults = (resultRepository, userRepository, quizRepository) => {
       query('quiz', 'Quiz id is required').exists()
     ],
     checkErrors,
-    resultRouter.postResult.bind(resultRouter)
+    resultController.postResult.bind(resultController)
   )
   return results
 }

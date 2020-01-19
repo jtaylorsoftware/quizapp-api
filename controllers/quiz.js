@@ -1,124 +1,119 @@
-const { Quiz } = require('../models/quiz')
+const debug = require('debug')('routes:quiz')
 
-/**
- * @typedef {Object} Quiz
- * @property {string} user user submitting quiz
- * @property {string} title title of quiz
- * @property {Date} expiresIn expiration date
- * @property {boolean} isPublic flag indicating if quiz isn't restricted to allowed users
- * @property {[object]} questions array of question objects
- * @property {[string]} allowedUsers array of username strings
- */
+const { Controller } = require('./controller')
 
-class QuizController {
-  constructor(userRepository, quizRepository) {
-    this.userRepository = userRepository
-    this.quizRepository = quizRepository
-  }
-
+class QuizController extends Controller {
   /**
-   * Gets a quiz by id
-   * @param {string} quizId
-   * @returns {Quiz}
+   * Returns a quiz's data as a listing or full format
    */
-  async getQuizFromId(quizId) {
-    const quiz = await this.quizRepository.findById(quizId)
-    quiz.allowedUsers = await this._getUsernames(quiz.allowedUsers)
-    return quiz
-  }
-
-  /**
-   * Gets a user's responses to a quiz
-   * @param {string} quizId
-   * @param {string} userId
-   */
-  async getUserResponsesToQuiz(quizId, userId) {
-    // TODO
+  async getQuiz(req, res, next) {
+    const { user } = req
+    const { id: quizId } = req.params
+    const { format } = req.query
+    try {
+      const quiz = await this._controller.getQuizFromId(quizId)
+      if (!quiz) {
+        res.status(404).end()
+        return next()
+      }
+      if (!this._canUserViewQuiz(user.id, quiz)) {
+        res.status(403).json({
+          errors: [{ msg: 'You are not allowed to view this quiz' }]
+        })
+        return next()
+      }
+      if (!format || format === 'full') {
+        res.json(quiz)
+      } else {
+        const { questions, allowedUsers, ...listing } = quiz
+        res.json(listing)
+      }
+    } catch (error) {
+      debug(error)
+      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+    }
+    return next()
   }
 
   /**
    * Creates a new quiz
-   * @param {Quiz} quiz quiz data
-   * @returns {string} created quiz's id
    */
-  async createQuiz({
-    user,
-    title,
-    expiresIn,
-    isPublic,
-    questions,
-    allowedUsers
-  }) {
-    const allowedUserIds = await this._getUserIds(allowedUsers)
-    const quiz = await this.quizRepository.insert(
-      new Quiz(user, title, expiresIn, isPublic, questions, allowedUserIds)
+  async createQuiz(req, res, next) {
+    const { user } = req
+    const { title, allowedUsers, isPublic, questions } = req.body
+    const expiresIn = new Date(req.body.expiresIn).toISOString()
+
+    try {
+      const quizId = await this._controller.createQuiz({
+        user: user.id,
+        title,
+        expiresIn,
+        isPublic,
+        questions,
+        allowedUsers
+      })
+      res.json({ id: quizId })
+    } catch (error) {
+      debug(error)
+      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+    }
+    return next()
+  }
+
+  /**
+   * Edits an existing quiz
+   */
+  async editQuiz(req, res, next) {
+    const { user } = req
+    const quiz = req.body
+    const { id: quizId } = req.params
+    if (!this._userOwnsQuiz(user.id, quizId)) {
+      return res
+        .status(403)
+        .json({ errors: [{ msg: 'You are not the owner of this quiz' }] })
+    }
+    try {
+      await this._controller.updateQuiz(quizId, quiz)
+      res.status(204).end()
+    } catch (error) {
+      debug(error)
+      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+    }
+
+    return next()
+  }
+
+  /**
+   * Deletes a quiz
+   */
+  async deleteQuiz(req, res, next) {
+    const { user } = req
+    const { id: quizId } = req.params
+    if (!this._userOwnsQuiz(user.id, quizId)) {
+      return res
+        .status(403)
+        .json({ errors: [{ msg: 'You are not the owner of this quiz' }] })
+    }
+    try {
+      await this._controller.deleteQuiz(quizId, user.id)
+      res.status(204).end()
+    } catch (error) {
+      debug(error)
+      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+    }
+    return next()
+  }
+
+  _userOwnsQuiz(userId, quizId) {
+    return userId.toString() !== quizId
+  }
+
+  _canUserViewQuiz(userId, quiz) {
+    return (
+      quiz.isPublic ||
+      quiz.user.toString() === userId ||
+      !quiz.allowedUsers.some(userId => userId.toString() === id)
     )
-
-    await this.userRepository.addQuiz(user, quiz)
-    return quiz._id
-  }
-
-  /**
-   * Updates an existing quiz
-   * @param {string} quizId id of quiz to update
-   * @param {Quiz} quiz data to replace current data with
-   */
-  async updateQuiz(
-    quizId,
-    { title, expiresIn, isPublic, questions, allowedUsers }
-  ) {
-    const allowedUserIds = await this._getUserIds(allowedUsers)
-    await this.quizRepository.update(quizId, {
-      title,
-      isPublic,
-      questions,
-      expiresIn,
-      allowedUsers: allowedUserIds
-    })
-  }
-
-  /**
-   * Deletes a quiz by id and removes it from the creator's list of quizzes
-   * @param {string} quizId
-   * @param {string} userId id of owner (no checking is done) - if not present,
-   * it will find the quiz first to get the owner id
-   */
-  async deleteQuiz(quizId, userId = null) {
-    const user = userId || (await this.quizRepository.findById(quizId))._id
-    await this.quizRepository.delete(quizId)
-    await this.userRepository.removeQuiz(user, quizId)
-  }
-
-  /**
-   * Transforms a list of user Ids into a list of usernames
-   * @param {[string]} userids
-   * @returns {[string]} array of usernames
-   */
-  async _getUsernames(userids) {
-    const usernames = []
-    for (const id of userids) {
-      const user = await this.userRepository.findById(id)
-      if (user) {
-        usernames.push(user.username)
-      }
-    }
-    return usernames
-  }
-
-  /**
-   * Transforms a list of usernames into a list of user ids
-   * @param {[string]} usernames
-   * @returns {[string]} array of user ids
-   */
-  async _getUserIds(usernames) {
-    const userIds = []
-    for (const username of usernames) {
-      const user = await this.userRepository.findByUsername(username)
-      if (user) {
-        userIds.push(user._id)
-      }
-    }
-    return userIds
   }
 }
 

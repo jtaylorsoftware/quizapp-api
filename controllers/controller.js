@@ -1,4 +1,4 @@
-exports.Router = class Router {
+exports.Controller = class Controller {
   constructor(controller) {
     this._controller = controller
   }
