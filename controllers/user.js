@@ -11,7 +11,7 @@ class UserController extends Controller {
    */
   async getUserData(req, res, next) {
     try {
-      const user = await this._controller.getUserFromId(req.user.id)
+      const user = await this._service.getUserFromId(req.user.id)
       res.json(user)
     } catch (error) {
       debug(error)
@@ -32,9 +32,9 @@ class UserController extends Controller {
     try {
       let quizzes
       if (!format || format === 'full') {
-        quizzes = await this._controller.getUserQuizzes(user)
+        quizzes = await this._service.getUserQuizzes(user)
       } else {
-        quizzes = await this._controller.getUserQuizListings(user)
+        quizzes = await this._service.getUserQuizListings(user)
       }
 
       res.json(quizzes)
@@ -56,7 +56,7 @@ class UserController extends Controller {
     const user = req.user.id
     const { email } = req.body
     try {
-      const emailWasSet = await this._controller.changeUserEmail(user, email)
+      const emailWasSet = await this._service.changeUserEmail(user, email)
       if (!emailWasSet) {
         return res.status(400).json({ errors: [{ msg: 'Email in use' }] })
       }
@@ -79,7 +79,7 @@ class UserController extends Controller {
     const user = req.user.id
     const { password } = req.body
     try {
-      await this._controller.changeUserPassword(user, password)
+      await this._service.changeUserPassword(user, password)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -95,7 +95,7 @@ class UserController extends Controller {
    */
   async deleteUser(req, res, next) {
     try {
-      await this._controller.deleteUser(req.user.id)
+      await this._service.deleteUser(req.user.id)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -112,7 +112,7 @@ class UserController extends Controller {
    */
   async getUserById(req, res, next) {
     try {
-      const userData = await this._controller.getUserFromId(req.params.id)
+      const userData = await this._service.getUserFromId(req.params.id)
       if (!userData) {
         res.status(404).end()
         return next()
@@ -136,7 +136,7 @@ class UserController extends Controller {
   async authorizeUser(req, res, next) {
     const { username, password } = req.body
     try {
-      const userId = await this._controller.authorizeUser(username, password)
+      const userId = await this._service.authorizeUser(username, password)
       if (!userId) {
         return res
           .status(400)
@@ -172,7 +172,7 @@ class UserController extends Controller {
   async registerUser(req, res, next) {
     const { username, email, password } = req.body
     try {
-      const [userId, errors] = await this._controller.registerUser({
+      const [userId, errors] = await this._service.registerUser({
         username,
         email,
         password

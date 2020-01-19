@@ -11,7 +11,7 @@ class QuizController extends Controller {
     const { id: quizId } = req.params
     const { format } = req.query
     try {
-      const quiz = await this._controller.getQuizFromId(quizId)
+      const quiz = await this._service.getQuizFromId(quizId)
       if (!quiz) {
         res.status(404).end()
         return next()
@@ -44,7 +44,7 @@ class QuizController extends Controller {
     const expiresIn = new Date(req.body.expiresIn).toISOString()
 
     try {
-      const quizId = await this._controller.createQuiz({
+      const quizId = await this._service.createQuiz({
         user: user.id,
         title,
         expiresIn,
@@ -73,7 +73,7 @@ class QuizController extends Controller {
         .json({ errors: [{ msg: 'You are not the owner of this quiz' }] })
     }
     try {
-      await this._controller.updateQuiz(quizId, quiz)
+      await this._service.updateQuiz(quizId, quiz)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -95,7 +95,7 @@ class QuizController extends Controller {
         .json({ errors: [{ msg: 'You are not the owner of this quiz' }] })
     }
     try {
-      await this._controller.deleteQuiz(quizId, user.id)
+      await this._service.deleteQuiz(quizId, user.id)
       res.status(204).end()
     } catch (error) {
       debug(error)

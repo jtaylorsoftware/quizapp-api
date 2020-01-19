@@ -4,13 +4,16 @@ const { Controller } = require('./controller')
 
 class ResultController extends Controller {
   /**
-   * Gets a user's  results for a quiz as listings or full
+   * Gets a user's or all results for a quiz as listings or full
    */
   async getResult(req, res, next) {
     const { user: authUser } = req
-    const { format, user: queryUser, quiz } = req.query
+    const { format, user: queryUser, quiz: quizId } = req.query
     try {
-      const result = await this._controller.getUserResult(queryUser, quiz)
+      if (!queryUser) {
+        // get all results
+      }
+      const result = await this._service.getUserResult(queryUser, quizId)
       if (!result) {
         res.status(404).end()
         return next()
@@ -44,7 +47,7 @@ class ResultController extends Controller {
     const { quiz: quizId } = req.query
 
     try {
-      const [resultId, errors] = await this._controller.createResult({
+      const [resultId, errors] = await this._service.createResult({
         user: user.id,
         quizId,
         answers
