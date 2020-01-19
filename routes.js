@@ -167,7 +167,9 @@ const configResults = (resultRepository, userRepository, quizRepository) => {
         .custom(format => format === 'listing' || format === 'full')
         .optional(),
       query('quiz', 'Quiz id is required').exists(),
-      query('user', 'User id is required').exists()
+      query('user')
+        .exists()
+        .optional()
     ],
     checkErrors,
     authenticate({ required: true }),
