@@ -32,7 +32,7 @@ class UserController extends Controller {
     try {
       const quizIds = await this.serviceLocator.user.getUserQuizzes(userId)
       if (quizIds.length === 0) {
-        res.json({ quizzes: [] })
+        res.json([])
         return next()
       }
       const quizzes = []
@@ -47,7 +47,9 @@ class UserController extends Controller {
             quiz.allowedUsers = allowedUsers
             quizzes.push(quiz)
           } else {
-            const { questions, allowedUsers, ...listing } = quiz
+            const { questions, results, allowedUsers, ...listing } = quiz
+            listing.resultsCount = results.length
+            listing.questionCount = questions.length
             quizzes.push(listing)
           }
         }

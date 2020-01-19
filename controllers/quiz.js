@@ -31,7 +31,9 @@ class QuizController extends Controller {
         quiz.allowedUsers = allowedUsers
         res.json(quiz)
       } else {
-        const { questions, allowedUsers, ...listing } = quiz
+        const { questions, results, allowedUsers, ...listing } = quiz
+        listing.resultsCount = results.length
+        listing.questionCount = questions.length
         res.json(listing)
       }
     } catch (error) {
@@ -113,7 +115,7 @@ class QuizController extends Controller {
         .json({ errors: [{ msg: 'You are not the owner of this quiz' }] })
     }
     try {
-      await this._service.deleteQuiz(quizId, user.id)
+      await this.serviceLocator.quiz.deleteQuiz(quizId)
       res.status(204).end()
     } catch (error) {
       debug(error)
