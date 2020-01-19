@@ -11,7 +11,7 @@ class UserController extends Controller {
    */
   async getUserData(req, res, next) {
     try {
-      const user = await this._service.getUserFromId(req.user.id)
+      const user = await this.serviceLocator.user.getUserById(req.user.id)
       res.json(user)
     } catch (error) {
       debug(error)
@@ -28,13 +28,29 @@ class UserController extends Controller {
    */
   async getUsersQuizzes(req, res, next) {
     const { format } = req.query
-    const user = req.user.id
+    const { id: userId } = req.user
     try {
-      let quizzes
-      if (!format || format === 'full') {
-        quizzes = await this._service.getUserQuizzes(user)
-      } else {
-        quizzes = await this._service.getUserQuizListings(user)
+      const quizIds = await this.serviceLocator.user.getUserQuizzes(userId)
+      if (quizIds.length === 0) {
+        res.json({ quizzes: [] })
+        return next()
+      }
+      const quizzes = []
+      for (const id of quizIds) {
+        const quiz = await this.serviceLocator.quiz.getQuizById(id)
+        if (quiz) {
+          if (!format || format === 'full') {
+            // convert allowed users to usernames
+            const allowedUsers = await this.serviceLocator.user.getUsernamesFromIds(
+              quiz.allowedUsers
+            )
+            quiz.allowedUsers = allowedUsers
+            quizzes.push(quiz)
+          } else {
+            const { questions, allowedUsers, ...listing } = quiz
+            quizzes.push(listing)
+          }
+        }
       }
 
       res.json(quizzes)
@@ -56,7 +72,10 @@ class UserController extends Controller {
     const user = req.user.id
     const { email } = req.body
     try {
-      const emailWasSet = await this._service.changeUserEmail(user, email)
+      const emailWasSet = await this.serviceLocator.user.changeUserEmail(
+        user,
+        email
+      )
       if (!emailWasSet) {
         return res.status(400).json({ errors: [{ msg: 'Email in use' }] })
       }
@@ -79,7 +98,7 @@ class UserController extends Controller {
     const user = req.user.id
     const { password } = req.body
     try {
-      await this._service.changeUserPassword(user, password)
+      await this.serviceLocator.user.changeUserPassword(user, password)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -95,7 +114,7 @@ class UserController extends Controller {
    */
   async deleteUser(req, res, next) {
     try {
-      await this._service.deleteUser(req.user.id)
+      await this.serviceLocator.user.deleteUser(req.user.id)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -112,12 +131,12 @@ class UserController extends Controller {
    */
   async getUserById(req, res, next) {
     try {
-      const userData = await this._service.getUserFromId(req.params.id)
+      const userData = await this.serviceLocator.user.getUserById(req.params.id)
       if (!userData) {
         res.status(404).end()
         return next()
       }
-      const { email, date, ...user } = userData
+      const { email, date, results, ...user } = userData
       res.json(user)
     } catch (error) {
       debug(error)
@@ -136,7 +155,10 @@ class UserController extends Controller {
   async authorizeUser(req, res, next) {
     const { username, password } = req.body
     try {
-      const userId = await this._service.authorizeUser(username, password)
+      const userId = await this.serviceLocator.user.authorizeUser(
+        username,
+        password
+      )
       if (!userId) {
         return res
           .status(400)
@@ -172,7 +194,7 @@ class UserController extends Controller {
   async registerUser(req, res, next) {
     const { username, email, password } = req.body
     try {
-      const [userId, errors] = await this._service.registerUser({
+      const [userId, errors] = await this.serviceLocator.user.registerUser({
         username,
         email,
         password

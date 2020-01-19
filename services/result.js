@@ -3,10 +3,8 @@ const async = require('async')
 const { Result } = require('../models/result')
 
 class ResultService {
-  constructor(resultRepository, userRepository, quizRepository) {
+  constructor(resultRepository) {
     this._resultRepository = resultRepository
-    this._userRepository = userRepository
-    this._quizRepository = quizRepository
   }
 
   async getUserResult(userId, quizId) {
@@ -17,21 +15,21 @@ class ResultService {
     return result
   }
 
-  async createResult({ user: userId, quizId, answers }) {
+  async createResult(answers, userId, quiz) {
     const errors = []
     // check if user and quiz exist
-    const user = await this._userRepository.findById(userId)
-    const quiz = await this._quizRepository.findById(quizId)
+    // const user = await this._userRepository.findById(userId)
+    // const quiz = await this._quizRepository.findById(quizId)
 
-    if (!user) {
-      errors.push('user')
-    }
-    if (!quiz) {
-      errors.push('quiz')
-    }
-    if (errors.length > 0) {
-      return [null, errors]
-    }
+    // if (!user) {
+    //   errors.push('user')
+    // }
+    // if (!quiz) {
+    //   errors.push('quiz')
+    // }
+    // if (errors.length > 0) {
+    //   return [null, errors]
+    // }
 
     if (!quiz.allowMultipleResponses) {
       const duplicateResult = await async.some(quiz.results, async resultId => {
@@ -71,10 +69,10 @@ class ResultService {
     let result = {}
     if (errors.length === 0) {
       result = await this._resultRepository.insert(
-        new Result(userId, quizId, quiz.user, answers, score)
+        new Result(userId, quiz._id, quiz.user, answers, score)
       )
-      await this._userRepository.addResult(userId, result._id)
-      await this._quizRepository.addResult(quiz, result._id)
+      // await this._userRepository.addResult(userId, result._id)
+      // await this._quizRepository.addResult(quiz, result._id)
     }
 
     return [result._id, errors]

@@ -2,9 +2,8 @@ const { User } = require('../models/user')
 const bcrypt = require('bcryptjs')
 
 class UserService {
-  constructor(userRepository, quizRepository) {
+  constructor(userRepository) {
     this._userRepository = userRepository
-    this._quizRepository = quizRepository
   }
 
   /**
@@ -12,7 +11,7 @@ class UserService {
    * @param {string} userId
    * @returns {object} user data
    */
-  async getUserFromId(userId) {
+  async getUserById(userId) {
     const user = await this._userRepository.findById(userId)
     if (user) {
       const { password, ...userData } = user
@@ -26,7 +25,7 @@ class UserService {
    * @param {string} username
    * @returns {object} user data
    */
-  async getUserFromUsername(username) {
+  async getUserByUsername(username) {
     const user = await this._userRepository.findByUsername(username)
     if (user) {
       const { password, ...userData } = user
@@ -36,48 +35,75 @@ class UserService {
   }
 
   /**
+   * Returns a list of usernames with matching user ids
+   * @param {[string|ObjectId]} userIds
+   */
+  async getUsernamesFromIds(userIds) {
+    const usernames = await this._userRepository.getUsernames(userIds)
+    return usernames
+  }
+
+  /**
+   * Returns a list of user ids with matching usernames
+   * @param {[string|ObjectId]} usernames
+   */
+  async getIdsFromUsernames(usernames) {
+    const ids = await this._userRepository.getUserIds(usernames)
+    return ids
+  }
+
+  /**
    * Gets user's full quizzes
    * @param {string} userId
    */
   async getUserQuizzes(userId) {
     const user = await this._userRepository.findById(userId)
-    if (user && user.quizzes.length > 0) {
-      const quizzes = []
+    // if (user && user.quizzes.length > 0) {
+    //   const quizzes = []
 
-      for (const quizId of user.quizzes) {
-        const quiz = await this._quizRepository.findById(quizId)
-        if (quiz) {
-          quizzes.push({
-            quiz
-          })
-        }
-      }
-      return quizzes
-    }
-    return []
+    //   for (const quizId of user.quizzes) {
+    //     const quiz = await this._quizRepository.findById(quizId)
+    //     if (quiz) {
+    //       quizzes.push({
+    //         quiz
+    //       })
+    //     }
+    //   }
+    //   return quizzes
+    // }
+    return user.quizzes
+  }
+
+  /**
+   * Add a quiz to user's list of created quizzes
+   * @param {string} userId
+   * @param {string} quizId
+   */
+  async addQuiz(userId, quizId) {
+    await this._userRepository.addQuiz(userId, quizId)
   }
 
   /**
    * Gets user's quizzes as listings
    * @param {string} userId
    */
-  async getUserQuizListings(userId) {
-    const user = await this._userRepository.findById(userId)
-    if (user && user.quizzes.length > 0) {
-      const listings = []
+  // async getUserQuizListings(userId) {
+  //   const user = await this._userRepository.findById(userId)
+  //   if (user && user.quizzes.length > 0) {
+  //     const listings = []
 
-      for (const quizId of user.quizzes) {
-        const quiz = await this._quizRepository.findById(quizId)
-        if (quiz) {
-          const { questions, allowedUsers, ...listing } = quiz
-          listing.questionCount = questions.length
-          listings.push(listing)
-        }
-      }
-      return listings
-    }
-    return []
-  }
+  //     for (const quizId of user.quizzes) {
+  //       const quiz = await this._quizRepository.findById(quizId)
+  //       if (quiz) {
+  //         const { questions, allowedUsers, ...listing } = quiz
+  //         listing.questionCount = questions.length
+  //         listings.push(listing)
+  //       }
+  //     }
+  //     return listings
+  //   }
+  //   return []
+  // }
 
   /**
    * Authorizes a user, ensuring they exist and present valid credentials.

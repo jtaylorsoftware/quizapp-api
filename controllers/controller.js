@@ -1,5 +1,5 @@
 exports.Controller = class Controller {
-  constructor(controller) {
-    this._service = controller
+  constructor(serviceLocator) {
+    this.serviceLocator = serviceLocator
   }
 }

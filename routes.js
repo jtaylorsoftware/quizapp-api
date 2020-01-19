@@ -19,9 +19,10 @@ const { UserController } = require('./controllers/user')
 const { QuizController } = require('./controllers/quiz')
 const { ResultController } = require('./controllers/result')
 
-const configUsers = (userRepository, quizRepository) => {
-  const userService = new UserService(userRepository, quizRepository)
-  const userController = new UserController(userService)
+const { ServiceLocator } = require('./services/servicelocator')
+
+const configUsers = serviceLocator => {
+  const userController = new UserController(serviceLocator)
 
   const users = express.Router()
   users.use(debugRequests(debug('routes:user')))
@@ -95,9 +96,8 @@ const configUsers = (userRepository, quizRepository) => {
   return users
 }
 
-const configQuizzes = (userRepository, quizRepository) => {
-  const quizService = new QuizService(userRepository, quizRepository)
-  const quizController = new QuizController(quizService)
+const configQuizzes = serviceLocator => {
+  const quizController = new QuizController(serviceLocator)
 
   const quizzes = express.Router()
   quizzes.use(debugRequests(debug('routes:quiz')))
@@ -110,7 +110,7 @@ const configQuizzes = (userRepository, quizRepository) => {
         .optional()
     ],
     checkErrors,
-    authenticate({ required: false }),
+    authenticate({ required: true }),
     quizController.getQuiz.bind(quizController)
   )
   quizzes.post(
@@ -149,13 +149,8 @@ const configQuizzes = (userRepository, quizRepository) => {
   return quizzes
 }
 
-const configResults = (resultRepository, userRepository, quizRepository) => {
-  const resultService = new ResultService(
-    resultRepository,
-    userRepository,
-    quizRepository
-  )
-  const resultController = new ResultController(resultService)
+const configResults = serviceLocator => {
+  const resultController = new ResultController(serviceLocator)
 
   const results = express.Router()
   results.use(debugRequests(debug('routes:result')))
@@ -199,6 +194,7 @@ const configResults = (resultRepository, userRepository, quizRepository) => {
 exports.config = db => {
   let userRepository
   let quizRepository
+  let resultRepository
 
   db.collection('users', (error, collection) => {
     if (error) {
@@ -221,9 +217,18 @@ exports.config = db => {
     resultRepository = new ResultRepository(collection)
   })
 
+  const userService = new UserService(userRepository)
+  const quizService = new QuizService(quizRepository)
+  const resultService = new ResultService(resultRepository)
+  const serviceLocator = new ServiceLocator(
+    userService,
+    quizService,
+    resultService
+  )
+
   return {
-    users: configUsers(userRepository, quizRepository),
-    quizzes: configQuizzes(userRepository, quizRepository),
-    results: configResults(resultRepository, userRepository, quizRepository)
+    users: configUsers(serviceLocator),
+    quizzes: configQuizzes(serviceLocator),
+    results: configResults(serviceLocator)
   }
 }

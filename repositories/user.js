@@ -74,6 +74,31 @@ exports.UserRepository = class UserRepository extends Repository {
   }
 
   /**
+   * Returns an array of usernames with the given ids
+   * @param {[string|ObjectId]} ids
+   */
+  async getUsernames(ids) {
+    ids = ids.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))
+    const users = await this.store
+      .find({ _id: { $in: ids } })
+      .map(user => user.username)
+      .toArray()
+    return users
+  }
+
+  /**
+   * Returns an array of ids from usernames
+   * @param {[string|ObjectId]} usernames
+   */
+  async getUserIds(usernames) {
+    const users = await this.store
+      .find({ username: { $in: usernames } })
+      .map(user => user._id)
+      .toArray()
+    return users
+  }
+
+  /**
    * Finds a single user by id
    * @param {String} email
    * @returns {User} User entity without sensitive information

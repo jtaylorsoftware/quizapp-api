@@ -3,12 +3,14 @@ const jwt = require('jsonwebtoken')
 
 const verifyToken = token => {
   let user = null
-  try {
-    debug('verifying user token')
-    const payload = jwt.verify(token, process.env.JWT_SECRET)
-    user = payload.user
-  } catch (error) {
-    debug('verify token error: ', error)
+  if (token) {
+    try {
+      debug('verifying user token')
+      const payload = jwt.verify(token, process.env.JWT_SECRET)
+      user = payload.user
+    } catch (error) {
+      debug('verify token error: ', error)
+    }
   }
 
   return user
