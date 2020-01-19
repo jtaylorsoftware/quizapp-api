@@ -12,8 +12,16 @@ class ResultController extends Controller {
     try {
       if (!queryUser) {
         // get all results for the quiz
-        res.status(500).end()
-        return next()
+        const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+        if (quiz) {
+          if (quiz.user !== userId) {
+            res.status(403).end()
+            return next()
+          }
+        } else {
+          res.status(500).end()
+          return next()
+        }
       } else {
         const result = await this.serviceLocator.result.getUserResult(
           queryUser,
@@ -69,7 +77,10 @@ class ResultController extends Controller {
         res.status(404).end()
         return next()
       }
-      if (!quiz.allowedUsers.some(id => id.toString() === userId)) {
+      if (
+        !quiz.isPublic &&
+        !quiz.allowedUsers.some(id => id.toString() === userId)
+      ) {
         res.status(403).end()
         return next()
       }
