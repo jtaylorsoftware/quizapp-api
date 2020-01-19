@@ -4,7 +4,7 @@ const { Controller } = require('./controller')
 
 class QuizController extends Controller {
   /**
-   * Returns a quiz's data as a listing or full format
+   * Returns a quiz's data as a listing or full format only if signed in user owns quiz
    */
   async getQuiz(req, res, next) {
     const { id: userId } = req.user
@@ -16,13 +16,13 @@ class QuizController extends Controller {
         res.status(404).end()
         return next()
       }
-      if (!this._canUserViewQuiz(userId, quiz)) {
+      const isQuizOwner = userId === quiz.user.toString()
+      if (!isQuizOwner) {
         res.status(403).json({
           errors: [{ msg: 'You are not allowed to view this quiz' }]
         })
         return next()
       }
-
       if (!format || format === 'full') {
         // convert allowed users to usernames
         const allowedUsers = await this.serviceLocator.user.getUsernamesFromIds(
@@ -36,6 +36,34 @@ class QuizController extends Controller {
         listing.questionCount = questions.length
         res.json(listing)
       }
+    } catch (error) {
+      debug(error)
+      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+    }
+    return next()
+  }
+
+  /**
+   * Returns a quiz as a form for a user to answer
+   */
+  async getQuizForm(req, res, next) {
+    const { id: userId } = req.user
+    const { id: quizId } = req.params
+    try {
+      const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+      if (!quiz) {
+        res.status(404).end()
+        return next()
+      }
+
+      if (!this._canUserViewQuiz(userId, quiz)) {
+        res.status(403).json({
+          errors: [{ msg: 'You are not allowed to view this quiz' }]
+        })
+        return next()
+      }
+      const answerForm = this._convertToAnswerForm(quiz)
+      res.json(answerForm)
     } catch (error) {
       debug(error)
       res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
@@ -134,6 +162,22 @@ class QuizController extends Controller {
       quiz.user.toString() === userId ||
       !quiz.allowedUsers.some(userId => userId.toString() === id)
     )
+  }
+
+  _convertToAnswerForm(quiz) {
+    const {
+      allowedUsers,
+      showCorrectAnswers,
+      allowMultipleResponses,
+      isPublic,
+      results,
+      ...answerForm
+    } = quiz
+    for (let i = 0; i < answerForm.questions.length; ++i) {
+      const { correctAnswer, ...question } = answerForm.questions[i]
+      answerForm.questions[i] = question
+    }
+    return answerForm
   }
 }
 

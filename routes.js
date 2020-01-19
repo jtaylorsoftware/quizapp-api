@@ -113,6 +113,11 @@ const configQuizzes = serviceLocator => {
     authenticate({ required: true }),
     quizController.getQuiz.bind(quizController)
   )
+  quizzes.get(
+    '/:id/form',
+    authenticate({ required: true }),
+    quizController.getQuizForm.bind(quizController)
+  )
   quizzes.post(
     '/',
     authenticate({ required: true }),
