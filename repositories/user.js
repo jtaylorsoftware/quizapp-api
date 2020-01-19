@@ -32,6 +32,27 @@ exports.UserRepository = class UserRepository extends Repository {
   }
 
   /**
+   * Updates a user's quiz results
+   * @param {User|string|ObjectId} user User or ID of User to modify
+   * @param {Result|string|ObjectId} result quiz result or ID of quiz result
+   */
+  async addResult(user, result) {
+    const _id = Repository._getObjectIdFromEntity(user)
+    const resultId = Repository._getObjectIdFromEntity(result)
+    if (!_id || !resultId) {
+      return
+    }
+    await this.store.updateOne(
+      { _id },
+      {
+        $addToSet: {
+          results: resultId
+        }
+      }
+    )
+  }
+
+  /**
    * Remove a quiz from User's quizzes
    * @param {User|string|ObjectId} user User or ID of User to modify
    * @param {Quiz|string|ObjectId} quiz Quiz or ID a Quiz to remove

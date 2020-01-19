@@ -9,11 +9,15 @@ const quizValidators = require('./middleware/validation/quiz')
 
 const { UserRepository } = require('./repositories/user')
 const { QuizRepository } = require('./repositories/quiz')
+const { ResultRepository } = require('./repositories/result')
 
-const { UserController } = require('./controllers/user/controller')
+const { UserController } = require('./controllers/user')
 const { QuizController } = require('./controllers/quiz')
+const { ResultController } = require('./controllers/result')
+
 const { UserRouter } = require('./routers/user')
 const { QuizRouter } = require('./routers/quiz')
+const { ResultRouter } = require('./routers/result')
 
 const configUsers = (userRepository, quizRepository) => {
   const userController = new UserController(userRepository, quizRepository)
@@ -145,26 +149,79 @@ const configQuizzes = (userRepository, quizRepository) => {
   return quizzes
 }
 
+const configResults = (resultRepository, userRepository, quizRepository) => {
+  const resultController = new ResultController(
+    resultRepository,
+    userRepository,
+    quizRepository
+  )
+  const resultRouter = new ResultRouter(resultController)
+
+  const results = express.Router()
+  results.use(debugRequests(debug('routes:result')))
+
+  results.get(
+    '/',
+    [
+      query('format', 'Valid formats: listing, full')
+        .custom(format => format === 'listing' || format === 'full')
+        .optional(),
+      query('quiz', 'Quiz id is required').exists(),
+      query('user', 'User id is required').exists()
+    ],
+    checkErrors,
+    authenticate({ required: true }),
+    resultRouter.getResult.bind(resultRouter)
+  )
+  results.post(
+    '/',
+    authenticate({ required: true }),
+    [
+      check('answers', 'Answers must be valid').custom(answers => {
+        return (
+          answers instanceof Array &&
+          answers.every(
+            answer =>
+              typeof answer === 'object' && typeof answer.choice === 'number'
+          )
+        )
+      }),
+      query('quiz', 'Quiz id is required').exists()
+    ],
+    checkErrors,
+    resultRouter.postResult.bind(resultRouter)
+  )
+  return results
+}
+
 exports.config = db => {
   let userRepository
   let quizRepository
 
-  db.collection('user', (error, collection) => {
+  db.collection('users', (error, collection) => {
     if (error) {
       throw error
     }
     userRepository = new UserRepository(collection)
   })
 
-  db.collection('quiz', (error, collection) => {
+  db.collection('quizzes', (error, collection) => {
     if (error) {
       throw error
     }
     quizRepository = new QuizRepository(collection)
   })
 
+  db.collection('results', (error, collection) => {
+    if (error) {
+      throw error
+    }
+    resultRepository = new ResultRepository(collection)
+  })
+
   return {
     users: configUsers(userRepository, quizRepository),
-    quizzes: configQuizzes(userRepository, quizRepository)
+    quizzes: configQuizzes(userRepository, quizRepository),
+    results: configResults(resultRepository, userRepository, quizRepository)
   }
 }

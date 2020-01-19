@@ -25,10 +25,11 @@ exports.startServer = async port => {
     }
   })
 
-  const { users, quizzes } = routes.config(db)
+  const { users, quizzes, results } = routes.config(db)
 
   app.use('/api/users', users)
   app.use('/api/quizzes', quizzes)
+  app.use('/api/results', results)
 
   app.server = app.listen(port)
 

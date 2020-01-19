@@ -13,7 +13,7 @@ exports.QuizRepository = class QuizRepository extends Repository {
   }
   /**
    * Adds a quiz to the repository
-   * @param {Quiz} quiz
+   * @param {Quiz} quiz new quiz data
    * @returns {Object} Quiz data
    * @throws Throws Error if Quiz has no questions or any allowedUser is not an ObjectId
    */
@@ -30,6 +30,22 @@ exports.QuizRepository = class QuizRepository extends Repository {
    */
   async getAllPublicQuizzes() {
     return await this.store.find({ isPublic: true }).toArray()
+  }
+
+  /**
+   * Adds a quiz result/response
+   * @param {Quiz} quiz quiz object
+   * @param {string} result
+   */
+  async addResult(quiz, resultId) {
+    await this.store.updateOne(
+      { _id: quiz._id },
+      {
+        $addToSet: {
+          results: resultId
+        }
+      }
+    )
   }
 
   /**

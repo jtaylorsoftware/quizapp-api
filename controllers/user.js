@@ -1,4 +1,4 @@
-const { User } = require('../../models/user')
+const { User } = require('../models/user')
 const bcrypt = require('bcryptjs')
 
 class UserController {
@@ -167,7 +167,7 @@ class UserController {
    * @param {string} userId
    */
   async deleteUser(userId) {
-    await this._userRepository.delete(req.user.id)
+    await this._userRepository.delete(userId)
   }
 }
 

@@ -41,7 +41,7 @@ class QuizRouter extends Router {
   async createQuiz(req, res, next) {
     const { user } = req
     const { title, allowedUsers, isPublic, questions } = req.body
-    const expiresIn = new Date(req.body.expiresIn)
+    const expiresIn = new Date(req.body.expiresIn).toISOString()
 
     try {
       const quizId = await this._controller.createQuiz({
