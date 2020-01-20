@@ -53,25 +53,21 @@ class UserService {
   }
 
   /**
-   * Gets user's full quizzes
+   * Gets user's quizzes
    * @param {string} userId
    */
   async getUserQuizzes(userId) {
     const user = await this._userRepository.findById(userId)
-    // if (user && user.quizzes.length > 0) {
-    //   const quizzes = []
-
-    //   for (const quizId of user.quizzes) {
-    //     const quiz = await this._quizRepository.findById(quizId)
-    //     if (quiz) {
-    //       quizzes.push({
-    //         quiz
-    //       })
-    //     }
-    //   }
-    //   return quizzes
-    // }
     return user.quizzes
+  }
+
+  /**
+   * Gets user's results
+   * @param {string} userId
+   */
+  async getUserResults(userId) {
+    const user = await this._userRepository.findById(userId)
+    return user.results
   }
 
   /**
@@ -81,6 +77,15 @@ class UserService {
    */
   async addQuiz(userId, quizId) {
     await this._userRepository.addQuiz(userId, quizId)
+  }
+
+  /**
+   * Add a a quiz result to user's results
+   * @param {string} userId
+   * @param {string} resultId
+   */
+  async addResult(userId, resultId) {
+    await this._userRepository.addResult(userId, resultId)
   }
 
   /**

@@ -7,7 +7,12 @@ class ResultService {
     this._resultRepository = resultRepository
   }
 
-  async getUserResult(userId, quizId) {
+  async getResult(resultId) {
+    const result = await this._resultRepository.findById(resultId)
+    return result
+  }
+
+  async getUserResultForQuiz(userId, quizId) {
     const result = await this._resultRepository.findByUserAndQuizId(
       userId,
       quizId

@@ -23,7 +23,7 @@ class ResultController extends Controller {
           return next()
         }
       } else {
-        const result = await this.serviceLocator.result.getUserResult(
+        const result = await this.serviceLocator.result.getUserResultForQuiz(
           queryUser,
           quizId
         )
@@ -94,6 +94,7 @@ class ResultController extends Controller {
         res.status(400).json({ errors: [...errors] })
         return next()
       }
+      await this.serviceLocator.user.addResult(userId, resultId)
       await this.serviceLocator.quiz.addResult(quiz._id, resultId)
       res.json({ id: resultId })
     } catch (error) {

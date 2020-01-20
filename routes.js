@@ -42,6 +42,17 @@ const configUsers = serviceLocator => {
     checkErrors,
     userController.getUsersQuizzes.bind(userController)
   )
+  users.get(
+    '/me/results',
+    authenticate({ required: true }),
+    [
+      query('format', 'Valid formats: listing, full')
+        .custom(format => format === 'listing' || format === 'full')
+        .optional()
+    ],
+    checkErrors,
+    userController.getUsersResults.bind(userController)
+  )
   users.put(
     '/me/email',
     authenticate({ required: true }),

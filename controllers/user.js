@@ -12,6 +12,10 @@ class UserController extends Controller {
   async getUserData(req, res, next) {
     try {
       const user = await this.serviceLocator.user.getUserById(req.user.id)
+      if (!user) {
+        res.status(401).end()
+        return next()
+      }
       res.json(user)
     } catch (error) {
       debug(error)
@@ -56,6 +60,53 @@ class UserController extends Controller {
       }
 
       res.json(quizzes)
+    } catch (error) {
+      debug(error)
+      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+    }
+    return next()
+  }
+
+  /**
+   * Returns the user's results for all quizzes as listing or full format.
+   * @param {object} req request object
+   * @param {object} req.query request query object
+   * @param {string} req.query.format string describing if format is full or listing
+   */
+  async getUsersResults(req, res, next) {
+    const { format } = req.query
+    const { id: userId } = req.user
+    try {
+      const resultIds = await this.serviceLocator.user.getUserResults(userId)
+      if (resultIds.length === 0) {
+        res.json([])
+        return next()
+      }
+      const results = []
+      for (const id of resultIds) {
+        const result = await this.serviceLocator.result.getResult(id)
+        if (result) {
+          // get the quiz title and created by
+          const quiz = await this.serviceLocator.quiz.getQuizById(result.quiz)
+          if (quiz) {
+            result.quizTitle = quiz.title
+            const owner = await this.serviceLocator.user.getUserById(
+              result.quizOwner
+            )
+            if (owner) {
+              result.ownerUsername = owner.username
+            }
+          }
+          if (!format || format === 'full') {
+            results.push(result)
+          } else {
+            const { answers, ...listing } = result
+            results.push(listing)
+          }
+        }
+      }
+
+      res.json(results)
     } catch (error) {
       debug(error)
       res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
