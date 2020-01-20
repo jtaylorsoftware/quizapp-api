@@ -164,7 +164,7 @@ class QuizController extends Controller {
     return (
       quiz.isPublic ||
       quiz.user.toString() === userId ||
-      !quiz.allowedUsers.some(userId => userId.toString() === id)
+      quiz.allowedUsers.some(id => id.toString() === userId)
     )
   }
 
