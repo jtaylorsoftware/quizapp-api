@@ -2,7 +2,7 @@ const { Quiz } = require('../models/quiz')
 
 class QuizService {
   constructor(quizRepository) {
-    this.quizRepository = quizRepository
+    this._quizRepository = quizRepository
   }
 
   /**
@@ -11,7 +11,7 @@ class QuizService {
    * @returns {Quiz}
    */
   async getQuizById(quizId) {
-    const quiz = await this.quizRepository.findById(quizId)
+    const quiz = await this._quizRepository.findById(quizId)
     return quiz
   }
 
@@ -23,6 +23,15 @@ class QuizService {
   // async getUserResponsesToQuiz(quizId, userId) {
   //   // TODO
   // }
+
+  /**
+   * Adds a result to the list of quiz results
+   * @param {string|ObjectId} quizId
+   * @param {string|ObjectId} resultId
+   */
+  async addResult(quizId, resultId) {
+    await this._quizRepository.addResult(quizId, resultId)
+  }
 
   /**
    * Creates a new quiz
@@ -38,7 +47,7 @@ class QuizService {
     allowedUsers
   }) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
-    const quiz = await this.quizRepository.insert(
+    const quiz = await this._quizRepository.insert(
       new Quiz(user, title, expiresIn, isPublic, questions, allowedUsers)
     )
 
@@ -56,7 +65,7 @@ class QuizService {
     { title, expiresIn, isPublic, questions, allowedUsers }
   ) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
-    await this.quizRepository.update(quizId, {
+    await this._quizRepository.update(quizId, {
       title,
       isPublic,
       questions,
@@ -70,7 +79,7 @@ class QuizService {
    * @param {string} quizId
    */
   async deleteQuiz(quizId) {
-    await this.quizRepository.delete(quizId)
+    await this._quizRepository.delete(quizId)
     // await this.userRepository.removeQuiz(user, quizId)
   }
 

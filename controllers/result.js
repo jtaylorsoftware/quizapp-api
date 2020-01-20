@@ -94,6 +94,7 @@ class ResultController extends Controller {
         res.status(400).json({ errors: [...errors] })
         return next()
       }
+      await this.serviceLocator.quiz.addResult(quiz._id, resultId)
       res.json({ id: resultId })
     } catch (error) {
       debug(error)

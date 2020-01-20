@@ -34,12 +34,12 @@ exports.QuizRepository = class QuizRepository extends Repository {
 
   /**
    * Adds a quiz result/response
-   * @param {Quiz} quiz quiz object
+   * @param {string} quizId quiz object
    * @param {string} result
    */
-  async addResult(quiz, resultId) {
+  async addResult(quizId, resultId) {
     await this.store.updateOne(
-      { _id: quiz._id },
+      { _id: new ObjectId(quizId) },
       {
         $addToSet: {
           results: resultId
