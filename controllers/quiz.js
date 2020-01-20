@@ -63,6 +63,10 @@ class QuizController extends Controller {
         return next()
       }
       const answerForm = this._convertToAnswerForm(quiz)
+      const [username] = await this.serviceLocator.user.getUsernamesFromIds([
+        answerForm.user
+      ])
+      answerForm.user = username
       res.json(answerForm)
     } catch (error) {
       debug(error)
