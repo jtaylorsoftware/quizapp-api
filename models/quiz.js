@@ -18,7 +18,7 @@ exports.Quiz = class Quiz {
     isPublic = true,
     questions = [],
     allowedUsers = [],
-    showCorrectAnswers = false, // TODO - in validation and client allow user to toggle
+    showCorrectAnswers = true, // TODO - in validation and client allow user to toggle
     allowMultipleResponses = false // TODO - in validation and client allow user to toggle
   ) {
     this.user = ObjectId.isValid(user) ? new ObjectId(user) : null
