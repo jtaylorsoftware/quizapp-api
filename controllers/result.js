@@ -57,7 +57,7 @@ class ResultController extends Controller {
       }
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -99,7 +99,7 @@ class ResultController extends Controller {
       res.json({ id: resultId })
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }

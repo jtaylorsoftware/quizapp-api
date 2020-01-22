@@ -114,22 +114,26 @@ class UserService {
    * Authorizes a user, ensuring they exist and present valid credentials.
    * @param {string} username
    * @param {password} password
-   * @returns {string} string with user id if authorized, empty if not authorized
+   * @returns {[string, [any]]} string with user id if authorized, empty if not authorized
    */
   async authorizeUser(username, password) {
+    let userId = null
+    const errors = []
     // try to find a user with a matching username
     const user = await this._userRepository.findByUsername(username)
     if (!user) {
-      return ''
+      errors.push({ username: 'No matching username found.' })
+    } else {
+      // check if the password matches the user's password
+      const isMatch = await bcrypt.compare(password, user.password)
+      if (!isMatch) {
+        errors.push({ password: 'Invalid credentials.' })
+      } else {
+        userId = user._id
+      }
     }
 
-    // check if the password matches the user's password
-    const isMatch = await bcrypt.compare(password, user.password)
-    if (!isMatch) {
-      return ''
-    }
-
-    return user._id
+    return [userId, errors]
   }
 
   /**
@@ -173,11 +177,11 @@ class UserService {
     let existingUser = await this._userRepository.findByEmail(email)
 
     if (existingUser) {
-      errors.push('email')
+      errors.push({ email: 'Email is already in use.', value: email })
     }
     existingUser = await this._userRepository.findByUsername(username)
     if (existingUser) {
-      errors.push('username')
+      errors.push({ username: 'Username is already in use.', value: username })
     }
 
     let user = {}

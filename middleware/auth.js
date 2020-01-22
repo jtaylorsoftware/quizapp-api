@@ -22,7 +22,7 @@ exports.authenticate = options => async (req, res, next) => {
   const user = verifyToken(token)
   debug(user ? `user token received: ${user.id}` : 'no user token')
   if (!user && options.required) {
-    res.status(401).json({ errors: [{ msg: 'Authorization denied' }] })
+    res.status(401).end()
   } else {
     req.user = user
     return next()

@@ -1,54 +1,94 @@
-const { QuizRepository } = require('../../repositories/quiz')
+const { body } = require('express-validator')
+const moment = require('moment')
 
-const { body, param } = require('express-validator')
+const userValidation = require('./user')
 
-exports.checkQuizTitle = body(
-  'title',
-  'Quiz must have a non-empty title'
-).custom(value => typeof value === 'string' && value.length > 0)
+const isValidExpiration = expirationDateStr =>
+  moment(expirationDateStr).isValid() &&
+  moment().diff(moment(expirationDateStr)) < 0
 
-exports.checkPublic = body(
-  'isPublic',
-  'Must set a value for public'
-).isBoolean()
-exports.checkExpiresIn = body(
+const checkExpiration = body(
   'expiresIn',
-  'expiresIn must be a valid date'
-).isISO8601({ strict: true })
-exports.checkAllowedUsers = body(
+  'Expiration must be a date and time in the future'
+).custom(isValidExpiration)
+
+const isValidTitle = title => title.length > 0
+
+const checkTitle = body('title', "Title can't be empty")
+  .isString()
+  .custom(isValidTitle)
+
+const checkIsPublic = body(
+  'isPublic',
+  'Public setting must be a boolean'
+).isBoolean()
+
+const allowedUsersAreValid = allowedUsers =>
+  allowedUsers.every(user => userValidation.isValidUsername(user))
+
+const checkAllowedUsers = body(
   'allowedUsers',
-  'Allowed users must be empty array or only contain user IDs'
-).custom(
-  value =>
-    (value && value instanceof Array && value.length === 0) ||
-    value.every(user => typeof user === 'string')
-)
-
-exports.checkQuestionIndex = param(
-  'questionIndex',
-  'questionIndex must be a positive integer'
-).isInt({
-  min: 0
-})
-
-exports.checkQuestions = body(
-  'questions',
-  'Questions must be a valid array of question objects'
+  'Allowed users must be an array of usernames'
 )
   .isArray()
-  .custom(values => values.every(q => QuizRepository.validateQuestion(q)))
+  .custom(allowedUsersAreValid)
+  .optional()
 
-exports.checkQuestionText = body('text', 'Text must not be empty')
-  .isString()
-  .isLength({ min: 1 })
+const isValidQuestionText = text => text.length > 0
 
-exports.checkAnswerText = body('text', 'Text must not be empty')
-  .isString()
-  .isLength({ min: 1 })
+const MIN_ANSWER_COUNT = 2
 
-exports.checkAnswerIndex = param(
-  'answerIndex',
-  'answerIndex must be a positive integer'
-).isInt({
-  min: 0
+const isValidCorrectAnswer = (correctAnswer, answerCount) => {
+  correctAnswer = Number.parseInt(correctAnswer)
+  return (
+    !isNaN(correctAnswer) && correctAnswer < answerCount && correctAnswer >= 0
+  )
+}
+
+const isValidAnswerText = text => text.length > 0
+
+const isValidAnswer = answer =>
+  typeof answer === 'object' && isValidAnswerText(answer.text)
+
+const answersAreValid = answers =>
+  answers instanceof Array && answers.length >= MIN_ANSWER_COUNT
+
+// const isValidQuestion = question =>
+//   isValidQuestionText(question.text) &&
+//   isValidCorrectAnswer(question.correctAnswer, question.answers.length) &&
+//   answersAreValid(question.answers)
+
+const checkQuestions = body('questions').custom(questions => {
+  if (!(questions instanceof Array)) {
+    throw Error('Questions must be an array')
+  }
+  if (questions.length < 1) {
+    throw Error('There must be at least one question')
+  }
+  if (!questions.every(q => isValidQuestionText(q.text))) {
+    throw Error('One or more questions has empty question text')
+  }
+  if (!questions.every(q => answersAreValid(q.answers))) {
+    throw Error('One or more questions has too few answers')
+  }
+  if (!questions.every(q => q.answers.every(isValidAnswer))) {
+    throw Error('One or more questions has empty answer text')
+  }
+  if (
+    !questions.every(q =>
+      isValidCorrectAnswer(q.correctAnswer, q.answers.length)
+    )
+  ) {
+    throw Error('One or more question has an answer index that is out of range')
+  }
+
+  return true
 })
+
+module.exports = {
+  checkExpiration,
+  checkTitle,
+  checkIsPublic,
+  checkAllowedUsers,
+  checkQuestions
+}

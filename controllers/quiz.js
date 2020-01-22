@@ -1,5 +1,4 @@
 const debug = require('debug')('routes:quiz')
-
 const { Controller } = require('./controller')
 
 class QuizController extends Controller {
@@ -18,9 +17,7 @@ class QuizController extends Controller {
       }
       const isQuizOwner = userId === quiz.user.toString()
       if (!isQuizOwner) {
-        res.status(403).json({
-          errors: [{ msg: 'You are not allowed to view this quiz' }]
-        })
+        res.status(403).end()
         return next()
       }
       if (!format || format === 'full') {
@@ -38,7 +35,7 @@ class QuizController extends Controller {
       }
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -57,9 +54,7 @@ class QuizController extends Controller {
       }
 
       if (!this._canUserViewQuiz(userId, quiz)) {
-        res.status(403).json({
-          errors: [{ msg: 'You are not allowed to view this quiz' }]
-        })
+        res.status(403).end()
         return next()
       }
       const answerForm = this._convertToAnswerForm(quiz)
@@ -70,7 +65,7 @@ class QuizController extends Controller {
       res.json(answerForm)
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -82,14 +77,14 @@ class QuizController extends Controller {
     const { id: userId } = req.user
     const { title, isPublic, questions, ...quiz } = req.body
     const expiresIn = new Date(req.body.expiresIn).toISOString()
-
     try {
       const user = await this.serviceLocator.user.getUserById(userId)
       if (!user) {
         res.status(400).end()
+        return next()
       }
       const allowedUsers = await this.serviceLocator.user.getIdsFromUsernames(
-        quiz.allowedUsers
+        quiz.allowedUsers || []
       )
       const quizId = await this.serviceLocator.quiz.createQuiz({
         user: user._id,
@@ -103,7 +98,7 @@ class QuizController extends Controller {
       res.json({ id: quizId })
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -114,22 +109,45 @@ class QuizController extends Controller {
   async editQuiz(req, res, next) {
     const { user } = req
     const quiz = req.body
+
     const { id: quizId } = req.params
     if (!this._userOwnsQuiz(user.id, quizId)) {
-      return res
-        .status(403)
-        .json({ errors: [{ msg: 'You are not the owner of this quiz' }] })
+      res.status(403).end()
+      return next()
     }
     try {
+      const existingQuiz = await this.serviceLocator.quiz.getQuizById(quizId)
+      if (!existingQuiz) {
+        res.status(400).end()
+        return next()
+      }
+      const existingAnswers = existingQuiz.questions.map(q => q.correctAnswer)
+      const quizAnswers = quiz.questions.map(q => q.correctAnswer)
+      if (
+        existingAnswers.length !== quizAnswers.length ||
+        !existingAnswers.every((ans, ind) => ans === quizAnswers[ind])
+      ) {
+        res.status(409).json({
+          errors: [
+            {
+              questions:
+                'Cannot change correctAnswers or number of questions for existing quiz',
+              value: quiz
+            }
+          ]
+        })
+        return next()
+      }
+
       const allowedUsers = await this.serviceLocator.user.getIdsFromUsernames(
-        quiz.allowedUsers
+        quiz.allowedUsers || []
       )
       quiz.allowedUsers = allowedUsers
       await this.serviceLocator.quiz.updateQuiz(quizId, quiz)
       res.status(204).end()
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
 
     return next()
@@ -142,16 +160,15 @@ class QuizController extends Controller {
     const { user } = req
     const { id: quizId } = req.params
     if (!this._userOwnsQuiz(user.id, quizId)) {
-      return res
-        .status(403)
-        .json({ errors: [{ msg: 'You are not the owner of this quiz' }] })
+      res.status(403).end()
+      return next()
     }
     try {
       await this.serviceLocator.quiz.deleteQuiz(quizId)
       res.status(204).end()
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }

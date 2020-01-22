@@ -19,7 +19,7 @@ class UserController extends Controller {
       res.json(user)
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -62,7 +62,7 @@ class UserController extends Controller {
       res.json(quizzes)
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -109,7 +109,7 @@ class UserController extends Controller {
       res.json(results)
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -130,12 +130,14 @@ class UserController extends Controller {
         email
       )
       if (!emailWasSet) {
-        return res.status(400).json({ errors: [{ msg: 'Email in use' }] })
+        return res
+          .status(400)
+          .json({ errors: [{ email: 'Email is already in use.' }] })
       }
       res.status(204).end()
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -155,7 +157,7 @@ class UserController extends Controller {
       res.status(204).end()
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -171,7 +173,7 @@ class UserController extends Controller {
       res.status(204).end()
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -193,7 +195,7 @@ class UserController extends Controller {
       res.json(user)
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -208,14 +210,12 @@ class UserController extends Controller {
   async authorizeUser(req, res, next) {
     const { username, password } = req.body
     try {
-      const userId = await this.serviceLocator.user.authorizeUser(
+      const [userId, errors] = await this.serviceLocator.user.authorizeUser(
         username,
         password
       )
       if (!userId) {
-        return res
-          .status(400)
-          .json({ errors: [{ msg: 'Invalid Credentials' }] })
+        return res.status(400).json({ errors: errors })
       }
       // the jwt will contain the user's id
       const payload = {
@@ -231,7 +231,7 @@ class UserController extends Controller {
       res.json({ token })
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
@@ -270,7 +270,7 @@ class UserController extends Controller {
       res.json({ token })
     } catch (error) {
       debug(error)
-      res.status(500).json({ errors: [{ msg: 'Internal server error' }] })
+      res.status(500).end()
     }
     return next()
   }
