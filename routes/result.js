@@ -1,8 +1,9 @@
 const express = require('express')
-const { check, query } = require('express-validator')
+const { query } = require('express-validator')
 
 const { debugRequests } = require('../middleware/logging')
 const { authenticate } = require('../middleware/auth')
+const validators = require('../middleware/validation/result')
 const { resolveErrors } = require('../middleware/validation/resolve-errors')
 
 const debug = require('debug')
@@ -33,18 +34,7 @@ exports.configResultRoute = serviceLocator => {
   results.post(
     '/',
     authenticate({ required: true }),
-    [
-      check('answers', 'Answers must be valid').custom(answers => {
-        return (
-          answers instanceof Array &&
-          answers.every(
-            answer =>
-              typeof answer === 'object' && typeof answer.choice === 'number'
-          )
-        )
-      }),
-      query('quiz', 'Quiz id is required').exists()
-    ],
+    [validators.checkAnswers, query('quiz', 'Quiz id is required').exists()],
     resolveErrors,
     resultController.postResult.bind(resultController)
   )

@@ -49,7 +49,7 @@ exports.config = db => {
 
   return {
     users: configUserRoute(serviceLocator),
-    quizzes: configQuizRoute(serviceLocator)
-    // results: configResultRoute(serviceLocator)
+    quizzes: configQuizRoute(serviceLocator),
+    results: configResultRoute(serviceLocator)
   }
 }

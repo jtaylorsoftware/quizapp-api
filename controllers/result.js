@@ -19,7 +19,7 @@ class ResultController extends Controller {
             return next()
           }
         } else {
-          res.status(500).end()
+          res.status(404).end()
           return next()
         }
       } else {
