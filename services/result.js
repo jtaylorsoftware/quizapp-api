@@ -12,6 +12,10 @@ class ResultService {
     return result
   }
 
+  async deleteResult(resultId) {
+    await this._resultRepository.delete(resultId)
+  }
+
   async getUserResultForQuiz(userId, quizId) {
     const result = await this._resultRepository.findByUserAndQuizId(
       userId,
@@ -22,19 +26,6 @@ class ResultService {
 
   async createResult(answers, userId, quiz) {
     const errors = []
-    // check if user and quiz exist
-    // const user = await this._userRepository.findById(userId)
-    // const quiz = await this._quizRepository.findById(quizId)
-
-    // if (!user) {
-    //   errors.push('user')
-    // }
-    // if (!quiz) {
-    //   errors.push('quiz')
-    // }
-    // if (errors.length > 0) {
-    //   return [null, errors]
-    // }
 
     if (!quiz.allowMultipleResponses) {
       const duplicateResult = await async.some(quiz.results, async resultId => {
@@ -76,8 +67,6 @@ class ResultService {
       result = await this._resultRepository.insert(
         new Result(userId, quiz._id, quiz.user, answers, score)
       )
-      // await this._userRepository.addResult(userId, result._id)
-      // await this._quizRepository.addResult(quiz, result._id)
     }
 
     return [result._id, errors]

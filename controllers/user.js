@@ -168,8 +168,14 @@ class UserController extends Controller {
    * @param {{ id: string }} req.user user with id property
    */
   async deleteUser(req, res, next) {
+    const userId = req.user.id
     try {
-      await this.serviceLocator.user.deleteUser(req.user.id)
+      // Clean up user's results before deleting user
+      const results = await this.serviceLocator.user.getUserResults(userId)
+      for (const result of results) {
+        await this.serviceLocator.result.deleteResult(result)
+      }
+      await this.serviceLocator.user.deleteUser(userId)
       res.status(204).end()
     } catch (error) {
       debug(error)

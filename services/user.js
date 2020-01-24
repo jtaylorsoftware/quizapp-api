@@ -80,6 +80,15 @@ class UserService {
   }
 
   /**
+   * Removes a user's quiz
+   * @param {string} userId
+   * @param {string} quizId
+   */
+  async removeQuiz(userId, quizId) {
+    await this._userRepository.removeQuiz(userId, quizId)
+  }
+
+  /**
    * Add a a quiz result to user's results
    * @param {string} userId
    * @param {string} resultId
@@ -89,26 +98,13 @@ class UserService {
   }
 
   /**
-   * Gets user's quizzes as listings
+   * Remove a user's quiz result
    * @param {string} userId
+   * @param {string} resultId
    */
-  // async getUserQuizListings(userId) {
-  //   const user = await this._userRepository.findById(userId)
-  //   if (user && user.quizzes.length > 0) {
-  //     const listings = []
-
-  //     for (const quizId of user.quizzes) {
-  //       const quiz = await this._quizRepository.findById(quizId)
-  //       if (quiz) {
-  //         const { questions, allowedUsers, ...listing } = quiz
-  //         listing.questionCount = questions.length
-  //         listings.push(listing)
-  //       }
-  //     }
-  //     return listings
-  //   }
-  //   return []
-  // }
+  async removeResult(userId, resultId) {
+    await this._userRepository.removeResult(userId, resultId)
+  }
 
   /**
    * Authorizes a user, ensuring they exist and present valid credentials.

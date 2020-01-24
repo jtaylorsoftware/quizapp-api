@@ -80,40 +80,7 @@ class QuizService {
    */
   async deleteQuiz(quizId) {
     await this._quizRepository.delete(quizId)
-    // await this.userRepository.removeQuiz(user, quizId)
   }
-
-  // /**
-  //  * Transforms a list of user Ids into a list of usernames
-  //  * @param {[string]} userids
-  //  * @returns {[string]} array of usernames
-  //  */
-  // async _getUsernames(userids) {
-  //   const usernames = []
-  //   for (const id of userids) {
-  //     const user = await this.userRepository.findById(id)
-  //     if (user) {
-  //       usernames.push(user.username)
-  //     }
-  //   }
-  //   return usernames
-  // }
-
-  // /**
-  //  * Transforms a list of usernames into a list of user ids
-  //  * @param {[string]} usernames
-  //  * @returns {[string]} array of user ids
-  //  */
-  // async _getUserIds(usernames) {
-  //   const userIds = []
-  //   for (const username of usernames) {
-  //     const user = await this.userRepository.findByUsername(username)
-  //     if (user) {
-  //       userIds.push(user._id)
-  //     }
-  //   }
-  //   return userIds
-  // }
 }
 
 exports.QuizService = QuizService
