@@ -166,6 +166,9 @@ class QuizController extends Controller {
     try {
       const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
       // Clean up references to this quiz before finally deleting it
+      if (!quiz) {
+        return res.status(404).end()
+      }
       for (const resultId of quiz.results) {
         const result = await this.serviceLocator.result.getResult(resultId)
         if (result) {
