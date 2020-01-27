@@ -131,8 +131,10 @@ class UserController extends Controller {
       )
       if (!emailWasSet) {
         return res
-          .status(400)
-          .json({ errors: [{ email: 'Email is already in use.' }] })
+          .status(409)
+          .json({
+            errors: [{ email: 'Email is already in use.', value: email }]
+          })
       }
       res.status(204).end()
     } catch (error) {
@@ -260,7 +262,7 @@ class UserController extends Controller {
       })
 
       if (!userId) {
-        res.status(400).json({ errors: [...errors] })
+        res.status(409).json({ errors: [...errors] })
         return next()
       }
 
