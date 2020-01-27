@@ -9,7 +9,7 @@ const verifyToken = token => {
       const payload = jwt.verify(token, process.env.JWT_SECRET)
       user = payload.user
     } catch (error) {
-      debug('verify token error: ', error)
+      debug('verify token error: ', error.message)
     }
   }
 
