@@ -1,4 +1,5 @@
 const debug = require('debug')('routes:result')
+const moment = require('moment')
 
 const { Controller } = require('./controller')
 
@@ -81,6 +82,15 @@ class ResultController extends Controller {
         res.status(403).end()
         return next()
       }
+      console.log(moment(quiz.expiresIn).diff(moment()) < 0)
+      console.log(moment(quiz.expiresIn).toLocaleString())
+      console.log(moment().toLocaleString())
+      if (moment(quiz.expiresIn).diff(moment()) < 0) {
+        // quiz expired
+        res.status(403).json({ errors: [{ expiresIn: 'Quiz has expired' }] })
+        return next()
+      }
+
       const [resultId, errors] = await this.serviceLocator.result.createResult(
         answers,
         userId,
