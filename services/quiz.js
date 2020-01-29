@@ -34,6 +34,15 @@ class QuizService {
   }
 
   /**
+   * Removes a result from the quiz's list of results.
+   * @param {string|ObjectId} quizId
+   * @param {string|ObjectId} resultId
+   */
+  async removeResult(quizId, resultId) {
+    await this._quizRepository.removeResult(quizId, resultId)
+  }
+
+  /**
    * Creates a new quiz
    * @param {Quiz} quiz quiz data
    * @returns {string} created quiz's id

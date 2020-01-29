@@ -49,6 +49,22 @@ exports.QuizRepository = class QuizRepository extends Repository {
   }
 
   /**
+   * Removes a result from the quiz's list of results
+   * @param {string} quizId quiz object
+   * @param {string} result
+   */
+  async removeResult(quizId, resultId) {
+    await this.store.updateOne(
+      { _id: new ObjectId(quizId) },
+      {
+        $pull: {
+          results: resultId
+        }
+      }
+    )
+  }
+
+  /**
    * Updates the title of a quiz
    * @param {Quiz} quiz quiz object
    * @param {string} title
