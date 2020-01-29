@@ -31,6 +31,14 @@ exports.startServer = async port => {
   app.use('/api/quizzes', quizzes)
   app.use('/api/results', results)
 
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static('client/build'))
+    app.get('*', (req, res, next) => {
+      res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'))
+      next()
+    })
+  }
+
   app.server = app.listen(port)
 
   return app
