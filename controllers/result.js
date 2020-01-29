@@ -15,7 +15,7 @@ class ResultController extends Controller {
         // get all results for the quiz
         const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
         if (quiz) {
-          if (quiz.user !== userId) {
+          if (quiz.user.toString() !== userId) {
             res.status(403).end()
             return next()
           }
@@ -23,6 +23,25 @@ class ResultController extends Controller {
           res.status(404).end()
           return next()
         }
+        const results = []
+        for (const resultId of quiz.results) {
+          const result = await this.serviceLocator.result.getResult(resultId)
+          if (result) {
+            const resultUser = await this.serviceLocator.user.getUserById(
+              result.user
+            )
+            if (resultUser) {
+              result.username = resultUser.username
+            }
+            if (!format || format === 'full') {
+              results.push(result)
+            } else {
+              const { answers, ...listing } = result
+              results.push(listing)
+            }
+          }
+        }
+        res.json({ results })
       } else {
         const result = await this.serviceLocator.result.getUserResultForQuiz(
           queryUser,
@@ -82,9 +101,7 @@ class ResultController extends Controller {
         res.status(403).end()
         return next()
       }
-      console.log(moment(quiz.expiresIn).diff(moment()) < 0)
-      console.log(moment(quiz.expiresIn).toLocaleString())
-      console.log(moment().toLocaleString())
+
       if (moment(quiz.expiresIn).diff(moment()) < 0) {
         // quiz expired
         res.status(403).json({ errors: [{ expiresIn: 'Quiz has expired' }] })
