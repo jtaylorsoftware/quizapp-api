@@ -130,11 +130,10 @@ class UserController extends Controller {
         email
       )
       if (!emailWasSet) {
-        return res
-          .status(409)
-          .json({
-            errors: [{ email: 'Email is already in use.', value: email }]
-          })
+        res.status(409).json({
+          errors: [{ email: 'Email is already in use.', value: email }]
+        })
+        return next()
       }
       res.status(204).end()
     } catch (error) {
@@ -172,11 +171,40 @@ class UserController extends Controller {
   async deleteUser(req, res, next) {
     const userId = req.user.id
     try {
-      // Clean up user's results before deleting user
-      const results = await this.serviceLocator.user.getUserResults(userId)
-      for (const result of results) {
-        await this.serviceLocator.result.deleteResult(result)
+      const user = await this.serviceLocator.user.getUserById(userId)
+      if (!user) {
+        res.status(404).end()
+        return next()
       }
+      // Clean up user's results
+      const results = user.results
+      for (const resultId of results) {
+        const result = await this.serviceLocator.result.getResult(resultId)
+        if (result) {
+          const quiz = await this.serviceLocator.quiz.getQuizById(result.quiz)
+          if (quiz) {
+            await this.serviceLocator.quiz.removeResult(quiz._id, resultId)
+          }
+          await this.serviceLocator.result.deleteResult(resultId)
+        }
+      }
+      // Clean up users's quizzes completley including results to those quizzes
+      const quizzes = user.quizzes
+      for (const quizId of quizzes) {
+        const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+        if (quiz) {
+          const quizResults = quiz.results
+          for (const resultId of quizResults) {
+            const result = await this.serviceLocator.result.getResult(resultId)
+            if (result) {
+              await this.serviceLocator.result.deleteResult(resultId)
+              await this.serviceLocator.user.removeResult(result.user, result)
+            }
+          }
+          await this.serviceLocator.quiz.deleteQuiz(quizId)
+        }
+      }
+
       await this.serviceLocator.user.deleteUser(userId)
       res.status(204).end()
     } catch (error) {
