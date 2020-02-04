@@ -2,7 +2,7 @@ const debug = require('debug')('server')
 const express = require('express')
 const path = require('path')
 const routes = require('./routes')
-
+const helmet = require('helmet')
 const { connectToDb } = require('./database/db')
 
 /**
@@ -14,6 +14,7 @@ exports.startServer = async port => {
   console.log('Connected to Mongodb')
 
   const app = express()
+  app.use(helmet())
 
   app.use(express.json({ extended: false }))
   app.use((error, req, res, next) => {
