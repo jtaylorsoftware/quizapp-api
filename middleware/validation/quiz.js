@@ -8,7 +8,7 @@ const isValidExpiration = expirationDateStr =>
   moment().diff(moment(expirationDateStr)) < 0
 
 const checkExpiration = body(
-  'expiresIn',
+  'expiration',
   'Expiration must be a date and time in the future'
 ).custom(isValidExpiration)
 
@@ -86,6 +86,7 @@ const checkQuestions = body('questions').custom(questions => {
 })
 
 module.exports = {
+  isValidExpiration,
   checkExpiration,
   checkTitle,
   checkIsPublic,

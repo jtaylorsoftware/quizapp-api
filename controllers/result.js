@@ -102,9 +102,9 @@ class ResultController extends Controller {
         return next()
       }
 
-      if (moment(quiz.expiresIn).diff(moment()) < 0) {
+      if (moment(quiz.expiration).diff(moment()) < 0) {
         // quiz expired
-        res.status(403).json({ errors: [{ expiresIn: 'Quiz has expired' }] })
+        res.status(403).json({ errors: [{ expiration: 'Quiz has expired' }] })
         return next()
       }
 

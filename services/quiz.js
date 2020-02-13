@@ -50,14 +50,14 @@ class QuizService {
   async createQuiz({
     user,
     title,
-    expiresIn,
+    expiration,
     isPublic,
     questions,
     allowedUsers
   }) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
     const quiz = await this._quizRepository.insert(
-      new Quiz(user, title, expiresIn, isPublic, questions, allowedUsers)
+      new Quiz(user, title, expiration, isPublic, questions, allowedUsers)
     )
 
     // await this.userRepository.addQuiz(user, quiz)
@@ -71,14 +71,14 @@ class QuizService {
    */
   async updateQuiz(
     quizId,
-    { title, expiresIn, isPublic, questions, allowedUsers }
+    { title, expiration, isPublic, questions, allowedUsers }
   ) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
     await this._quizRepository.update(quizId, {
       title,
       isPublic,
       questions,
-      expiresIn,
+      expiration,
       allowedUsers
     })
   }

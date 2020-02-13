@@ -50,7 +50,6 @@ exports.configQuizRoute = serviceLocator => {
     [
       validators.checkTitle,
       validators.checkIsPublic,
-      validators.checkExpiration,
       validators.checkAllowedUsers,
       validators.checkQuestions
     ],

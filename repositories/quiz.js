@@ -84,15 +84,15 @@ exports.QuizRepository = class QuizRepository extends Repository {
   /**
    * Updates the options of a quiz
    * @param {Quiz} quiz quiz object
-   * @param {Object} options object containing relevant options (expiresIn, isPublic)
+   * @param {Object} options object containing relevant options (expiration, isPublic)
    */
   async updateOptions(quiz, options) {
-    const { expiresIn, isPublic } = options
+    const { expiration, isPublic } = options
     await this.store.updateOne(
       { _id: quiz._id },
       {
         $set: {
-          expiresIn,
+          expiration,
           isPublic
         }
       }

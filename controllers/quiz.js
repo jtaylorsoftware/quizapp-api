@@ -1,5 +1,6 @@
 const debug = require('debug')('routes:quiz')
 const { Controller } = require('./controller')
+const { isValidExpiration } = require('../middleware/validation/quiz')
 
 class QuizController extends Controller {
   /**
@@ -76,7 +77,7 @@ class QuizController extends Controller {
   async createQuiz(req, res, next) {
     const { id: userId } = req.user
     const { title, isPublic, questions, ...quiz } = req.body
-    const expiresIn = new Date(req.body.expiresIn).toISOString()
+    const expiration = new Date(req.body.expiration).toISOString()
     try {
       const user = await this.serviceLocator.user.getUserById(userId)
       if (!user) {
@@ -89,7 +90,7 @@ class QuizController extends Controller {
       const quizId = await this.serviceLocator.quiz.createQuiz({
         user: user._id,
         title,
-        expiresIn,
+        expiration,
         isPublic,
         questions,
         allowedUsers
@@ -119,6 +120,20 @@ class QuizController extends Controller {
       const existingQuiz = await this.serviceLocator.quiz.getQuizById(quizId)
       if (!existingQuiz) {
         res.status(400).end()
+        return next()
+      }
+      if (
+        !isValidExpiration(quiz.expiration) &&
+        quiz.expiration !== existingQuiz.expiration
+      ) {
+        res.status(400).json({
+          errors: [
+            {
+              expiration: 'Expiration must be a date and time in the future',
+              value: quiz.expiration
+            }
+          ]
+        })
         return next()
       }
       const existingAnswers = existingQuiz.questions.map(q => q.correctAnswer)

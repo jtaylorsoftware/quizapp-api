@@ -4,7 +4,7 @@ const { ObjectId } = require('mongodb')
  * Representation of a Quiz document
  * @property {string} user id of owner
  * @property {title} title of quiz
- * @property {string} expiresIn expiration date of quiz (as ISO string)
+ * @property {string} expiration expiration date of quiz (as ISO string)
  * @property {boolean} isPublic can anyone with link view quiz
  * @property {[any]} questions Array of questions
  * @property {boolean} showCorrectAnswers should results contain the correct answers
@@ -14,7 +14,7 @@ exports.Quiz = class Quiz {
   constructor(
     user,
     title,
-    expiresIn,
+    expiration,
     isPublic = true,
     questions = [],
     allowedUsers = [],
@@ -29,7 +29,7 @@ exports.Quiz = class Quiz {
     this.showCorrectAnswers = showCorrectAnswers
     this.allowMultipleResponses = allowMultipleResponses
     this.isPublic = isPublic
-    this.expiresIn = expiresIn
+    this.expiration = expiration
     this.date = new Date().toISOString()
   }
 }
