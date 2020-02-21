@@ -1,9 +1,9 @@
-import { UserRepository } from '../repositories/user'
-import { User } from '../models/user'
+import UserRepository from '../repositories/user'
+import User from '../models/user'
 
-const bcrypt = require('bcryptjs')
+import bcrypt from 'bcryptjs'
 
-export class UserService {
+export default class UserService {
   constructor(private userRepository: UserRepository) {
     this.userRepository = userRepository
   }
@@ -168,7 +168,7 @@ export class UserService {
    * @param user.username
    * @returns user id and array of fields that had errors
    */
-  async registerUser({ email, username, password }) {
+  async registerUser({ email, username, password }): Promise<[string, any[]]> {
     const errors = []
 
     let existingUser = await this.userRepository.findByEmail(email)
@@ -181,7 +181,7 @@ export class UserService {
       errors.push({ username: 'Username is already in use.', value: username })
     }
 
-    let user: User
+    let user: User | any = {}
     if (errors.length === 0) {
       user = new User(username, email, password)
 

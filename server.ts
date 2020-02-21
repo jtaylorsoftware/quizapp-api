@@ -1,22 +1,19 @@
 const debug = require('debug')('server')
-const express = require('express')
-const path = require('path')
-const routes = require('./routes')
-const helmet = require('helmet')
-const { connectToDb } = require('./database/db')
+import express from 'express'
+import path from 'path'
+import helmet from 'helmet'
+import connectToDb from './database/db'
 
-/**
- * Starts the server
- * @param port Port that server will listen on
- */
-export const startServer = async (port: number) => {
+import configControllers from './controllers/config'
+
+const configApp = async () => {
   const { db } = await connectToDb({ url: process.env.DB_URL })
   console.log('Connected to Mongodb')
 
   const app = express()
   app.use(helmet())
 
-  app.use(express.json({ extended: false }))
+  app.use(express.json())
   app.use((error, req, res, next) => {
     if (error instanceof SyntaxError) {
       res.status(400).json({ errors: [{ msg: 'Invalid JSON format' }] })
@@ -26,11 +23,11 @@ export const startServer = async (port: number) => {
     }
   })
 
-  const { users, quizzes, results } = routes.config(db)
+  const { users, quizzes, results } = configControllers(db)
 
-  app.use('/api/users', users)
-  app.use('/api/quizzes', quizzes)
-  app.use('/api/results', results)
+  app.use('/api/users', users.router)
+  app.use('/api/quizzes', quizzes.router)
+  app.use('/api/results', results.router)
 
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static('client/build'))
@@ -38,8 +35,15 @@ export const startServer = async (port: number) => {
       res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'))
     })
   }
-
-  app.server = app.listen(port)
-
   return app
+}
+
+/**
+ * Starts the server
+ * @param port Port that server will listen on
+ */
+export default async function async(port: number) {
+  const app = await configApp()
+
+  app.listen(port)
 }

@@ -1,7 +1,10 @@
-const { errorFormatter } = require('./formatter')
-const { validationResult } = require('express-validator')
+import { validationResult, ValidationError } from 'express-validator'
 
-export const resolveErrors = (req, res, next) => {
+function errorFormatter({ msg, param, value }: ValidationError) {
+  return { [param]: msg, value: value }
+}
+
+export default function(req, res, next) {
   const errors = validationResult(req).formatWith(errorFormatter)
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() })

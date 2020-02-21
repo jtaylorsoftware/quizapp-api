@@ -1,4 +1,4 @@
-import { Model } from './model'
+import Model from './model'
 
 /**
  * Represents a user document
@@ -6,7 +6,7 @@ import { Model } from './model'
  * @property email
  * @property password
  */
-export class User extends Model {
+export default class User extends Model {
   quizzes: string[]
   results: string[]
   constructor(

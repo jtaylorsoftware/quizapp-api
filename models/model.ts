@@ -1,4 +1,4 @@
-export abstract class Model {
+export default abstract class Model {
   _id: string
   date: string
   constructor() {

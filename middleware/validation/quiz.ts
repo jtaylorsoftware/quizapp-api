@@ -1,18 +1,23 @@
-const { body } = require('express-validator')
-const moment = require('moment')
+import { body } from 'express-validator'
+import moment from 'moment'
 
-const userValidation = require('./user')
+import * as userValidation from './user'
 
-export const isValidExpiration = (expirationDateStr: string) =>
-  moment(expirationDateStr).isValid() &&
-  moment().diff(moment(expirationDateStr)) < 0
+export function isValidExpiration(expirationDateStr: string) {
+  return (
+    moment(expirationDateStr).isValid() &&
+    moment().diff(moment(expirationDateStr)) < 0
+  )
+}
 
 export const checkExpiration = body(
   'expiration',
   'Expiration must be a date and time in the future'
 ).custom(isValidExpiration)
 
-export const isValidTitle = (title: string) => title.length > 0
+export function isValidTitle(title: string) {
+  return title.length > 0
+}
 
 export const checkTitle = body('title', "Title can't be empty")
   .isString()
@@ -23,8 +28,9 @@ export const checkIsPublic = body(
   'Public setting must be a boolean'
 ).isBoolean()
 
-export const allowedUsersAreValid = (allowedUsers: string[]) =>
-  allowedUsers.every(user => userValidation.isValidUsername(user))
+export function allowedUsersAreValid(allowedUsers: string[]) {
+  return allowedUsers.every(user => userValidation.isValidUsername(user))
+}
 
 export const checkAllowedUsers = body(
   'allowedUsers',
@@ -34,7 +40,9 @@ export const checkAllowedUsers = body(
   .custom(allowedUsersAreValid)
   .optional()
 
-export const isValidQuestionText = (text: string) => text.length > 0
+export function isValidQuestionText(text: string) {
+  return text.length > 0
+}
 
 export const MIN_ANSWER_COUNT = 2
 
@@ -48,16 +56,20 @@ export const isValidCorrectAnswer = (
   )
 }
 
-export const isValidAnswerText = (text: string) => text.length > 0
+export function isValidAnswerText(text: string) {
+  return text.length > 0
+}
 
 interface QuizAnswer {
   text: string
 }
-export const isValidAnswer = (answer: QuizAnswer) =>
-  typeof answer === 'object' && isValidAnswerText(answer.text)
+export function isValidAnswer(answer: QuizAnswer) {
+  return typeof answer === 'object' && isValidAnswerText(answer.text)
+}
 
-export const answersAreValid = (answers: QuizAnswer[]) =>
-  answers instanceof Array && answers.length >= MIN_ANSWER_COUNT
+export function answersAreValid(answers: QuizAnswer[]) {
+  return answers instanceof Array && answers.length >= MIN_ANSWER_COUNT
+}
 
 // const isValidQuestion = question =>
 //   isValidQuestionText(question.text) &&

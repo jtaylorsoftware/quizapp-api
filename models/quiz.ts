@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { Model } from './model'
+import Model from './model'
 
 interface Answer {
   choice: string
@@ -21,7 +21,7 @@ interface Question {
  * @property showCorrectAnswers should results contain the correct answers
  * @property allowMultipleResponses should multiple responses be used
  */
-export class Quiz extends Model {
+export default class Quiz extends Model {
   results: string[]
 
   constructor(

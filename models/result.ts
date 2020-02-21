@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { Model } from './model'
+import Model from './model'
 
 interface Answer {
   choice: string
@@ -13,7 +13,7 @@ interface Answer {
  * @property answers
  * @property score the computed score (percent correct)
  */
-export class Result extends Model {
+export default class Result extends Model {
   constructor(
     public user: ObjectId,
     public quiz: ObjectId,

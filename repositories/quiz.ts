@@ -1,10 +1,10 @@
 import { ObjectId } from 'mongodb'
-import { Repository } from './repository'
+import Repository from './repository'
 
 export const MIN_QUESTIONS: number = 1
 export const MIN_ANSWERS: number = 2
 
-export class QuizRepository extends Repository {
+export default class QuizRepository extends Repository {
   /**
    * Adds a quiz result to a quiz
    * @param quiz quiz id

@@ -1,8 +1,8 @@
-import { User } from '../models/user'
-import { Repository } from './repository'
 import { ObjectId } from 'mongodb'
+import User from '../models/user'
+import Repository from './repository'
 
-export class UserRepository extends Repository {
+export default class UserRepository extends Repository {
   /**
    * Updates a user's quizzes
    * @param user User or ID of User to modify

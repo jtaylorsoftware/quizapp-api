@@ -1,12 +1,30 @@
 const debug = require('debug')('routes:result')
-const moment = require('moment')
+import moment from 'moment'
 
-const { Controller } = require('./controller')
+import { query } from 'express-validator'
+import resolveErrors from '../middleware/validation/resolve-errors'
+import * as validators from '../middleware/validation/result'
 
-class ResultController extends Controller {
+import authenticate from '../middleware/auth'
+
+import { Config, Get, Post, Controller } from './controller'
+
+@Config({ debugName: 'result' })
+export default class ResultController extends Controller {
   /**
    * Gets a user's or all results for a quiz as listings or full
    */
+  @Get('/', [
+    query('format', 'Valid formats: listing, full')
+      .custom(format => format === 'listing' || format === 'full')
+      .optional(),
+    query('quiz', 'Quiz id is required').exists(),
+    query('user')
+      .exists()
+      .optional(),
+    resolveErrors,
+    authenticate({ required: true })
+  ])
   async getResult(req, res, next) {
     const { id: userId } = req.user
     const { format, user: queryUser, quiz: quizId } = req.query
@@ -85,6 +103,12 @@ class ResultController extends Controller {
   /**
    * Posts a response to a quiz
    */
+  @Post('/', [
+    authenticate({ required: true }),
+    validators.checkAnswers,
+    query('quiz', 'Quiz id is required').exists(),
+    resolveErrors
+  ])
   async postResult(req, res, next) {
     const { id: userId } = req.user
     const { answers } = req.body
@@ -92,12 +116,11 @@ class ResultController extends Controller {
 
     try {
       const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
-
       if (!quiz) {
         res.status(404).end()
         return next()
       }
-      if (!this._canUserViewQuiz(userId, quiz)) {
+      if (!this.canUserViewQuiz(userId, quiz)) {
         res.status(403).end()
         return next()
       }
@@ -120,6 +143,7 @@ class ResultController extends Controller {
       }
       await this.serviceLocator.user.addResult(userId, resultId)
       await this.serviceLocator.quiz.addResult(quiz._id, resultId)
+
       res.json({ id: resultId })
     } catch (error) {
       debug(error)
@@ -128,7 +152,7 @@ class ResultController extends Controller {
     return next()
   }
 
-  _canUserViewQuiz(userId, quiz) {
+  private canUserViewQuiz(userId, quiz) {
     return (
       quiz.isPublic ||
       quiz.user.toString() === userId ||
@@ -136,5 +160,3 @@ class ResultController extends Controller {
     )
   }
 }
-
-exports.ResultController = ResultController

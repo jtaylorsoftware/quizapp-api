@@ -1,10 +1,10 @@
-const { MongoClient } = require('mongodb')
+import { MongoClient } from 'mongodb'
 
 interface DbConfig {
   url: string
 }
 
-export async function connectToDb(config: DbConfig) {
+export default async function(config: DbConfig) {
   const client = await MongoClient.connect(config.url, {
     useUnifiedTopology: true,
     useNewUrlParser: true

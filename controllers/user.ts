@@ -1,14 +1,21 @@
 const debug = require('debug')('routes:user')
-const jwt = require('jsonwebtoken')
+import jwt from 'jsonwebtoken'
+import { check, query } from 'express-validator'
+import resolveErrors from '../middleware/validation/resolve-errors'
+import * as validators from '../middleware/validation/user'
 
-const { Controller } = require('./controller')
+import authenticate from '../middleware/auth'
 
-export class UserController extends Controller {
+import { Config, Get, Put, Post, Delete, Controller } from './controller'
+
+@Config({ debugName: 'user' })
+export default class UserController extends Controller {
   /**
    * Returns an authenticated user's info without sensitive info,
    * @param req request object
    * @param req.user user with id property
    */
+  @Get('/me', [authenticate({ required: true })])
   async getUserData(req, res, next) {
     try {
       const user = await this.serviceLocator.user.getUserById(req.user.id)
@@ -30,6 +37,13 @@ export class UserController extends Controller {
    * @param req.query request query object
    * @param req.query.format string describing if format is full or listing
    */
+  @Get('/me/quizzes', [
+    authenticate({ required: true }),
+    query('format', 'Valid formats: listing, full')
+      .custom(format => format === 'listing' || format === 'full')
+      .optional(),
+    resolveErrors
+  ])
   async getUsersQuizzes(req, res, next) {
     const { format } = req.query
     const { id: userId } = req.user
@@ -73,6 +87,13 @@ export class UserController extends Controller {
    * @param req.query request query object
    * @param req.query.format string describing if format is full or listing
    */
+  @Get('/me/results', [
+    authenticate({ required: true }),
+    query('format', 'Valid formats: listing, full')
+      .custom(format => format === 'listing' || format === 'full')
+      .optional(),
+    resolveErrors
+  ])
   async getUsersResults(req, res, next) {
     const { format } = req.query
     const { id: userId } = req.user
@@ -121,6 +142,11 @@ export class UserController extends Controller {
    * @param req.body json body of request
    * @param req.body.email the new email to use
    */
+  @Put('/me/email', [
+    authenticate({ required: true }),
+    validators.checkEmail,
+    resolveErrors
+  ])
   async changeUserEmail(req, res, next) {
     const user = req.user.id
     const { email } = req.body
@@ -150,6 +176,11 @@ export class UserController extends Controller {
    * @param req.body json body of request
    * @param req.body.password the new password to use
    */
+  @Put('/me/password', [
+    authenticate({ required: true }),
+    validators.checkPassword,
+    resolveErrors
+  ])
   async changeUserPassword(req, res, next) {
     const user = req.user.id
     const { password } = req.body
@@ -168,6 +199,7 @@ export class UserController extends Controller {
    * @param req request object
    * @param req.user user with id property
    */
+  @Delete('/me', [authenticate({ required: true })])
   async deleteUser(req, res, next) {
     const userId = req.user.id
     try {
@@ -220,6 +252,7 @@ export class UserController extends Controller {
    * @param req.params request params
    * @param req.params.id id of user to find
    */
+  @Get('/:id')
   async getUserById(req, res, next) {
     try {
       const userData = await this.serviceLocator.user.getUserById(req.params.id)
@@ -243,6 +276,17 @@ export class UserController extends Controller {
    * @param req.body.username the user's username
    * @param req.body.password the user's password
    */
+  @Post('/auth', [
+    check('username', 'Please enter your username.').isLength({
+      min: 1,
+      max: 50
+    }),
+    check('password', 'Please enter your password.').isLength({
+      min: 1,
+      max: 50
+    }),
+    resolveErrors
+  ])
   async authorizeUser(req, res, next) {
     const { username, password } = req.body
     try {
@@ -280,6 +324,12 @@ export class UserController extends Controller {
    * @param req.body.password the user's password
    * @param req.body.email the user's email
    */
+  @Post('/', [
+    validators.checkUsername,
+    validators.checkEmail,
+    validators.checkPassword,
+    resolveErrors
+  ])
   async registerUser(req, res, next) {
     const { username, email, password } = req.body
     try {

@@ -1,7 +1,7 @@
-import { Repository } from './repository'
 import { ObjectId } from 'mongodb'
+import Repository from './repository'
 
-export class ResultRepository extends Repository {
+export default class ResultRepository extends Repository {
   /**
    * Finds a quiz result by the user id and quiz id
    * @param userId Id of user that has the result

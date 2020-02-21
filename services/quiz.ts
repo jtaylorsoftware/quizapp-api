@@ -1,7 +1,7 @@
-import { Quiz } from '../models/quiz'
-import { QuizRepository } from '../repositories/quiz'
+import Quiz from '../models/quiz'
+import QuizRepository from '../repositories/quiz'
 
-export class QuizService {
+export default class QuizService {
   constructor(private quizRepository: QuizRepository) {
     this.quizRepository = quizRepository
   }

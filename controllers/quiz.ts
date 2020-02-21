@@ -1,11 +1,25 @@
 const debug = require('debug')('routes:quiz')
-const { Controller } = require('./controller')
-const { isValidExpiration } = require('../middleware/validation/quiz')
+import { isValidExpiration } from '../middleware/validation/quiz'
+import { query } from 'express-validator'
 
-class QuizController extends Controller {
+import authenticate from '../middleware/auth'
+import resolveErrors from '../middleware/validation/resolve-errors'
+import * as validators from '../middleware/validation/quiz'
+
+import { Config, Get, Put, Post, Delete, Controller } from './controller'
+
+@Config({ debugName: 'quiz' })
+export default class QuizController extends Controller {
   /**
    * Returns a quiz's data as a listing or full format only if signed in user owns quiz
    */
+  @Get('/:id', [
+    query('format', 'Valid formats: listing, full')
+      .custom(format => format === 'listing' || format === 'full')
+      .optional(),
+    resolveErrors,
+    authenticate({ required: true })
+  ])
   async getQuiz(req, res, next) {
     const { id: userId } = req.user
     const { id: quizId } = req.params
@@ -44,6 +58,7 @@ class QuizController extends Controller {
   /**
    * Returns a quiz as a form for a user to answer
    */
+  @Get('/:id/form', [authenticate({ required: true })])
   async getQuizForm(req, res, next) {
     const { id: userId } = req.user
     const { id: quizId } = req.params
@@ -54,11 +69,11 @@ class QuizController extends Controller {
         return next()
       }
 
-      if (!this._canUserViewQuiz(userId, quiz)) {
+      if (!this.canUserViewQuiz(userId, quiz)) {
         res.status(403).end()
         return next()
       }
-      const answerForm = this._convertToAnswerForm(quiz)
+      const answerForm = this.convertToAnswerForm(quiz)
       const [username] = await this.serviceLocator.user.getUsernamesFromIds([
         answerForm.user
       ])
@@ -74,6 +89,15 @@ class QuizController extends Controller {
   /**
    * Creates a new quiz
    */
+  @Post('/', [
+    authenticate({ required: true }),
+    validators.checkTitle,
+    validators.checkIsPublic,
+    validators.checkExpiration,
+    validators.checkAllowedUsers,
+    validators.checkQuestions,
+    resolveErrors
+  ])
   async createQuiz(req, res, next) {
     const { id: userId } = req.user
     const { title, isPublic, questions, ...quiz } = req.body
@@ -107,12 +131,20 @@ class QuizController extends Controller {
   /**
    * Edits an existing quiz
    */
+  @Put('/:id/edit', [
+    authenticate({ required: true }),
+    validators.checkTitle,
+    validators.checkIsPublic,
+    validators.checkAllowedUsers,
+    validators.checkQuestions,
+    resolveErrors
+  ])
   async editQuiz(req, res, next) {
     const { user } = req
     const quiz = req.body
 
     const { id: quizId } = req.params
-    if (!this._userOwnsQuiz(user.id, quizId)) {
+    if (!this.userOwnsQuiz(user.id, quizId)) {
       res.status(403).end()
       return next()
     }
@@ -171,10 +203,11 @@ class QuizController extends Controller {
   /**
    * Deletes a quiz
    */
+  @Delete('/:id', [authenticate({ required: true })])
   async deleteQuiz(req, res, next) {
     const { user } = req
     const { id: quizId } = req.params
-    if (!this._userOwnsQuiz(user.id, quizId)) {
+    if (!this.userOwnsQuiz(user.id, quizId)) {
       res.status(403).end()
       return next()
     }
@@ -201,11 +234,11 @@ class QuizController extends Controller {
     return next()
   }
 
-  _userOwnsQuiz(userId, quizId) {
+  private userOwnsQuiz(userId, quizId) {
     return userId !== quizId
   }
 
-  _canUserViewQuiz(userId, quiz) {
+  private canUserViewQuiz(userId, quiz) {
     return (
       quiz.isPublic ||
       quiz.user.toString() === userId ||
@@ -213,7 +246,7 @@ class QuizController extends Controller {
     )
   }
 
-  _convertToAnswerForm(quiz) {
+  private convertToAnswerForm(quiz) {
     const {
       allowedUsers,
       showCorrectAnswers,
@@ -229,5 +262,3 @@ class QuizController extends Controller {
     return answerForm
   }
 }
-
-exports.QuizController = QuizController

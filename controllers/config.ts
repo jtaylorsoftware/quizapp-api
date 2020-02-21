@@ -1,20 +1,20 @@
 import { Db } from 'mongodb'
 
-const { UserRepository } = require('./repositories/user')
-const { QuizRepository } = require('./repositories/quiz')
-const { ResultRepository } = require('./repositories/result')
+import UserRepository from '../repositories/user'
+import QuizRepository from '../repositories/quiz'
+import ResultRepository from '../repositories/result'
 
-const { UserService } = require('./services/user')
-const { QuizService } = require('./services/quiz')
-const { ResultService } = require('./services/result')
+import UserService from '../services/user'
+import QuizService from '../services/quiz'
+import ResultService from '../services/result'
 
-const { ServiceLocator } = require('./services/servicelocator')
+import ServiceLocator from '../services/servicelocator'
 
-const { configUserRoute } = require('./routes/user')
-const { configQuizRoute } = require('./routes/quiz')
-const { configResultRoute } = require('./routes/result')
+import UserController from './user'
+import QuizController from './quiz'
+import ResultController from './result'
 
-export const config = (db: Db) => {
+export default function(db: Db) {
   let userRepository
   let quizRepository
   let resultRepository
@@ -50,8 +50,8 @@ export const config = (db: Db) => {
   )
 
   return {
-    users: configUserRoute(serviceLocator),
-    quizzes: configQuizRoute(serviceLocator),
-    results: configResultRoute(serviceLocator)
+    users: new UserController(serviceLocator),
+    quizzes: new QuizController(serviceLocator),
+    results: new ResultController(serviceLocator)
   }
 }

@@ -1,8 +1,8 @@
-import { UserService } from './user'
-import { QuizService } from './quiz'
-import { ResultService } from './result'
+import UserService from './user'
+import QuizService from './quiz'
+import ResultService from './result'
 
-export class ServiceLocator {
+export default class ServiceLocator {
   constructor(
     private userService: UserService,
     private quizService: QuizService,

@@ -1,13 +1,13 @@
-const { body } = require('express-validator')
+import { body } from 'express-validator'
 
 interface ResultAnswer {
   choice: number
 }
-export const answersAreValid = (answers: ResultAnswer[]) =>
-  answers.every(
+export function answersAreValid(answers: ResultAnswer[]) {
+  return answers.every(
     ans => typeof ans === 'object' && typeof ans.choice === 'number'
   )
-
+}
 export const checkAnswers = body(
   'answers',
   "Answers must be an array of objects with one numeric property 'choice'"

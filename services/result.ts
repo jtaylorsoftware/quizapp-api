@@ -1,9 +1,9 @@
-const async = require('async')
+import async from 'async'
 
-import { ResultRepository } from '../repositories/result'
-import { Result } from '../models/result'
+import ResultRepository from '../repositories/result'
+import Result from '../models/result'
 
-export class ResultService {
+export default class ResultService {
   constructor(private resultRepository: ResultRepository) {
     this.resultRepository = resultRepository
   }
@@ -25,14 +25,24 @@ export class ResultService {
     return result
   }
 
-  async createResult(answers, userId, quiz) {
+  async createResult(
+    answers: any[],
+    userId: any,
+    quiz: any
+  ): Promise<[string, any[]]> {
     const errors = []
 
     if (!quiz.allowMultipleResponses) {
-      const duplicateResult = await async.some(quiz.results, async resultId => {
-        const result = await this.resultRepository.findById(resultId)
-        return result && result.user.toString() === userId
-      })
+      const duplicateResult: any = await async.some(
+        quiz.results,
+        async (resultId: string) => {
+          console.log('in async')
+          const result = await this.resultRepository.findById(resultId)
+          console.log('got result', result)
+          console.log(result && result.user.toString() === userId)
+          return result && result.user.toString() === userId
+        }
+      )
       if (duplicateResult) {
         errors.push('duplicate')
         return [null, errors]
@@ -63,7 +73,7 @@ export class ResultService {
         }
       }
     }
-    let result: Result
+    let result: Result | any = {}
     if (errors.length === 0) {
       result = await this.resultRepository.insert(
         new Result(userId, quiz._id, quiz.user, answers, score)
