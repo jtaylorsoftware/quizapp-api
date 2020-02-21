@@ -7,9 +7,9 @@ const { connectToDb } = require('./database/db')
 
 /**
  * Starts the server
- * @param {Number} port Port that server will listen on
+ * @param port Port that server will listen on
  */
-exports.startServer = async port => {
+export const startServer = async (port: number) => {
   const { db } = await connectToDb({ url: process.env.DB_URL })
   console.log('Connected to Mongodb')
 

@@ -7,8 +7,9 @@ const { resolveErrors } = require('../middleware/validation/resolve-errors')
 const validators = require('../middleware/validation/user')
 
 const { UserController } = require('../controllers/user')
+import { ServiceLocator } from '../services/servicelocator'
 
-exports.configUserRoute = serviceLocator => {
+export const configUserRoute = (serviceLocator: ServiceLocator) => {
   const userController = new UserController(serviceLocator)
 
   const users = express.Router()

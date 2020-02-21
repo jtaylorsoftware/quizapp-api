@@ -8,8 +8,9 @@ const validators = require('../middleware/validation/quiz')
 const debug = require('debug')
 
 const { QuizController } = require('../controllers/quiz')
+import { ServiceLocator } from '../services/servicelocator'
 
-exports.configQuizRoute = serviceLocator => {
+export const configQuizRoute = (serviceLocator: ServiceLocator) => {
   const quizController = new QuizController(serviceLocator)
 
   const quizzes = express.Router()

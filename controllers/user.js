@@ -3,11 +3,11 @@ const jwt = require('jsonwebtoken')
 
 const { Controller } = require('./controller')
 
-class UserController extends Controller {
+export class UserController extends Controller {
   /**
    * Returns an authenticated user's info without sensitive info,
-   * @param {object} req request object
-   * @param {{ id: string }} req.user user with id property
+   * @param req request object
+   * @param req.user user with id property
    */
   async getUserData(req, res, next) {
     try {
@@ -26,9 +26,9 @@ class UserController extends Controller {
   /**
    * Returns the user's quizzes as either listing or full data.
    * By default, full if no query string supplied.
-   * @param {object} req request object
-   * @param {object} req.query request query object
-   * @param {string} req.query.format string describing if format is full or listing
+   * @param req request object
+   * @param req.query request query object
+   * @param req.query.format string describing if format is full or listing
    */
   async getUsersQuizzes(req, res, next) {
     const { format } = req.query
@@ -69,9 +69,9 @@ class UserController extends Controller {
 
   /**
    * Returns the user's results for all quizzes as listing or full format.
-   * @param {object} req request object
-   * @param {object} req.query request query object
-   * @param {string} req.query.format string describing if format is full or listing
+   * @param req request object
+   * @param req.query request query object
+   * @param req.query.format string describing if format is full or listing
    */
   async getUsersResults(req, res, next) {
     const { format } = req.query
@@ -116,10 +116,10 @@ class UserController extends Controller {
 
   /**
    * Updates the authenticated user's email
-   * @param {object} req request object
-   * @param {{ id: string }} req.user user with id property
-   * @param {object} req.body json body of request
-   * @param {string} req.body.email the new email to use
+   * @param req request object
+   * @param req.user user with id property
+   * @param req.body json body of request
+   * @param req.body.email the new email to use
    */
   async changeUserEmail(req, res, next) {
     const user = req.user.id
@@ -145,10 +145,10 @@ class UserController extends Controller {
 
   /**
    * Updates the authenticated user's password
-   * @param {object} req request object
-   * @param {{ id: string }} req.user user with id property
-   * @param {object} req.body json body of request
-   * @param {string} req.body.password the new password to use
+   * @param req request object
+   * @param req.user user with id property
+   * @param req.body json body of request
+   * @param req.body.password the new password to use
    */
   async changeUserPassword(req, res, next) {
     const user = req.user.id
@@ -165,8 +165,8 @@ class UserController extends Controller {
 
   /**
    * Deletes a user
-   * @param {object} req request object
-   * @param {{ id: string }} req.user user with id property
+   * @param req request object
+   * @param req.user user with id property
    */
   async deleteUser(req, res, next) {
     const userId = req.user.id
@@ -216,9 +216,9 @@ class UserController extends Controller {
 
   /**
    * Returns a user by their id without their email, password, or registration date
-   * @param {object} req request object
-   * @param {object} req.params request params
-   * @param {string} req.params.id id of user to find
+   * @param req request object
+   * @param req.params request params
+   * @param req.params.id id of user to find
    */
   async getUserById(req, res, next) {
     try {
@@ -238,10 +238,10 @@ class UserController extends Controller {
 
   /**
    * Authorizes a user
-   * @param {object} req request object
-   * @param {object} req.body json body of request
-   * @param {string} req.body.username the user's username
-   * @param {string} req.body.password the user's password
+   * @param req request object
+   * @param req.body json body of request
+   * @param req.body.username the user's username
+   * @param req.body.password the user's password
    */
   async authorizeUser(req, res, next) {
     const { username, password } = req.body
@@ -274,11 +274,11 @@ class UserController extends Controller {
 
   /**
    * Registers a user
-   * @param {object} req request object
-   * @param {object} req.body json body of request
-   * @param {string} req.body.username the user's username
-   * @param {string} req.body.password the user's password
-   * @param {string} req.body.email the user's email
+   * @param req request object
+   * @param req.body json body of request
+   * @param req.body.username the user's username
+   * @param req.body.password the user's password
+   * @param req.body.email the user's email
    */
   async registerUser(req, res, next) {
     const { username, email, password } = req.body
@@ -311,5 +311,3 @@ class UserController extends Controller {
     return next()
   }
 }
-
-exports.UserController = UserController

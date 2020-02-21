@@ -1,23 +1,24 @@
 const async = require('async')
 
-const { Result } = require('../models/result')
+import { ResultRepository } from '../repositories/result'
+import { Result } from '../models/result'
 
-class ResultService {
-  constructor(resultRepository) {
-    this._resultRepository = resultRepository
+export class ResultService {
+  constructor(private resultRepository: ResultRepository) {
+    this.resultRepository = resultRepository
   }
 
   async getResult(resultId) {
-    const result = await this._resultRepository.findById(resultId)
+    const result = await this.resultRepository.findById(resultId)
     return result
   }
 
   async deleteResult(resultId) {
-    await this._resultRepository.delete(resultId)
+    await this.resultRepository.delete(resultId)
   }
 
   async getUserResultForQuiz(userId, quizId) {
-    const result = await this._resultRepository.findByUserAndQuizId(
+    const result = await this.resultRepository.findByUserAndQuizId(
       userId,
       quizId
     )
@@ -29,7 +30,7 @@ class ResultService {
 
     if (!quiz.allowMultipleResponses) {
       const duplicateResult = await async.some(quiz.results, async resultId => {
-        const result = await this._resultRepository.findById(resultId)
+        const result = await this.resultRepository.findById(resultId)
         return result && result.user.toString() === userId
       })
       if (duplicateResult) {
@@ -62,9 +63,9 @@ class ResultService {
         }
       }
     }
-    let result = {}
+    let result: Result
     if (errors.length === 0) {
-      result = await this._resultRepository.insert(
+      result = await this.resultRepository.insert(
         new Result(userId, quiz._id, quiz.user, answers, score)
       )
     }
@@ -72,5 +73,3 @@ class ResultService {
     return [result._id, errors]
   }
 }
-
-exports.ResultService = ResultService

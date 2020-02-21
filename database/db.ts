@@ -1,6 +1,10 @@
 const { MongoClient } = require('mongodb')
 
-exports.connectToDb = async config => {
+interface DbConfig {
+  url: string
+}
+
+export async function connectToDb(config: DbConfig) {
   const client = await MongoClient.connect(config.url, {
     useUnifiedTopology: true,
     useNewUrlParser: true

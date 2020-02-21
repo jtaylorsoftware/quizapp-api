@@ -1,7 +1,7 @@
 const debug = require('debug')('middleware:auth')
 const jwt = require('jsonwebtoken')
 
-const verifyToken = token => {
+const verifyToken = (token: string) => {
   let user = null
   if (token) {
     try {
@@ -16,7 +16,14 @@ const verifyToken = token => {
   return user
 }
 
-exports.authenticate = options => async (req, res, next) => {
+interface AuthOptions {
+  required: boolean
+}
+export const authenticate = (options: AuthOptions) => async (
+  req: any,
+  res: any,
+  next: any
+) => {
   const token = req.header('x-auth-token')
   debug('authenticating user')
   const user = verifyToken(token)

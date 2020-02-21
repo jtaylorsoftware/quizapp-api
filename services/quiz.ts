@@ -1,50 +1,42 @@
-const { Quiz } = require('../models/quiz')
+import { Quiz } from '../models/quiz'
+import { QuizRepository } from '../repositories/quiz'
 
-class QuizService {
-  constructor(quizRepository) {
-    this._quizRepository = quizRepository
+export class QuizService {
+  constructor(private quizRepository: QuizRepository) {
+    this.quizRepository = quizRepository
   }
 
   /**
    * Gets a quiz by id
-   * @param {string} quizId
-   * @returns {Quiz}
+   * @param quizId
+   * @returns
    */
   async getQuizById(quizId) {
-    const quiz = await this._quizRepository.findById(quizId)
+    const quiz = await this.quizRepository.findById(quizId)
     return quiz
   }
 
-  // /**
-  //  * Gets a user's responses to a quiz
-  //  * @param {string} quizId
-  //  * @param {string} userId
-  //  */
-  // async getUserResponsesToQuiz(quizId, userId) {
-  //   // TODO
-  // }
-
   /**
    * Adds a result to the list of quiz results
-   * @param {string|ObjectId} quizId
-   * @param {string|ObjectId} resultId
+   * @param quizId
+   * @param resultId
    */
   async addResult(quizId, resultId) {
-    await this._quizRepository.addResult(quizId, resultId)
+    await this.quizRepository.addResult(quizId, resultId)
   }
 
   /**
    * Removes a result from the quiz's list of results.
-   * @param {string|ObjectId} quizId
-   * @param {string|ObjectId} resultId
+   * @param quizId
+   * @param resultId
    */
   async removeResult(quizId, resultId) {
-    await this._quizRepository.removeResult(quizId, resultId)
+    await this.quizRepository.removeResult(quizId, resultId)
   }
 
   /**
    * Creates a new quiz
-   * @param {Quiz} quiz quiz data
+   * @param quiz quiz data
    * @returns {string} created quiz's id
    */
   async createQuiz({
@@ -56,7 +48,7 @@ class QuizService {
     allowedUsers
   }) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
-    const quiz = await this._quizRepository.insert(
+    const quiz = await this.quizRepository.insert(
       new Quiz(user, title, expiration, isPublic, questions, allowedUsers)
     )
 
@@ -66,15 +58,15 @@ class QuizService {
 
   /**
    * Updates an existing quiz
-   * @param {string} quizId id of quiz to update
-   * @param {Quiz} quiz data to replace current data with
+   * @param quizId id of quiz to update
+   * @param quiz data to replace current data with
    */
   async updateQuiz(
     quizId,
     { title, expiration, isPublic, questions, allowedUsers }
   ) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
-    await this._quizRepository.update(quizId, {
+    await this.quizRepository.update(quizId, {
       title,
       isPublic,
       questions,
@@ -85,11 +77,9 @@ class QuizService {
 
   /**
    * Deletes a quiz by id
-   * @param {string} quizId
+   * @param quizId
    */
   async deleteQuiz(quizId) {
-    await this._quizRepository.delete(quizId)
+    await this.quizRepository.delete(quizId)
   }
 }
-
-exports.QuizService = QuizService

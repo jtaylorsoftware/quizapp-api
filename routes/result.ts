@@ -9,8 +9,9 @@ const { resolveErrors } = require('../middleware/validation/resolve-errors')
 const debug = require('debug')
 
 const { ResultController } = require('../controllers/result')
+import { ServiceLocator } from '../services/servicelocator'
 
-exports.configResultRoute = serviceLocator => {
+export const configResultRoute = (serviceLocator: ServiceLocator) => {
   const resultController = new ResultController(serviceLocator)
 
   const results = express.Router()

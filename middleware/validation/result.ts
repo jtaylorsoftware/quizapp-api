@@ -1,17 +1,16 @@
 const { body } = require('express-validator')
 
-const answersAreValid = answers =>
+interface ResultAnswer {
+  choice: number
+}
+export const answersAreValid = (answers: ResultAnswer[]) =>
   answers.every(
     ans => typeof ans === 'object' && typeof ans.choice === 'number'
   )
 
-const checkAnswers = body(
+export const checkAnswers = body(
   'answers',
   "Answers must be an array of objects with one numeric property 'choice'"
 )
   .isArray()
   .custom(answersAreValid)
-
-module.exports = {
-  checkAnswers
-}

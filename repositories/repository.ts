@@ -1,26 +1,26 @@
-const { ObjectId } = require('mongodb')
+import { ObjectId } from 'mongodb'
 
-exports.Repository = class Repository {
-  constructor(store) {
+export abstract class Repository {
+  constructor(protected store: any) {
     this.store = store
   }
 
   /**
    * Adds an entity to the repository
-   * @param {Object} doc entity document
-   * @returns {Object} Inserted document
+   * @param doc entity document
+   * @returns Inserted document
    */
-  async insert(doc) {
+  async insert(doc: any): Promise<any> {
     const { ops } = await this.store.insertOne(doc)
     return ops[0]
   }
 
   /**
    * Finds a single entity by id
-   * @param {String} id
-   * @returns {Object} Quiz data
+   * @param id
+   * @returns Quiz data
    */
-  async findById(id) {
+  async findById(id: string | ObjectId): Promise<any | null> {
     if (!ObjectId.isValid(id)) {
       return null
     }
@@ -29,9 +29,9 @@ exports.Repository = class Repository {
 
   /**
    * Deletes a single entity by id
-   * @param {Object} ID
+   * @param ID
    */
-  async delete(id) {
+  async delete(id: string | ObjectId): Promise<void> {
     if (!ObjectId.isValid(id)) {
       return
     }
@@ -40,10 +40,10 @@ exports.Repository = class Repository {
 
   /**
    * Updates an entire entity
-   * @param {Object} id
-   * @param {Object} entity document to replace current values
+   * @param id
+   * @param entity document to replace current values
    */
-  async update(id, entity) {
+  async update(id: string | ObjectId, entity: any): Promise<void> {
     if (!ObjectId.isValid(id)) {
       return
     }
@@ -52,9 +52,5 @@ exports.Repository = class Repository {
       { _id: new ObjectId(id) },
       { $set: { ...doc } }
     )
-  }
-
-  static _getObjectIdFromEntity(entity) {
-    return entity._id || (ObjectId.isValid(entity) ? new ObjectId(entity) : '')
   }
 }

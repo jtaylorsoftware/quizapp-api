@@ -3,30 +3,30 @@ const moment = require('moment')
 
 const userValidation = require('./user')
 
-const isValidExpiration = expirationDateStr =>
+export const isValidExpiration = (expirationDateStr: string) =>
   moment(expirationDateStr).isValid() &&
   moment().diff(moment(expirationDateStr)) < 0
 
-const checkExpiration = body(
+export const checkExpiration = body(
   'expiration',
   'Expiration must be a date and time in the future'
 ).custom(isValidExpiration)
 
-const isValidTitle = title => title.length > 0
+export const isValidTitle = (title: string) => title.length > 0
 
-const checkTitle = body('title', "Title can't be empty")
+export const checkTitle = body('title', "Title can't be empty")
   .isString()
   .custom(isValidTitle)
 
-const checkIsPublic = body(
+export const checkIsPublic = body(
   'isPublic',
   'Public setting must be a boolean'
 ).isBoolean()
 
-const allowedUsersAreValid = allowedUsers =>
+export const allowedUsersAreValid = (allowedUsers: string[]) =>
   allowedUsers.every(user => userValidation.isValidUsername(user))
 
-const checkAllowedUsers = body(
+export const checkAllowedUsers = body(
   'allowedUsers',
   'Allowed users must be an array of usernames'
 )
@@ -34,23 +34,29 @@ const checkAllowedUsers = body(
   .custom(allowedUsersAreValid)
   .optional()
 
-const isValidQuestionText = text => text.length > 0
+export const isValidQuestionText = (text: string) => text.length > 0
 
-const MIN_ANSWER_COUNT = 2
+export const MIN_ANSWER_COUNT = 2
 
-const isValidCorrectAnswer = (correctAnswer, answerCount) => {
-  correctAnswer = Number.parseInt(correctAnswer)
+export const isValidCorrectAnswer = (
+  answerStr: string,
+  answerCount: number
+) => {
+  const correctAnswer: number = Number.parseInt(answerStr)
   return (
     !isNaN(correctAnswer) && correctAnswer < answerCount && correctAnswer >= 0
   )
 }
 
-const isValidAnswerText = text => text.length > 0
+export const isValidAnswerText = (text: string) => text.length > 0
 
-const isValidAnswer = answer =>
+interface QuizAnswer {
+  text: string
+}
+export const isValidAnswer = (answer: QuizAnswer) =>
   typeof answer === 'object' && isValidAnswerText(answer.text)
 
-const answersAreValid = answers =>
+export const answersAreValid = (answers: QuizAnswer[]) =>
   answers instanceof Array && answers.length >= MIN_ANSWER_COUNT
 
 // const isValidQuestion = question =>
@@ -58,7 +64,7 @@ const answersAreValid = answers =>
 //   isValidCorrectAnswer(question.correctAnswer, question.answers.length) &&
 //   answersAreValid(question.answers)
 
-const checkQuestions = body('questions').custom(questions => {
+export const checkQuestions = body('questions').custom(questions => {
   if (!(questions instanceof Array)) {
     throw Error('Questions must be an array')
   }
@@ -84,12 +90,3 @@ const checkQuestions = body('questions').custom(questions => {
 
   return true
 })
-
-module.exports = {
-  isValidExpiration,
-  checkExpiration,
-  checkTitle,
-  checkIsPublic,
-  checkAllowedUsers,
-  checkQuestions
-}

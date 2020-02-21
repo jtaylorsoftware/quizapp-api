@@ -1,3 +1,5 @@
+import { Db } from 'mongodb'
+
 const { UserRepository } = require('./repositories/user')
 const { QuizRepository } = require('./repositories/quiz')
 const { ResultRepository } = require('./repositories/result')
@@ -12,7 +14,7 @@ const { configUserRoute } = require('./routes/user')
 const { configQuizRoute } = require('./routes/quiz')
 const { configResultRoute } = require('./routes/result')
 
-exports.config = db => {
+export const config = (db: Db) => {
   let userRepository
   let quizRepository
   let resultRepository
