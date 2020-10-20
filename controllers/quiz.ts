@@ -40,6 +40,7 @@ export default class QuizController extends Controller {
         const allowedUsers = await this.serviceLocator.user.getUsernamesFromIds(
           quiz.allowedUsers
         )
+
         quiz.allowedUsers = allowedUsers
         res.json(quiz)
       } else {
@@ -185,11 +186,21 @@ export default class QuizController extends Controller {
         })
         return next()
       }
-
-      const allowedUsers = await this.serviceLocator.user.getIdsFromUsernames(
-        quiz.allowedUsers || []
+      const allowedUsers = new Set(
+        await this.serviceLocator.user.getIdsFromUsernames(
+          quiz.allowedUsers || []
+        )
       )
-      quiz.allowedUsers = allowedUsers
+
+      // Merge user IDs from existing results with the edit's IDs so
+      // the edit cannot remove users that have already taken quiz.
+      for (const resultId of existingQuiz.results) {
+        const result = await this.serviceLocator.result.getResult(resultId)
+        const user = await this.serviceLocator.user.getUserById(result.user)
+        allowedUsers.add(user._id)
+      }
+      quiz.allowedUsers = [...allowedUsers]
+
       await this.serviceLocator.quiz.updateQuiz(quizId, quiz)
       res.status(204).end()
     } catch (error) {
