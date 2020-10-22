@@ -19,9 +19,7 @@ export default class ResultController extends Controller {
       .custom(format => format === 'listing' || format === 'full')
       .optional(),
     query('quiz', 'Quiz id is required').exists(),
-    query('user')
-      .exists()
-      .optional(),
+    query('user').exists().optional(),
     resolveErrors,
     authenticate({ required: true })
   ])
@@ -75,6 +73,13 @@ export default class ResultController extends Controller {
           res.status(403).end()
           return next()
         }
+        const resultUser = await this.serviceLocator.user.getUserById(
+          result.user
+        )
+        if (resultUser) {
+          result.username = resultUser.username
+        }
+
         // get the quiz title and created by
         const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
         if (quiz) {
