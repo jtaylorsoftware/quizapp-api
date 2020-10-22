@@ -6,9 +6,9 @@ import connectToDb from './database/db'
 
 import configControllers from './controllers/config'
 
-const configApp = async () => {
-  const { db } = await connectToDb({ url: process.env.DB_URL })
-  console.log('Connected to Mongodb')
+export const configApp = async () => {
+  const { client, db } = await connectToDb({ url: process.env.DB_URL })
+  // console.log('Connected to Mongodb')
 
   const app = express()
   app.use(helmet())
@@ -35,7 +35,7 @@ const configApp = async () => {
       res.sendFile(path.resolve(__dirname, '../client', 'build', 'index.html'))
     })
   }
-  return app
+  return { client, app }
 }
 
 /**
@@ -43,7 +43,7 @@ const configApp = async () => {
  * @param port Port that server will listen on
  */
 export default async function async(port: number) {
-  const app = await configApp()
+  const { app } = await configApp()
 
   app.listen(port)
 }
