@@ -142,35 +142,35 @@ export default class QuizController extends Controller {
   ])
   async editQuiz(req, res, next) {
     const { user } = req
-    const quiz = req.body
-
+    const quizEdits = req.body
     const { id: quizId } = req.params
-    if (!this.userOwnsQuiz(user.id, quizId)) {
-      res.status(403).end()
-      return next()
-    }
+
     try {
       const existingQuiz = await this.serviceLocator.quiz.getQuizById(quizId)
       if (!existingQuiz) {
         res.status(400).end()
         return next()
       }
+      if (!this.userOwnsQuiz(user.id, existingQuiz)) {
+        res.status(403).end()
+        return next()
+      }
       if (
-        !isValidExpiration(quiz.expiration) &&
-        quiz.expiration !== existingQuiz.expiration
+        !isValidExpiration(quizEdits.expiration) &&
+        quizEdits.expiration !== existingQuiz.expiration
       ) {
         res.status(400).json({
           errors: [
             {
               expiration: 'Expiration must be a date and time in the future',
-              value: quiz.expiration
+              value: quizEdits.expiration
             }
           ]
         })
         return next()
       }
       const existingAnswers = existingQuiz.questions.map(q => q.correctAnswer)
-      const quizAnswers = quiz.questions.map(q => q.correctAnswer)
+      const quizAnswers = quizEdits.questions.map(q => q.correctAnswer)
       if (
         existingAnswers.length !== quizAnswers.length ||
         !existingAnswers.every((ans, ind) => ans === quizAnswers[ind])
@@ -180,7 +180,7 @@ export default class QuizController extends Controller {
             {
               questions:
                 'Cannot change correctAnswers or number of questions for existing quiz',
-              value: quiz
+              value: quizEdits
             }
           ]
         })
@@ -188,7 +188,7 @@ export default class QuizController extends Controller {
       }
       const allowedUsers = new Set(
         await this.serviceLocator.user.getIdsFromUsernames(
-          quiz.allowedUsers || []
+          quizEdits.allowedUsers || []
         )
       )
 
@@ -199,9 +199,9 @@ export default class QuizController extends Controller {
         const user = await this.serviceLocator.user.getUserById(result.user)
         allowedUsers.add(user._id)
       }
-      quiz.allowedUsers = [...allowedUsers]
+      quizEdits.allowedUsers = [...allowedUsers]
 
-      await this.serviceLocator.quiz.updateQuiz(quizId, quiz)
+      await this.serviceLocator.quiz.updateQuiz(quizId, quizEdits)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -218,15 +218,16 @@ export default class QuizController extends Controller {
   async deleteQuiz(req, res, next) {
     const { user } = req
     const { id: quizId } = req.params
-    if (!this.userOwnsQuiz(user.id, quizId)) {
-      res.status(403).end()
-      return next()
-    }
+
     try {
       const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
       // Clean up references to this quiz before finally deleting it
       if (!quiz) {
         return res.status(404).end()
+      }
+      if (!this.userOwnsQuiz(user.id, quiz)) {
+        res.status(403).end()
+        return next()
       }
       for (const resultId of quiz.results) {
         const result = await this.serviceLocator.result.getResult(resultId)
@@ -245,8 +246,8 @@ export default class QuizController extends Controller {
     return next()
   }
 
-  private userOwnsQuiz(userId, quizId) {
-    return userId !== quizId
+  private userOwnsQuiz(userId, quiz) {
+    return userId === quiz.user.toString()
   }
 
   private canUserViewQuiz(userId, quiz) {
