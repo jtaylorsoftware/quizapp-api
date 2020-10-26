@@ -2,7 +2,7 @@ import request from 'supertest'
 
 import jwt from 'jsonwebtoken'
 import express from 'express'
-import mongo from 'mongodb'
+import mongo, { ObjectId } from 'mongodb'
 
 import { configApp } from 'server'
 import User from 'models/user'
@@ -12,7 +12,8 @@ import {
   teacherUser,
   quizzes,
   studentUsername,
-  results
+  results,
+  studentUser
 } from './setup'
 
 describe('/api/users', () => {
@@ -430,6 +431,45 @@ describe('/api/users', () => {
       it('if email is valid and not taken returns status 204', async () => {
         await get(token).send({ email: 'testemail@email.com' }).expect(204)
       })
+    })
+  })
+
+  describe('DELETE /me', () => {
+    const username = studentUsername
+    const password = 'password'
+    let user: User
+    let token = ''
+
+    beforeAll(async () => {
+      let res = await request(app)
+        .post('/api/users/auth')
+        .send({ username, password })
+      ;({ token } = res.body)
+      user = await users.findOne({ username: studentUsername })
+    })
+
+    it('removes the student user, their quizzes, and their results', async () => {
+      await request(app)
+        .delete('/api/users/me')
+        .set('x-auth-token', token)
+        .expect(204)
+      expect(await users.findOne({ username: studentUsername })).toBeNull()
+      await Promise.all(
+        user.quizzes.map(async quiz => {
+          expect(
+            await db.collection('quizzes').findOne({ _id: new ObjectId(quiz) })
+          ).toBeNull()
+        })
+      )
+      await Promise.all(
+        user.results.map(async result => {
+          expect(
+            await db
+              .collection('results')
+              .findOne({ _id: new ObjectId(result) })
+          ).toBeNull()
+        })
+      )
     })
   })
 })

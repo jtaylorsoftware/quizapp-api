@@ -84,6 +84,41 @@ export const quizzes = [
   }
 ]
 
+export const studentQuiz = {
+  user: '',
+  title: 'student quiz',
+  expiration: moment().add(1, 'd').toISOString(),
+  isPublic: true,
+  questions: [
+    {
+      text: 'q1',
+      correctAnswer: 0,
+      answers: [
+        {
+          text: 'answer 1'
+        },
+        {
+          text: 'answer 2'
+        }
+      ]
+    }
+  ],
+  results: [],
+  allowedUsers: []
+}
+
+export const studentQuizResult = {
+  user: '',
+  quiz: '',
+  quizOwner: '',
+  answers: [
+    {
+      choice: 0
+    }
+  ],
+  score: 1.0
+}
+
 export const results = [
   {
     user: '',
@@ -118,18 +153,22 @@ const addUsers = async () => {
   teacherUser.password = await bcrypt.hash(password, salt)
   studentUser.password = await bcrypt.hash(password, salt)
 
-  const { insertedId: creatorId } = await usersCol.insertOne(teacherUser)
-  const { insertedId: takerId } = await usersCol.insertOne(studentUser)
+  const { insertedId: teacherId } = await usersCol.insertOne(teacherUser)
+  const { insertedId: studentId } = await usersCol.insertOne(studentUser)
 
   quizzes.forEach(quiz => {
-    quiz.user = creatorId.toString()
+    quiz.user = teacherId.toString()
   })
-  quizzes[1].allowedUsers.push(takerId.toString())
+  quizzes[1].allowedUsers.push(studentId.toString())
+
+  studentQuiz.user = studentId.toString()
 
   results.forEach(result => {
-    result.user = takerId.toString()
-    result.quizOwner = creatorId.toString()
+    result.user = studentId.toString()
+    result.quizOwner = teacherId.toString()
   })
+
+  studentQuizResult.user = teacherId
 }
 
 const addQuizzes = async () => {
@@ -153,6 +192,16 @@ const addQuizzes = async () => {
   results.forEach((result, ind) => {
     result.quiz = quizzes[ind]['_id'].toString()
   })
+
+  const { insertedId: studentQuizId } = await quizzesCol.insertOne(studentQuiz)
+  await usersCol.updateOne(
+    { username: studentUsername },
+    {
+      $addToSet: {
+        quizzes: studentQuizId
+      }
+    }
+  )
 }
 
 const addResults = async () => {
@@ -184,6 +233,29 @@ const addResults = async () => {
         }
       )
     })
+  )
+
+  const { insertedId: teacherResultId } = await resultsCol.insertOne(
+    studentQuizResult
+  )
+  await usersCol.updateOne(
+    { username: teacherUsername },
+    {
+      $addToSet: {
+        results: teacherResultId
+      }
+    }
+  )
+
+  await quizzesCol.updateOne(
+    {
+      title: studentQuiz.title
+    },
+    {
+      $addToSet: {
+        results: teacherResultId
+      }
+    }
   )
 }
 
