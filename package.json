@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "test": "jest --watchAll --config=unit.jest.config.ts",
-    "test:e2e": "jest --watchAll --testPathPattern=e2e --config=e2e.jest.config.ts",
+    "test:e2e": "jest --testPathPattern=e2e --config=e2e.jest.config.ts",
     "build": "npm install && npx tsc -p build.tsconfig.json && npm install --prefix client && npm run build --prefix client",
     "start": "node build/start.js",
     "server": "npx tsc && DEBUG=routes:*,middleware:* nodemon build/start.js",

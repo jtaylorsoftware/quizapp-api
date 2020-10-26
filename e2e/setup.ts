@@ -13,29 +13,46 @@ require('dotenv').config()
  * of quizzes & results).
  */
 
-export const teacherUsername = 'teacher'
-export const studentUsername = 'student'
-export const password = 'password'
-
-export const teacherUser = {
-  username: teacherUsername,
-  date: moment().toISOString(),
-  email: `${teacherUsername}@email.com`,
-  password,
-  quizzes: [],
-  results: []
+export const teacher = {
+  username: 'teacher',
+  email: 'teacher@email.com',
+  password: 'password'
 }
 
-export const studentUser = {
-  username: studentUsername,
-  date: moment().toISOString(),
-  email: `${studentUsername}@email.com`,
-  password,
-  quizzes: [],
-  results: []
+export const student = {
+  username: 'student',
+  email: 'student@email.com',
+  password: 'password'
 }
 
-export const quizzes = [
+export const extraUser = {
+  username: 'extrauser',
+  email: 'extrauser@email.com',
+  password: 'password'
+}
+
+export const users = [
+  {
+    ...teacher,
+    date: moment().toISOString(),
+    quizzes: [],
+    results: []
+  },
+  {
+    ...student,
+    date: moment().toISOString(),
+    quizzes: [],
+    results: []
+  },
+  {
+    ...extraUser,
+    date: moment().toISOString(),
+    quizzes: [],
+    results: []
+  }
+]
+
+const teacherQuizzes = [
   // public quiz
   {
     user: '',
@@ -59,7 +76,7 @@ export const quizzes = [
     results: [],
     allowedUsers: []
   },
-  // private quiz, no allowed users
+  // private quiz
   {
     user: '',
     title: 'private quiz',
@@ -80,46 +97,49 @@ export const quizzes = [
       }
     ],
     results: [],
+    allowedUsers: [] // will contain extraUser
+  }
+]
+
+const studentQuizzes = [
+  {
+    user: '',
+    title: 'student quiz',
+    expiration: moment().add(1, 'd').toISOString(),
+    isPublic: true,
+    questions: [
+      {
+        text: 'q1',
+        correctAnswer: 0,
+        answers: [
+          {
+            text: 'answer 1'
+          },
+          {
+            text: 'answer 2'
+          }
+        ]
+      }
+    ],
+    results: [],
     allowedUsers: []
   }
 ]
 
-export const studentQuiz = {
-  user: '',
-  title: 'student quiz',
-  expiration: moment().add(1, 'd').toISOString(),
-  isPublic: true,
-  questions: [
-    {
-      text: 'q1',
-      correctAnswer: 0,
-      answers: [
-        {
-          text: 'answer 1'
-        },
-        {
-          text: 'answer 2'
-        }
-      ]
-    }
-  ],
-  results: [],
-  allowedUsers: []
-}
-
-export const studentQuizResult = {
-  user: '',
-  quiz: '',
-  quizOwner: '',
-  answers: [
-    {
-      choice: 0
-    }
-  ],
-  score: 1.0
-}
+export const quizzes = [...teacherQuizzes, ...studentQuizzes]
 
 export const results = [
+  {
+    user: '',
+    quiz: '',
+    quizOwner: '',
+    answers: [
+      {
+        choice: 0
+      }
+    ],
+    score: 0
+  },
   {
     user: '',
     quiz: '',
@@ -150,58 +170,87 @@ let resultsCol: mongo.Collection
 
 const addUsers = async () => {
   const salt = await bcrypt.genSalt(10)
-  teacherUser.password = await bcrypt.hash(password, salt)
-  studentUser.password = await bcrypt.hash(password, salt)
+  const IDs: string[] = await Promise.all(
+    users.map(async user => {
+      user.password = await bcrypt.hash(user.password, salt)
+      const { insertedId } = await usersCol.insertOne(user)
+      return insertedId.toString()
+    })
+  )
 
-  const { insertedId: teacherId } = await usersCol.insertOne(teacherUser)
-  const { insertedId: studentId } = await usersCol.insertOne(studentUser)
+  {
+    const id = users.find(user => user.username === teacher.username)['_id']
+    const extraUserID = users.find(
+      user => user.username === extraUser.username
+    )['_id']
+    teacherQuizzes.forEach(quiz => {
+      quiz.user = id
+      if (!quiz.isPublic) {
+        quiz.allowedUsers.push(extraUserID)
+      }
+    })
+  }
 
-  quizzes.forEach(quiz => {
-    quiz.user = teacherId.toString()
+  {
+    const id = users
+      .find(user => user.username === student.username)
+      ['_id'].toString()
+    studentQuizzes.forEach(quiz => {
+      quiz.user = id
+    })
+  }
+
+  results.forEach((result, ind) => {
+    const id = IDs[ind]
+    result.user = id
+    result.quizOwner = id
   })
-  quizzes[1].allowedUsers.push(studentId.toString())
-
-  studentQuiz.user = studentId.toString()
-
-  results.forEach(result => {
-    result.user = studentId.toString()
-    result.quizOwner = teacherId.toString()
-  })
-
-  studentQuizResult.user = teacherId
 }
 
 const addQuizzes = async () => {
-  const promises = quizzes.map(async quiz => {
-    const { insertedId } = await quizzesCol.insertOne(quiz)
-    return insertedId.toString()
-  })
-  const ids = await Promise.all(promises)
+  {
+    // add teacher quizzes
+    const promises = teacherQuizzes.map(async quiz => {
+      const { insertedId } = await quizzesCol.insertOne(quiz)
+      return insertedId.toString()
+    })
+    const ids = await Promise.all(promises)
 
-  await usersCol.updateOne(
-    { username: teacherUsername },
-    {
-      $addToSet: {
-        quizzes: {
-          $each: ids
+    await usersCol.updateOne(
+      { username: teacher.username },
+      {
+        $addToSet: {
+          quizzes: {
+            $each: ids
+          }
         }
       }
-    }
-  )
+    )
+  }
+
+  {
+    // add student's quizzes
+    const promises = studentQuizzes.map(async quiz => {
+      const { insertedId } = await quizzesCol.insertOne(quiz)
+      return insertedId.toString()
+    })
+    const ids = await Promise.all(promises)
+
+    await usersCol.updateOne(
+      { username: student.username },
+      {
+        $addToSet: {
+          quizzes: {
+            $each: ids
+          }
+        }
+      }
+    )
+  }
 
   results.forEach((result, ind) => {
     result.quiz = quizzes[ind]['_id'].toString()
   })
-
-  const { insertedId: studentQuizId } = await quizzesCol.insertOne(studentQuiz)
-  await usersCol.updateOne(
-    { username: studentUsername },
-    {
-      $addToSet: {
-        quizzes: studentQuizId
-      }
-    }
-  )
 }
 
 const addResults = async () => {
@@ -211,15 +260,19 @@ const addResults = async () => {
   })
   const ids = await Promise.all(promises)
 
-  await usersCol.updateOne(
-    { username: studentUsername },
-    {
-      $addToSet: {
-        results: {
-          $each: ids
+  await Promise.all(
+    users.map(async (user, ind) => {
+      await usersCol.updateOne(
+        {
+          username: user.username
+        },
+        {
+          $addToSet: {
+            results: ids[ind]
+          }
         }
-      }
-    }
+      )
+    })
   )
 
   await Promise.all(
@@ -233,29 +286,6 @@ const addResults = async () => {
         }
       )
     })
-  )
-
-  const { insertedId: teacherResultId } = await resultsCol.insertOne(
-    studentQuizResult
-  )
-  await usersCol.updateOne(
-    { username: teacherUsername },
-    {
-      $addToSet: {
-        results: teacherResultId
-      }
-    }
-  )
-
-  await quizzesCol.updateOne(
-    {
-      title: studentQuiz.title
-    },
-    {
-      $addToSet: {
-        results: teacherResultId
-      }
-    }
   )
 }
 
