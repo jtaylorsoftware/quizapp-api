@@ -169,11 +169,19 @@ export default class QuizController extends Controller {
         })
         return next()
       }
-      const existingAnswers = existingQuiz.questions.map(q => q.correctAnswer)
-      const quizAnswers = quizEdits.questions.map(q => q.correctAnswer)
+
+      const questionsCompatible = (q1, q2) => {
+        return (
+          q1.correctAnswer === q2.correctAnswer &&
+          q1.answers.length === q2.answers.length
+        )
+      }
+
       if (
-        existingAnswers.length !== quizAnswers.length ||
-        !existingAnswers.every((ans, ind) => ans === quizAnswers[ind])
+        existingQuiz.questions.length !== quizEdits.questions.length ||
+        !existingQuiz.questions.every((question, ind) =>
+          questionsCompatible(question, quizEdits.questions[ind])
+        )
       ) {
         res.status(409).json({
           errors: [
