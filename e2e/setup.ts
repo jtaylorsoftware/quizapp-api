@@ -170,11 +170,11 @@ let resultsCol: mongo.Collection
 
 const addUsers = async () => {
   const salt = await bcrypt.genSalt(10)
-  const IDs: string[] = await Promise.all(
+  const IDs: mongo.ObjectID[] = await Promise.all(
     users.map(async user => {
       user.password = await bcrypt.hash(user.password, salt)
       const { insertedId } = await usersCol.insertOne(user)
-      return insertedId.toString()
+      return insertedId
     })
   )
 
@@ -192,9 +192,7 @@ const addUsers = async () => {
   }
 
   {
-    const id = users
-      .find(user => user.username === student.username)
-      ['_id'].toString()
+    const id = users.find(user => user.username === student.username)['_id']
     studentQuizzes.forEach(quiz => {
       quiz.user = id
     })
@@ -202,7 +200,9 @@ const addUsers = async () => {
 
   results.forEach((result, ind) => {
     const id = IDs[ind]
+    //@ts-ignore
     result.user = id
+    //@ts-ignore
     result.quizOwner = id
   })
 }
@@ -212,7 +212,7 @@ const addQuizzes = async () => {
     // add teacher quizzes
     const promises = teacherQuizzes.map(async quiz => {
       const { insertedId } = await quizzesCol.insertOne(quiz)
-      return insertedId.toString()
+      return insertedId
     })
     const ids = await Promise.all(promises)
 
@@ -249,14 +249,14 @@ const addQuizzes = async () => {
   }
 
   results.forEach((result, ind) => {
-    result.quiz = quizzes[ind]['_id'].toString()
+    result.quiz = quizzes[ind]['_id']
   })
 }
 
 const addResults = async () => {
   const promises = results.map(async result => {
     const { insertedId } = await resultsCol.insertOne(result)
-    return insertedId.toString()
+    return insertedId
   })
   const ids = await Promise.all(promises)
 
