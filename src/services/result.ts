@@ -36,10 +36,7 @@ export default class ResultService {
       const duplicateResult: any = await async.some(
         quiz.results,
         async (resultId: string) => {
-          console.log('in async')
           const result = await this.resultRepository.findById(resultId)
-          console.log('got result', result)
-          console.log(result && result.user.toString() === userId)
           return result && result.user.toString() === userId
         }
       )
