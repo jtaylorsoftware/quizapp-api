@@ -175,7 +175,6 @@ describe('/api/results', () => {
       let res = await post(quizIds[1], token).send({
         answers: [{ choice: 0 }]
       })
-      console.log(res.body.errors)
       expect(res.body.errors.some(err => err === 'duplicate')).toBeTruthy()
     })
   })
