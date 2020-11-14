@@ -1,8 +1,25 @@
 import { ObjectId } from 'mongodb'
-import User from '../models/user'
+import User from 'models/user'
+import { Inject, Service } from 'express-di'
 import Repository from './repository'
+import DbService from 'services/db'
 
-export default class UserRepository extends Repository {
+@Inject
+export default class UserRepository extends Service() {
+  private _repo: Repository
+
+  constructor(private db: DbService) {
+    super()
+  }
+
+  get repo(): Repository {
+    return this._repo
+  }
+
+  onInit() {
+    this._repo = new Repository(this.db.users)
+  }
+
   /**
    * Updates a user's quizzes
    * @param user User or ID of User to modify
@@ -17,7 +34,7 @@ export default class UserRepository extends Repository {
     }
     const _id: ObjectId = new ObjectId(user)
     const quizId: ObjectId = new ObjectId(quiz)
-    await this.store.updateOne(
+    await this._repo.store.updateOne(
       { _id },
       {
         $addToSet: {
@@ -41,7 +58,7 @@ export default class UserRepository extends Repository {
     }
     const _id: ObjectId = new ObjectId(user)
     const resultId: ObjectId = new ObjectId(result)
-    await this.store.updateOne(
+    await this._repo.store.updateOne(
       { _id },
       {
         $addToSet: {
@@ -65,7 +82,7 @@ export default class UserRepository extends Repository {
     }
     const _id: ObjectId = new ObjectId(user)
     const quizId: ObjectId = new ObjectId(quiz)
-    await this.store.updateOne(
+    await this._repo.store.updateOne(
       { _id },
       {
         $pull: {
@@ -89,7 +106,7 @@ export default class UserRepository extends Repository {
     }
     const _id: ObjectId = new ObjectId(user)
     const resultId: ObjectId = new ObjectId(result)
-    await this.store.updateOne(
+    await this._repo.store.updateOne(
       { _id },
       {
         $pull: {
@@ -105,7 +122,7 @@ export default class UserRepository extends Repository {
    */
   async getUsernames(ids: Array<string | ObjectId>): Promise<User[]> {
     ids = ids.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))
-    const users = await this.store
+    const users = await this._repo.store
       .find({ _id: { $in: ids } })
       .map(user => user.username)
       .toArray()
@@ -118,7 +135,7 @@ export default class UserRepository extends Repository {
    * @returns ids of users with related usernames
    */
   async getUserIds(usernames: string[]): Promise<string[]> {
-    const users = await this.store
+    const users = await this._repo.store
       .find({ username: { $in: usernames } })
       .map(user => user._id)
       .toArray()
@@ -131,7 +148,7 @@ export default class UserRepository extends Repository {
    * @returns User entity without sensitive information
    */
   async findByEmail(email: string): Promise<User> {
-    return await this.store.findOne({ email })
+    return await this._repo.store.findOne({ email })
   }
 
   /**
@@ -140,7 +157,7 @@ export default class UserRepository extends Repository {
    * @returns User entity without sensitive information
    */
   async findByUsername(username: string): Promise<User> {
-    return await this.store.findOne({ username })
+    return await this._repo.store.findOne({ username })
   }
 
   /**
@@ -153,7 +170,7 @@ export default class UserRepository extends Repository {
       return
     }
     const _id: ObjectId = new ObjectId(user)
-    await this.store.findOneAndUpdate({ _id }, { $set: { email } })
+    await this._repo.store.findOneAndUpdate({ _id }, { $set: { email } })
   }
 
   /**
@@ -169,6 +186,6 @@ export default class UserRepository extends Repository {
       return
     }
     const _id: ObjectId = new ObjectId(user)
-    await this.store.findOneAndUpdate({ _id }, { $set: { password } })
+    await this._repo.store.findOneAndUpdate({ _id }, { $set: { password } })
   }
 }

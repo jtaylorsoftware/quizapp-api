@@ -1,20 +1,22 @@
 import async from 'async'
 
-import ResultRepository from '../repositories/result'
-import Result from '../models/result'
+import ResultRepository from 'repositories/result'
+import Result from 'models/result'
+import { Inject, Service } from 'express-di'
 
-export default class ResultService {
+@Inject
+export default class ResultService extends Service() {
   constructor(private resultRepository: ResultRepository) {
-    this.resultRepository = resultRepository
+    super()
   }
 
   async getResult(resultId) {
-    const result = await this.resultRepository.findById(resultId)
+    const result = await this.resultRepository.repo.findById(resultId)
     return result
   }
 
   async deleteResult(resultId) {
-    await this.resultRepository.delete(resultId)
+    await this.resultRepository.repo.delete(resultId)
   }
 
   async getUserResultForQuiz(userId, quizId) {
@@ -36,10 +38,11 @@ export default class ResultService {
       const duplicateResult: any = await async.some(
         quiz.results,
         async (resultId: string) => {
-          const result = await this.resultRepository.findById(resultId)
+          const result = await this.resultRepository.repo.findById(resultId)
           return result && result.user.toString() === userId
         }
       )
+
       if (duplicateResult) {
         errors.push('duplicate')
         return [null, errors]
@@ -72,7 +75,7 @@ export default class ResultService {
     }
     let result: Result | any = {}
     if (errors.length === 0) {
-      result = await this.resultRepository.insert(
+      result = await this.resultRepository.repo.insert(
         new Result(userId, quiz._id, quiz.user, answers, score)
       )
     }

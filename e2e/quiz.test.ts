@@ -3,7 +3,7 @@ import request from 'supertest'
 import express from 'express'
 import mongo from 'mongodb'
 
-import { configApp } from 'server'
+import bootstrap from 'bootstrap-app'
 import Quiz from 'models/quiz'
 
 import { teacher, extraUser } from './setup'
@@ -17,7 +17,7 @@ describe('/api/quizzes', () => {
   let quizzes: mongo.Collection<Quiz>
 
   beforeAll(async () => {
-    ;({ client: dbClient, app: app } = await configApp())
+    ;({ client: dbClient, app: app } = await bootstrap())
     db = await dbClient.db()
     quizzes = db.collection('quizzes')
   })

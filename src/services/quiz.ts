@@ -1,9 +1,11 @@
-import Quiz from '../models/quiz'
-import QuizRepository from '../repositories/quiz'
+import Quiz from 'models/quiz'
+import QuizRepository from 'repositories/quiz'
+import { Inject, Service } from 'express-di'
 
-export default class QuizService {
+@Inject
+export default class QuizService extends Service() {
   constructor(private quizRepository: QuizRepository) {
-    this.quizRepository = quizRepository
+    super()
   }
 
   /**
@@ -12,7 +14,7 @@ export default class QuizService {
    * @returns
    */
   async getQuizById(quizId) {
-    const quiz = await this.quizRepository.findById(quizId)
+    const quiz = await this.quizRepository.repo.findById(quizId)
     return quiz
   }
 
@@ -48,7 +50,7 @@ export default class QuizService {
     allowedUsers
   }) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
-    const quiz = await this.quizRepository.insert(
+    const quiz = await this.quizRepository.repo.insert(
       new Quiz(user, title, expiration, isPublic, questions, allowedUsers)
     )
 
@@ -66,7 +68,7 @@ export default class QuizService {
     { title, expiration, isPublic, questions, allowedUsers }
   ) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
-    await this.quizRepository.update(quizId, {
+    await this.quizRepository.repo.update(quizId, {
       title,
       isPublic,
       questions,
@@ -80,6 +82,6 @@ export default class QuizService {
    * @param quizId
    */
   async deleteQuiz(quizId) {
-    await this.quizRepository.delete(quizId)
+    await this.quizRepository.repo.delete(quizId)
   }
 }

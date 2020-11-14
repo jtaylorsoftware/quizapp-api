@@ -3,13 +3,27 @@ import { isValidExpiration } from '../middleware/validation/quiz'
 import { query } from 'express-validator'
 
 import authenticate from '../middleware/auth'
-import resolveErrors from '../middleware/validation/resolve-errors'
-import * as validators from '../middleware/validation/quiz'
+import resolveErrors from 'middleware/validation/resolve-errors'
+import * as validators from 'middleware/validation/quiz'
 
-import { Config, Get, Put, Post, Delete, Controller } from './controller'
+import { Get, Put, Post, Delete, Controller, Inject } from 'express-di'
 
-@Config({ debugName: 'quiz' })
-export default class QuizController extends Controller {
+import QuizService from 'services/quiz'
+import ResultService from 'services/result'
+import UserService from 'services/user'
+
+@Inject
+export default class QuizController extends Controller({
+  root: '/api/quizzes'
+}) {
+  constructor(
+    private quizzes: QuizService,
+    private results: ResultService,
+    private users: UserService
+  ) {
+    super()
+  }
+
   /**
    * Returns a quiz's data as a listing or full format only if signed in user owns quiz
    */
@@ -25,7 +39,7 @@ export default class QuizController extends Controller {
     const { id: quizId } = req.params
     const { format } = req.query
     try {
-      const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+      const quiz = await this.quizzes.getQuizById(quizId)
       if (!quiz) {
         res.status(404).end()
         return next()
@@ -37,7 +51,7 @@ export default class QuizController extends Controller {
       }
       if (!format || format === 'full') {
         // convert allowed users to usernames
-        const allowedUsers = await this.serviceLocator.user.getUsernamesFromIds(
+        const allowedUsers = await this.users.getUsernamesFromIds(
           quiz.allowedUsers
         )
 
@@ -64,7 +78,7 @@ export default class QuizController extends Controller {
     const { id: userId } = req.user
     const { id: quizId } = req.params
     try {
-      const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+      const quiz = await this.quizzes.getQuizById(quizId)
       if (!quiz) {
         res.status(404).end()
         return next()
@@ -75,9 +89,7 @@ export default class QuizController extends Controller {
         return next()
       }
       const answerForm = this.convertToAnswerForm(quiz)
-      const [username] = await this.serviceLocator.user.getUsernamesFromIds([
-        answerForm.user
-      ])
+      const [username] = await this.users.getUsernamesFromIds([answerForm.user])
       answerForm.user = username
       res.json(answerForm)
     } catch (error) {
@@ -104,15 +116,15 @@ export default class QuizController extends Controller {
     const { title, isPublic, questions, ...quiz } = req.body
     const expiration = new Date(req.body.expiration).toISOString()
     try {
-      const user = await this.serviceLocator.user.getUserById(userId)
+      const user = await this.users.getUserById(userId)
       if (!user) {
         res.status(400).end()
         return next()
       }
-      const allowedUsers = await this.serviceLocator.user.getIdsFromUsernames(
+      const allowedUsers = await this.users.getIdsFromUsernames(
         quiz.allowedUsers || []
       )
-      const quizId = await this.serviceLocator.quiz.createQuiz({
+      const quizId = await this.quizzes.createQuiz({
         user: user._id,
         title,
         expiration,
@@ -120,7 +132,7 @@ export default class QuizController extends Controller {
         questions,
         allowedUsers
       })
-      await this.serviceLocator.user.addQuiz(userId, quizId)
+      await this.users.addQuiz(userId, quizId)
       res.json({ id: quizId })
     } catch (error) {
       debug(error)
@@ -146,7 +158,7 @@ export default class QuizController extends Controller {
     const { id: quizId } = req.params
 
     try {
-      const existingQuiz = await this.serviceLocator.quiz.getQuizById(quizId)
+      const existingQuiz = await this.quizzes.getQuizById(quizId)
       if (!existingQuiz) {
         res.status(400).end()
         return next()
@@ -195,21 +207,19 @@ export default class QuizController extends Controller {
         return next()
       }
       const allowedUsers = new Set(
-        await this.serviceLocator.user.getIdsFromUsernames(
-          quizEdits.allowedUsers || []
-        )
+        await this.users.getIdsFromUsernames(quizEdits.allowedUsers || [])
       )
 
       // Merge user IDs from existing results with the edit's IDs so
       // the edit cannot remove users that have already taken quiz.
       for (const resultId of existingQuiz.results) {
-        const result = await this.serviceLocator.result.getResult(resultId)
-        const user = await this.serviceLocator.user.getUserById(result.user)
+        const result = await this.results.getResult(resultId)
+        const user = await this.users.getUserById(result.user)
         allowedUsers.add(user._id)
       }
       quizEdits.allowedUsers = [...allowedUsers]
 
-      await this.serviceLocator.quiz.updateQuiz(quizId, quizEdits)
+      await this.quizzes.updateQuiz(quizId, quizEdits)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -228,7 +238,7 @@ export default class QuizController extends Controller {
     const { id: quizId } = req.params
 
     try {
-      const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+      const quiz = await this.quizzes.getQuizById(quizId)
       // Clean up references to this quiz before finally deleting it
       if (!quiz) {
         return res.status(404).end()
@@ -238,14 +248,14 @@ export default class QuizController extends Controller {
         return next()
       }
       for (const resultId of quiz.results) {
-        const result = await this.serviceLocator.result.getResult(resultId)
+        const result = await this.results.getResult(resultId)
         if (result) {
-          await this.serviceLocator.result.deleteResult(resultId)
-          await this.serviceLocator.user.removeResult(result.user, resultId)
+          await this.results.deleteResult(resultId)
+          await this.users.removeResult(result.user, resultId)
         }
       }
-      await this.serviceLocator.user.removeQuiz(quiz.user, quizId)
-      await this.serviceLocator.quiz.deleteQuiz(quizId)
+      await this.users.removeQuiz(quiz.user, quizId)
+      await this.quizzes.deleteQuiz(quizId)
       res.status(204).end()
     } catch (error) {
       debug(error)

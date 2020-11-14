@@ -1,15 +1,28 @@
 const debug = require('debug')('routes:user')
+
 import jwt from 'jsonwebtoken'
 import { check, query } from 'express-validator'
-import resolveErrors from '../middleware/validation/resolve-errors'
-import * as validators from '../middleware/validation/user'
 
-import authenticate from '../middleware/auth'
+import resolveErrors from 'middleware/validation/resolve-errors'
+import * as validators from 'middleware/validation/user'
+import authenticate from 'middleware/auth'
 
-import { Config, Get, Put, Post, Delete, Controller } from './controller'
+import { Inject, Get, Put, Post, Delete, Controller } from 'express-di'
 
-@Config({ debugName: 'user' })
-export default class UserController extends Controller {
+import QuizService from 'services/quiz'
+import ResultService from 'services/result'
+import UserService from 'services/user'
+
+@Inject
+export default class UserController extends Controller({ root: '/api/users' }) {
+  constructor(
+    private quizzes: QuizService,
+    private results: ResultService,
+    private users: UserService
+  ) {
+    super()
+  }
+
   /**
    * Returns an authenticated user's info without sensitive info,
    * @param req request object
@@ -18,7 +31,7 @@ export default class UserController extends Controller {
   @Get('/me', [authenticate({ required: true })])
   async getUserData(req, res, next) {
     try {
-      const user = await this.serviceLocator.user.getUserById(req.user.id)
+      const user = await this.users.getUserById(req.user.id)
       if (!user) {
         res.status(401).end()
         return next()
@@ -48,18 +61,18 @@ export default class UserController extends Controller {
     const { format } = req.query
     const { id: userId } = req.user
     try {
-      const quizIds = await this.serviceLocator.user.getUserQuizzes(userId)
+      const quizIds = await this.users.getUserQuizzes(userId)
       if (quizIds.length === 0) {
         res.json([])
         return next()
       }
       const quizzes = []
       for (const id of quizIds) {
-        const quiz = await this.serviceLocator.quiz.getQuizById(id)
+        const quiz = await this.quizzes.getQuizById(id)
         if (quiz) {
           if (!format || format === 'full') {
             // convert allowed users to usernames
-            const allowedUsers = await this.serviceLocator.user.getUsernamesFromIds(
+            const allowedUsers = await this.users.getUsernamesFromIds(
               quiz.allowedUsers
             )
             quiz.allowedUsers = allowedUsers
@@ -98,22 +111,20 @@ export default class UserController extends Controller {
     const { format } = req.query
     const { id: userId } = req.user
     try {
-      const resultIds = await this.serviceLocator.user.getUserResults(userId)
+      const resultIds = await this.users.getUserResults(userId)
       if (resultIds.length === 0) {
         res.json([])
         return next()
       }
       const results = []
       for (const id of resultIds) {
-        const result = await this.serviceLocator.result.getResult(id)
+        const result = await this.results.getResult(id)
         if (result) {
           // get the quiz title and created by
-          const quiz = await this.serviceLocator.quiz.getQuizById(result.quiz)
+          const quiz = await this.quizzes.getQuizById(result.quiz)
           if (quiz) {
             result.quizTitle = quiz.title
-            const owner = await this.serviceLocator.user.getUserById(
-              result.quizOwner
-            )
+            const owner = await this.users.getUserById(result.quizOwner)
             if (owner) {
               result.ownerUsername = owner.username
             }
@@ -151,10 +162,7 @@ export default class UserController extends Controller {
     const user = req.user.id
     const { email } = req.body
     try {
-      const emailWasSet = await this.serviceLocator.user.changeUserEmail(
-        user,
-        email
-      )
+      const emailWasSet = await this.users.changeUserEmail(user, email)
       if (!emailWasSet) {
         res.status(409).json({
           errors: [{ email: 'Email is already in use.', value: email }]
@@ -185,7 +193,7 @@ export default class UserController extends Controller {
     const user = req.user.id
     const { password } = req.body
     try {
-      await this.serviceLocator.user.changeUserPassword(user, password)
+      await this.users.changeUserPassword(user, password)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -203,7 +211,7 @@ export default class UserController extends Controller {
   async deleteUser(req, res, next) {
     const userId = req.user.id
     try {
-      const user = await this.serviceLocator.user.getUserById(userId)
+      const user = await this.users.getUserById(userId)
       if (!user) {
         res.status(404).end()
         return next()
@@ -211,33 +219,33 @@ export default class UserController extends Controller {
       // Clean up user's results
       const results = user.results
       for (const resultId of results) {
-        const result = await this.serviceLocator.result.getResult(resultId)
+        const result = await this.results.getResult(resultId)
         if (result) {
-          const quiz = await this.serviceLocator.quiz.getQuizById(result.quiz)
+          const quiz = await this.quizzes.getQuizById(result.quiz)
           if (quiz) {
-            await this.serviceLocator.quiz.removeResult(quiz._id, resultId)
+            await this.quizzes.removeResult(quiz._id, resultId)
           }
-          await this.serviceLocator.result.deleteResult(resultId)
+          await this.results.deleteResult(resultId)
         }
       }
       // Clean up users's quizzes completley including results to those quizzes
       const quizzes = user.quizzes
       for (const quizId of quizzes) {
-        const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+        const quiz = await this.quizzes.getQuizById(quizId)
         if (quiz) {
           const quizResults = quiz.results
           for (const resultId of quizResults) {
-            const result = await this.serviceLocator.result.getResult(resultId)
+            const result = await this.results.getResult(resultId)
             if (result) {
-              await this.serviceLocator.result.deleteResult(resultId)
-              await this.serviceLocator.user.removeResult(result.user, result)
+              await this.results.deleteResult(resultId)
+              await this.users.removeResult(result.user, result)
             }
           }
-          await this.serviceLocator.quiz.deleteQuiz(quizId)
+          await this.quizzes.deleteQuiz(quizId)
         }
       }
 
-      await this.serviceLocator.user.deleteUser(userId)
+      await this.users.deleteUser(userId)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -255,7 +263,7 @@ export default class UserController extends Controller {
   @Get('/:id')
   async getUserById(req, res, next) {
     try {
-      const userData = await this.serviceLocator.user.getUserById(req.params.id)
+      const userData = await this.users.getUserById(req.params.id)
       if (!userData) {
         res.status(404).end()
         return next()
@@ -290,7 +298,7 @@ export default class UserController extends Controller {
   async authorizeUser(req, res, next) {
     const { username, password } = req.body
     try {
-      const [userId, errors] = await this.serviceLocator.user.authorizeUser(
+      const [userId, errors] = await this.users.authorizeUser(
         username,
         password
       )
@@ -333,7 +341,7 @@ export default class UserController extends Controller {
   async registerUser(req, res, next) {
     const { username, email, password } = req.body
     try {
-      const [userId, errors] = await this.serviceLocator.user.registerUser({
+      const [userId, errors] = await this.users.registerUser({
         username,
         email,
         password

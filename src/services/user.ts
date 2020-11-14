@@ -1,11 +1,13 @@
-import UserRepository from '../repositories/user'
-import User from '../models/user'
-
 import bcrypt from 'bcryptjs'
 
-export default class UserService {
+import UserRepository from 'repositories/user'
+import User from 'models/user'
+import { Inject, Service } from 'express-di'
+
+@Inject
+export default class UserService extends Service() {
   constructor(private userRepository: UserRepository) {
-    this.userRepository = userRepository
+    super()
   }
 
   /**
@@ -14,7 +16,7 @@ export default class UserService {
    * @returns user data
    */
   async getUserById(userId) {
-    const user = await this.userRepository.findById(userId)
+    const user = await this.userRepository.repo.findById(userId)
     if (user) {
       const { password, ...userData } = user
       return userData
@@ -59,7 +61,7 @@ export default class UserService {
    * @param userId
    */
   async getUserQuizzes(userId) {
-    const user = await this.userRepository.findById(userId)
+    const user = await this.userRepository.repo.findById(userId)
     return user.quizzes
   }
 
@@ -68,7 +70,7 @@ export default class UserService {
    * @param userId
    */
   async getUserResults(userId) {
-    const user = await this.userRepository.findById(userId)
+    const user = await this.userRepository.repo.findById(userId)
     return user.results
   }
 
@@ -188,7 +190,7 @@ export default class UserService {
       const salt = await bcrypt.genSalt(10)
       user.password = await bcrypt.hash(password, salt)
 
-      user = await this.userRepository.insert(user)
+      user = await this.userRepository.repo.insert(user)
     }
 
     return [user._id, errors]
@@ -199,6 +201,6 @@ export default class UserService {
    * @param userId
    */
   async deleteUser(userId) {
-    await this.userRepository.delete(userId)
+    await this.userRepository.repo.delete(userId)
   }
 }

@@ -1,10 +1,27 @@
 import { ObjectId } from 'mongodb'
+import { Inject, Service } from 'express-di'
 import Repository from './repository'
+import DbService from 'services/db'
 
 export const MIN_QUESTIONS: number = 1
 export const MIN_ANSWERS: number = 2
 
-export default class QuizRepository extends Repository {
+@Inject
+export default class QuizRepository extends Service() {
+  private _repo: Repository
+
+  constructor(private db: DbService) {
+    super()
+  }
+
+  get repo(): Repository {
+    return this._repo
+  }
+
+  onInit() {
+    this._repo = new Repository(this.db.quizzes)
+  }
+
   /**
    * Adds a quiz result to a quiz
    * @param quiz quiz id
@@ -19,7 +36,7 @@ export default class QuizRepository extends Repository {
     }
     const _id: ObjectId = new ObjectId(quiz)
     const resultId: ObjectId = new ObjectId(result)
-    await this.store.updateOne(
+    await this._repo.store.updateOne(
       { _id },
       {
         $addToSet: {
@@ -43,7 +60,7 @@ export default class QuizRepository extends Repository {
     }
     const _id: ObjectId = new ObjectId(quiz)
     const resultId: ObjectId = new ObjectId(result)
-    await this.store.updateOne(
+    await this._repo.store.updateOne(
       { _id },
       {
         $pull: {

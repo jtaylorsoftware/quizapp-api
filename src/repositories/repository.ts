@@ -1,9 +1,7 @@
 import { ObjectId } from 'mongodb'
 
-export default abstract class Repository {
-  constructor(protected store: any) {
-    this.store = store
-  }
+export default class Repository {
+  constructor(public store: any) {}
 
   /**
    * Adds an entity to the repository

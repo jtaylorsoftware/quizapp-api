@@ -1,16 +1,30 @@
 const debug = require('debug')('routes:result')
+
 import moment from 'moment'
-
 import { query } from 'express-validator'
-import resolveErrors from '../middleware/validation/resolve-errors'
-import * as validators from '../middleware/validation/result'
 
-import authenticate from '../middleware/auth'
+import resolveErrors from 'middleware/validation/resolve-errors'
+import * as validators from 'middleware/validation/result'
+import authenticate from 'middleware/auth'
 
-import { Config, Get, Post, Controller } from './controller'
+import { Inject, Get, Post, Controller } from 'express-di'
 
-@Config({ debugName: 'result' })
-export default class ResultController extends Controller {
+import QuizService from 'services/quiz'
+import ResultService from 'services/result'
+import UserService from 'services/user'
+
+@Inject
+export default class ResultController extends Controller({
+  root: '/api/results'
+}) {
+  constructor(
+    private quizzes: QuizService,
+    private results: ResultService,
+    private users: UserService
+  ) {
+    super()
+  }
+
   /**
    * Gets a user's or all results for a quiz as listings or full
    */
@@ -29,7 +43,7 @@ export default class ResultController extends Controller {
     try {
       if (!queryUser) {
         // get all results for the quiz
-        const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+        const quiz = await this.quizzes.getQuizById(quizId)
         if (quiz) {
           if (quiz.user.toString() !== userId) {
             res.status(403).end()
@@ -41,11 +55,9 @@ export default class ResultController extends Controller {
         }
         const results = []
         for (const resultId of quiz.results) {
-          const result = await this.serviceLocator.result.getResult(resultId)
+          const result = await this.results.getResult(resultId)
           if (result) {
-            const resultUser = await this.serviceLocator.user.getUserById(
-              result.user
-            )
+            const resultUser = await this.users.getUserById(result.user)
             if (resultUser) {
               result.username = resultUser.username
             }
@@ -59,7 +71,7 @@ export default class ResultController extends Controller {
         }
         res.json({ results })
       } else {
-        const result = await this.serviceLocator.result.getUserResultForQuiz(
+        const result = await this.results.getUserResultForQuiz(
           queryUser,
           quizId
         )
@@ -73,20 +85,16 @@ export default class ResultController extends Controller {
           res.status(403).end()
           return next()
         }
-        const resultUser = await this.serviceLocator.user.getUserById(
-          result.user
-        )
+        const resultUser = await this.users.getUserById(result.user)
         if (resultUser) {
           result.username = resultUser.username
         }
 
         // get the quiz title and created by
-        const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+        const quiz = await this.quizzes.getQuizById(quizId)
         if (quiz) {
           result.quizTitle = quiz.title
-          const owner = await this.serviceLocator.user.getUserById(
-            result.quizOwner
-          )
+          const owner = await this.users.getUserById(result.quizOwner)
           if (owner) {
             result.ownerUsername = owner.username
           }
@@ -120,7 +128,7 @@ export default class ResultController extends Controller {
     const { quiz: quizId } = req.query
 
     try {
-      const quiz = await this.serviceLocator.quiz.getQuizById(quizId)
+      const quiz = await this.quizzes.getQuizById(quizId)
       if (!quiz) {
         res.status(404).end()
         return next()
@@ -136,7 +144,7 @@ export default class ResultController extends Controller {
         return next()
       }
 
-      const [resultId, errors] = await this.serviceLocator.result.createResult(
+      const [resultId, errors] = await this.results.createResult(
         answers,
         userId,
         quiz
@@ -146,8 +154,8 @@ export default class ResultController extends Controller {
         res.status(400).json({ errors: [...errors] })
         return next()
       }
-      await this.serviceLocator.user.addResult(userId, resultId)
-      await this.serviceLocator.quiz.addResult(quiz._id, resultId)
+      await this.users.addResult(userId, resultId)
+      await this.quizzes.addResult(quiz._id, resultId)
 
       res.json({ id: resultId })
     } catch (error) {

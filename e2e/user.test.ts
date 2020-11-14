@@ -4,7 +4,8 @@ import jwt from 'jsonwebtoken'
 import express from 'express'
 import mongo, { ObjectId } from 'mongodb'
 
-import { configApp } from 'server'
+import bootstrap from 'bootstrap-app'
+
 import User from 'models/user'
 
 import { teacher, student } from './setup'
@@ -17,7 +18,7 @@ describe('/api/users', () => {
   let users: mongo.Collection<User>
 
   beforeAll(async () => {
-    ;({ client: dbClient, app: app } = await configApp())
+    ;({ client: dbClient, app: app } = await bootstrap())
     db = await dbClient.db()
     users = db.collection('users')
   })
