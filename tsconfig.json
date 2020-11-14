@@ -8,7 +8,9 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "module": "commonjs",
-    "baseUrl": "src"
+    "baseUrl": "src",
+    "emitDecoratorMetadata": true,
+    "sourceMap": true
   },
   "include": ["src/**/*", "e2e/**/*"],
   "exclude": ["./client", "./build"]
