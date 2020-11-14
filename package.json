@@ -8,8 +8,8 @@
     "test": "jest --watchAll --config=unit.jest.config.ts",
     "test:e2e": "jest --testPathPattern=e2e --config=e2e.jest.config.ts --runInBand",
     "build": "npm install && npx tsc -p build.tsconfig.json && npm install --prefix client && npm run build --prefix client",
-    "start": "node build/start.js",
-    "server": "npx tsc && DEBUG=routes:*,middleware:* nodemon build/start.js",
+    "start": "NODE_PATH=./build/src node build/src/start.js",
+    "server": "npx tsc && NODE_PATH=./build/src DEBUG=routes:*,middleware:*,express:router nodemon build/src/start.js",
     "client": "npm start --prefix client",
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
@@ -31,7 +31,7 @@
     "object.omit": "^3.0.0"
   },
   "devDependencies": {
-    "@types/async": "^3.2.3",
+    "@types/async": "^3.2.4",
     "@types/bcryptjs": "^2.4.2",
     "@types/express": "^4.17.6",
     "@types/helmet": "0.0.45",
