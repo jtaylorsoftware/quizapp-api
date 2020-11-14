@@ -2,19 +2,20 @@ import { ObjectId } from 'mongodb'
 import { Inject, Service } from 'express-di'
 import Repository from './repository'
 import DbService from 'services/db'
+import Quiz from 'models/quiz'
 
 export const MIN_QUESTIONS: number = 1
 export const MIN_ANSWERS: number = 2
 
 @Inject
 export default class QuizRepository extends Service() {
-  private _repo: Repository
+  private _repo: Repository<Quiz>
 
   constructor(private db: DbService) {
     super()
   }
 
-  get repo(): Repository {
+  get repo(): Repository<Quiz> {
     return this._repo
   }
 

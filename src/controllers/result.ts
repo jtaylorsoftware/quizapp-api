@@ -13,6 +13,8 @@ import { Inject, Get, Post, Controller } from 'express-di'
 import QuizService from 'services/quiz'
 import ResultService from 'services/result'
 import UserService from 'services/user'
+import { ObjectId } from 'mongodb'
+import Quiz from 'models/quiz'
 
 @Inject
 export default class ResultController extends Controller({
@@ -44,7 +46,7 @@ export default class ResultController extends Controller({
     try {
       if (!queryUser) {
         // get all results for the quiz
-        const quiz = await this.quizzes.getQuizById(quizId)
+        const quiz = await this.quizzes.getQuizById(<string>quizId)
         if (quiz) {
           if (quiz.user.toString() !== userId) {
             res.status(403).end()
@@ -60,7 +62,7 @@ export default class ResultController extends Controller({
           if (result) {
             const resultUser = await this.users.getUserById(result.user)
             if (resultUser) {
-              result.username = resultUser.username
+              result['username'] = resultUser['username']
             }
             if (!format || format === 'full') {
               results.push(result)
@@ -73,8 +75,8 @@ export default class ResultController extends Controller({
         res.json({ results })
       } else {
         const result = await this.results.getUserResultForQuiz(
-          queryUser,
-          quizId
+          <string>queryUser,
+          <string>quizId
         )
         if (!result) {
           res.status(404).end()
@@ -88,16 +90,16 @@ export default class ResultController extends Controller({
         }
         const resultUser = await this.users.getUserById(result.user)
         if (resultUser) {
-          result.username = resultUser.username
+          result['username'] = resultUser['username']
         }
 
         // get the quiz title and created by
-        const quiz = await this.quizzes.getQuizById(quizId)
+        const quiz = await this.quizzes.getQuizById(<string>quizId)
         if (quiz) {
-          result.quizTitle = quiz.title
+          result['quizTitle'] = quiz.title
           const owner = await this.users.getUserById(result.quizOwner)
           if (owner) {
-            result.ownerUsername = owner.username
+            result['ownerUsername'] = owner['username']
           }
         }
         if (!format || format === 'full') {
@@ -129,7 +131,7 @@ export default class ResultController extends Controller({
     const { quiz: quizId } = req.query
 
     try {
-      const quiz = await this.quizzes.getQuizById(quizId)
+      const quiz = await this.quizzes.getQuizById(<string>quizId)
       if (!quiz) {
         res.status(404).end()
         return next()
@@ -166,7 +168,7 @@ export default class ResultController extends Controller({
     return next()
   }
 
-  private canUserViewQuiz(userId, quiz) {
+  private canUserViewQuiz(userId: string, quiz: Quiz) {
     return (
       quiz.isPublic ||
       quiz.user.toString() === userId ||

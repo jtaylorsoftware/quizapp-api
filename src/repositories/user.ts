@@ -1,18 +1,18 @@
 import { ObjectId } from 'mongodb'
-import User from 'models/user'
 import { Inject, Service } from 'express-di'
 import Repository from './repository'
 import DbService from 'services/db'
+import User from 'models/user'
 
 @Inject
 export default class UserRepository extends Service() {
-  private _repo: Repository
+  private _repo: Repository<User>
 
   constructor(private db: DbService) {
     super()
   }
 
-  get repo(): Repository {
+  get repo(): Repository<User> {
     return this._repo
   }
 
@@ -120,7 +120,7 @@ export default class UserRepository extends Service() {
    * Returns an array of usernames with the given ids
    * @param ids
    */
-  async getUsernames(ids: Array<string | ObjectId>): Promise<User[]> {
+  async getUsernames(ids: Array<string | ObjectId>): Promise<string[]> {
     ids = ids.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))
     const users = await this._repo.store
       .find({ _id: { $in: ids } })
@@ -134,7 +134,7 @@ export default class UserRepository extends Service() {
    * @param usernames
    * @returns ids of users with related usernames
    */
-  async getUserIds(usernames: string[]): Promise<string[]> {
+  async getUserIds(usernames: string[]): Promise<ObjectId[]> {
     const users = await this._repo.store
       .find({ username: { $in: usernames } })
       .map(user => user._id)

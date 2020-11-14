@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import UserRepository from 'repositories/user'
 import User from 'models/user'
 import { Inject, Service } from 'express-di'
+import { ObjectId } from 'mongodb'
 
 @Inject
 export default class UserService extends Service() {
@@ -15,8 +16,8 @@ export default class UserService extends Service() {
    * @param userId
    * @returns user data
    */
-  async getUserById(userId) {
-    const user = await this.userRepository.repo.findById(userId)
+  async getUserById(userId: string | ObjectId) {
+    const user = <User>await this.userRepository.repo.findById(userId)
     if (user) {
       const { password, ...userData } = user
       return userData
@@ -29,7 +30,7 @@ export default class UserService extends Service() {
    * @param username
    * @returns user data
    */
-  async getUserByUsername(username) {
+  async getUserByUsername(username: string) {
     const user = await this.userRepository.findByUsername(username)
     if (user) {
       const { password, ...userData } = user
@@ -42,7 +43,7 @@ export default class UserService extends Service() {
    * Returns a list of usernames with matching user ids
    * @param userIds
    */
-  async getUsernamesFromIds(userIds) {
+  async getUsernamesFromIds(userIds: Array<string | ObjectId>) {
     const usernames = await this.userRepository.getUsernames(userIds)
     return usernames
   }
@@ -51,7 +52,7 @@ export default class UserService extends Service() {
    * Returns a list of user ids with matching usernames
    * @param usernames
    */
-  async getIdsFromUsernames(usernames) {
+  async getIdsFromUsernames(usernames: string[]) {
     const ids = await this.userRepository.getUserIds(usernames)
     return ids
   }
@@ -60,8 +61,8 @@ export default class UserService extends Service() {
    * Gets user's quizzes
    * @param userId
    */
-  async getUserQuizzes(userId) {
-    const user = await this.userRepository.repo.findById(userId)
+  async getUserQuizzes(userId: string | ObjectId) {
+    const user = <User>await this.userRepository.repo.findById(userId)
     return user.quizzes
   }
 
@@ -69,8 +70,8 @@ export default class UserService extends Service() {
    * Gets user's results
    * @param userId
    */
-  async getUserResults(userId) {
-    const user = await this.userRepository.repo.findById(userId)
+  async getUserResults(userId: string | ObjectId) {
+    const user = <User>await this.userRepository.repo.findById(userId)
     return user.results
   }
 
@@ -79,7 +80,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param quizId
    */
-  async addQuiz(userId, quizId) {
+  async addQuiz(userId: string | ObjectId, quizId: string | ObjectId) {
     await this.userRepository.addQuiz(userId, quizId)
   }
 
@@ -88,7 +89,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param quizId
    */
-  async removeQuiz(userId, quizId) {
+  async removeQuiz(userId: string | ObjectId, quizId: string | ObjectId) {
     await this.userRepository.removeQuiz(userId, quizId)
   }
 
@@ -97,7 +98,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param resultId
    */
-  async addResult(userId, resultId) {
+  async addResult(userId: string | ObjectId, resultId: string | ObjectId) {
     await this.userRepository.addResult(userId, resultId)
   }
 
@@ -106,7 +107,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param resultId
    */
-  async removeResult(userId, resultId) {
+  async removeResult(userId: string | ObjectId, resultId: string | ObjectId) {
     await this.userRepository.removeResult(userId, resultId)
   }
 
@@ -116,7 +117,7 @@ export default class UserService extends Service() {
    * @param password
    * @returns string with user id if authorized, empty if not authorized
    */
-  async authorizeUser(username, password) {
+  async authorizeUser(username: string, password: string) {
     let userId = null
     const errors = []
     // try to find a user with a matching username
@@ -142,7 +143,7 @@ export default class UserService extends Service() {
    * @param email
    * @returns true if email was set and not previously in use
    */
-  async changeUserEmail(userId, email) {
+  async changeUserEmail(userId: string | ObjectId, email: string) {
     const existingUser = await this.userRepository.findByEmail(email)
     if (!existingUser) {
       await this.userRepository.updateEmail(userId, email)
@@ -156,7 +157,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param password
    */
-  async changeUserPassword(userId, password) {
+  async changeUserPassword(userId: string | ObjectId, password: string) {
     const salt = await bcrypt.genSalt(10)
     const encryptedPass = await bcrypt.hash(password, salt)
     await this.userRepository.updatePassword(userId, encryptedPass)
@@ -170,7 +171,11 @@ export default class UserService extends Service() {
    * @param user.username
    * @returns user id and array of fields that had errors
    */
-  async registerUser({ email, username, password }): Promise<[string, any[]]> {
+  async registerUser({
+    email,
+    username,
+    password
+  }: Partial<User>): Promise<[ObjectId, any[]]> {
     const errors = []
 
     let existingUser = await this.userRepository.findByEmail(email)
@@ -183,24 +188,24 @@ export default class UserService extends Service() {
       errors.push({ username: 'Username is already in use.', value: username })
     }
 
-    let user: User | any = {}
     if (errors.length === 0) {
-      user = new User(username, email, password)
+      let user = new User(username, email, password)
 
       const salt = await bcrypt.genSalt(10)
       user.password = await bcrypt.hash(password, salt)
 
       user = await this.userRepository.repo.insert(user)
+      return [user._id, undefined]
+    } else {
+      return [undefined, errors]
     }
-
-    return [user._id, errors]
   }
 
   /**
    * Deletes the user
    * @param userId
    */
-  async deleteUser(userId) {
+  async deleteUser(userId: string | ObjectId) {
     await this.userRepository.repo.delete(userId)
   }
 }

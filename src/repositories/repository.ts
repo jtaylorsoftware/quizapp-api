@@ -1,14 +1,24 @@
-import { ObjectId } from 'mongodb'
+import Quiz from 'models/quiz'
+import Result from 'models/result'
+import User from 'models/user'
+import {
+  Collection,
+  Condition,
+  FilterQuery,
+  ObjectId,
+  OptionalId,
+  WithId
+} from 'mongodb'
 
-export default class Repository {
-  constructor(public store: any) {}
+export default class Repository<T extends User | Quiz | Result> {
+  constructor(public store: Collection<any>) {}
 
   /**
    * Adds an entity to the repository
    * @param doc entity document
    * @returns Inserted document
    */
-  async insert(doc: any): Promise<any> {
+  async insert(doc: T): Promise<T> {
     const { ops } = await this.store.insertOne(doc)
     return ops[0]
   }
@@ -18,7 +28,7 @@ export default class Repository {
    * @param id
    * @returns Quiz data
    */
-  async findById(id: string | ObjectId): Promise<any | null> {
+  async findById(id: string | ObjectId): Promise<T | null> {
     if (!ObjectId.isValid(id)) {
       return null
     }
@@ -41,7 +51,7 @@ export default class Repository {
    * @param id
    * @param entity document to replace current values
    */
-  async update(id: string | ObjectId, entity: any): Promise<void> {
+  async update(id: string | ObjectId, entity: T): Promise<void> {
     if (!ObjectId.isValid(id)) {
       return
     }

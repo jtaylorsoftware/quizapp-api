@@ -53,16 +53,16 @@ export default class QuizController extends Controller({
       }
       if (!format || format === 'full') {
         // convert allowed users to usernames
-        const allowedUsers = await this.users.getUsernamesFromIds(
+        const allowedUsernames = await this.users.getUsernamesFromIds(
           quiz.allowedUsers
         )
-
-        quiz.allowedUsers = allowedUsers
-        res.json(quiz)
+        const { allowedUsers, ...quizWithUsernames } = quiz
+        quizWithUsernames['allowedUsers'] = allowedUsernames
+        res.json(quizWithUsernames)
       } else {
         const { questions, results, allowedUsers, ...listing } = quiz
-        listing.resultsCount = results.length
-        listing.questionCount = questions.length
+        listing['resultsCount'] = results.length
+        listing['questionCount'] = questions.length
         res.json(listing)
       }
     } catch (error) {

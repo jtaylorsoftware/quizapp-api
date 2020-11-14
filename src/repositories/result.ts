@@ -2,16 +2,17 @@ import { ObjectId } from 'mongodb'
 import { Inject, Service } from 'express-di'
 import Repository from './repository'
 import DbService from 'services/db'
+import Result from 'models/result'
 
 @Inject
 export default class ResultRepository extends Service() {
-  private _repo: Repository
+  private _repo: Repository<Result>
 
   constructor(private db: DbService) {
     super()
   }
 
-  get repo(): Repository {
+  get repo(): Repository<Result> {
     return this._repo
   }
 
@@ -27,7 +28,7 @@ export default class ResultRepository extends Service() {
   async findByUserAndQuizId(
     userId: string | ObjectId,
     quizId: string | ObjectId
-  ): Promise<any | null> {
+  ): Promise<Result | null> {
     if (!ObjectId.isValid(userId) || !ObjectId.isValid(quizId)) {
       return null
     }

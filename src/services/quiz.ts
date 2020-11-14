@@ -1,6 +1,7 @@
 import Quiz from 'models/quiz'
 import QuizRepository from 'repositories/quiz'
 import { Inject, Service } from 'express-di'
+import { ObjectId, OptionalId } from 'mongodb'
 
 @Inject
 export default class QuizService extends Service() {
@@ -13,7 +14,7 @@ export default class QuizService extends Service() {
    * @param quizId
    * @returns
    */
-  async getQuizById(quizId) {
+  async getQuizById(quizId: string | ObjectId) {
     const quiz = await this.quizRepository.repo.findById(quizId)
     return quiz
   }
@@ -23,7 +24,7 @@ export default class QuizService extends Service() {
    * @param quizId
    * @param resultId
    */
-  async addResult(quizId, resultId) {
+  async addResult(quizId: string | ObjectId, resultId: string | ObjectId) {
     await this.quizRepository.addResult(quizId, resultId)
   }
 
@@ -32,7 +33,7 @@ export default class QuizService extends Service() {
    * @param quizId
    * @param resultId
    */
-  async removeResult(quizId, resultId) {
+  async removeResult(quizId: string | ObjectId, resultId: string | ObjectId) {
     await this.quizRepository.removeResult(quizId, resultId)
   }
 
@@ -48,7 +49,7 @@ export default class QuizService extends Service() {
     isPublic,
     questions,
     allowedUsers
-  }) {
+  }: Partial<Quiz>) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
     const quiz = await this.quizRepository.repo.insert(
       new Quiz(user, title, expiration, isPublic, questions, allowedUsers)
@@ -68,7 +69,7 @@ export default class QuizService extends Service() {
     { title, expiration, isPublic, questions, allowedUsers }
   ) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
-    await this.quizRepository.repo.update(quizId, {
+    await this.quizRepository.repo.update(quizId, <Quiz>{
       title,
       isPublic,
       questions,

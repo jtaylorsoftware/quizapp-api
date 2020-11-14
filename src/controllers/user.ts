@@ -73,15 +73,16 @@ export default class UserController extends Controller({ root: '/api/users' }) {
         if (quiz) {
           if (!format || format === 'full') {
             // convert allowed users to usernames
-            const allowedUsers = await this.users.getUsernamesFromIds(
+            const allowedUsernames = await this.users.getUsernamesFromIds(
               quiz.allowedUsers
             )
-            quiz.allowedUsers = allowedUsers
-            quizzes.push(quiz)
+            const { allowedUsers, ...quizWithUsernames } = quiz
+            quizWithUsernames['allowedUsers'] = allowedUsernames
+            quizzes.push(quizWithUsernames)
           } else {
             const { questions, results, allowedUsers, ...listing } = quiz
-            listing.resultsCount = results.length
-            listing.questionCount = questions.length
+            listing['resultsCount'] = results.length
+            listing['questionCount'] = questions.length
             quizzes.push(listing)
           }
         }
@@ -124,10 +125,10 @@ export default class UserController extends Controller({ root: '/api/users' }) {
           // get the quiz title and created by
           const quiz = await this.quizzes.getQuizById(result.quiz)
           if (quiz) {
-            result.quizTitle = quiz.title
+            result['quizTitle'] = quiz.title
             const owner = await this.users.getUserById(result.quizOwner)
             if (owner) {
-              result.ownerUsername = owner.username
+              result['ownerUsername'] = owner.username
             }
           }
           if (!format || format === 'full') {
@@ -239,7 +240,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
             const result = await this.results.getResult(resultId)
             if (result) {
               await this.results.deleteResult(resultId)
-              await this.users.removeResult(result.user, result)
+              await this.users.removeResult(result.user, resultId)
             }
           }
           await this.quizzes.deleteQuiz(quizId)

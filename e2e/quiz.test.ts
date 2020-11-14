@@ -58,7 +58,7 @@ describe('/api/quizzes', () => {
 
       const quiz = await quizzes.findOne({ title: 'public quiz' })
 
-      res = await get(quiz._id, token).expect(403)
+      res = await get(quiz._id.toHexString(), token).expect(403)
     })
 
     it('by default or if format=full returns status 200 and full quiz', async () => {
@@ -70,10 +70,10 @@ describe('/api/quizzes', () => {
 
       const quiz = await quizzes.findOne({ title: 'public quiz' })
 
-      let res = await get(quiz._id, token).expect(200)
+      let res = await get(quiz._id.toHexString(), token).expect(200)
       expectQuizIsFull(res.body)
 
-      res = await get(quiz._id, token, 'full').expect(200)
+      res = await get(quiz._id.toHexString(), token, 'full').expect(200)
       expectQuizIsFull(res.body)
     })
 
@@ -88,7 +88,9 @@ describe('/api/quizzes', () => {
 
       const quiz = await quizzes.findOne({ title: 'public quiz' })
 
-      const res = await get(quiz._id, token, 'listing').expect(200)
+      const res = await get(quiz._id.toHexString(), token, 'listing').expect(
+        200
+      )
       expectQuizIsListing(res.body)
     })
 
@@ -114,13 +116,13 @@ describe('/api/quizzes', () => {
 
       it('if user owns public quiz returns the quiz form', async () => {
         const quiz = await quizzes.findOne({ title: 'public quiz' })
-        const res = await get(quiz._id, token).expect(200)
+        const res = await get(quiz._id.toHexString(), token).expect(200)
         expectIsAnswerForm(res.body)
       })
 
       it('if user owns private quiz returns the quiz form', async () => {
         const quiz = await quizzes.findOne({ title: 'private quiz' })
-        const res = await get(quiz._id, token).expect(200)
+        const res = await get(quiz._id.toHexString(), token).expect(200)
         expectIsAnswerForm(res.body)
       })
 
@@ -131,7 +133,7 @@ describe('/api/quizzes', () => {
 
         let { token } = res.body
         const quiz = await quizzes.findOne({ title: 'private quiz' })
-        res = await get(quiz._id, token).expect(200)
+        res = await get(quiz._id.toHexString(), token).expect(200)
         expectIsAnswerForm(res.body)
       })
 
@@ -142,7 +144,7 @@ describe('/api/quizzes', () => {
 
         let { token } = res.body
         const quiz = await quizzes.findOne({ title: 'private quiz' })
-        res = await get(quiz._id, token).expect(200)
+        res = await get(quiz._id.toHexString(), token).expect(200)
         expectIsAnswerForm(res.body)
       })
     })
@@ -332,13 +334,13 @@ describe('/api/quizzes', () => {
       let { token } = res.body
       const quiz = await quizzes.findOne({ title: 'test quiz' })
 
-      await put(quiz._id, token).send(quiz).expect(403)
+      await put(quiz._id.toHexString(), token).send(quiz).expect(403)
     })
 
     it('if title is empty in edits returns status 400 and errors', async () => {
       const quiz = await quizzes.findOne({ title: 'test quiz' })
 
-      const res = await put(quiz._id, token)
+      const res = await put(quiz._id.toHexString(), token)
         .send({
           ...quiz,
           title: ''
@@ -353,17 +355,23 @@ describe('/api/quizzes', () => {
       const quiz = await quizzes.findOne({ title: 'test quiz' })
       delete quiz.isPublic
 
-      const res = await put(quiz._id, token).send(quiz).expect(400)
+      const res = await put(quiz._id.toHexString(), token)
+        .send(quiz)
+        .expect(400)
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors).toHaveLength(1)
       expect(res.body.errors[0]).toHaveProperty('isPublic')
     })
 
     it('if allowedUsers has an invalid username returns status 400 and errors', async () => {
-      const quiz = await quizzes.findOne({ title: 'test quiz' })
-      quiz.allowedUsers = [...quiz.allowedUsers, 'a really invalid username']
+      const { allowedUsers, ...quiz } = await quizzes.findOne({
+        title: 'test quiz'
+      })
+      quiz['allowedUsers'] = [...allowedUsers, 'a really invalid username']
 
-      const res = await put(quiz._id, token).send(quiz).expect(400)
+      const res = await put(quiz._id.toHexString(), token)
+        .send(quiz)
+        .expect(400)
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors).toHaveLength(1)
       expect(res.body.errors[0]).toHaveProperty('allowedUsers')
@@ -373,7 +381,9 @@ describe('/api/quizzes', () => {
       const quiz = await quizzes.findOne({ title: 'test quiz' })
       delete quiz.questions
 
-      const res = await put(quiz._id, token).send(quiz).expect(400)
+      const res = await put(quiz._id.toHexString(), token)
+        .send(quiz)
+        .expect(400)
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors).toHaveLength(1)
       expect(res.body.errors[0]).toHaveProperty('questions')
@@ -388,7 +398,9 @@ describe('/api/quizzes', () => {
         }
       ]
 
-      const res = await put(quiz._id, token).send(quiz).expect(400)
+      const res = await put(quiz._id.toHexString(), token)
+        .send(quiz)
+        .expect(400)
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors).toHaveLength(1)
       expect(res.body.errors[0]).toHaveProperty('questions')
@@ -403,7 +415,9 @@ describe('/api/quizzes', () => {
         }
       ]
 
-      const res = await put(quiz._id, token).send(quiz).expect(400)
+      const res = await put(quiz._id.toHexString(), token)
+        .send(quiz)
+        .expect(400)
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors).toHaveLength(1)
       expect(res.body.errors[0]).toHaveProperty('questions')
@@ -414,7 +428,9 @@ describe('/api/quizzes', () => {
       quiz.questions[0].correctAnswer =
         (quiz.questions[0].correctAnswer + 1) % quiz.questions[0].answers.length
 
-      const res = await put(quiz._id, token).send(quiz).expect(409)
+      const res = await put(quiz._id.toHexString(), token)
+        .send(quiz)
+        .expect(409)
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors).toHaveLength(1)
       expect(res.body.errors[0]).toHaveProperty('questions')
@@ -428,7 +444,9 @@ describe('/api/quizzes', () => {
         answers: [{ text: 'a' }, { text: 'b' }]
       })
 
-      const res = await put(quiz._id, token).send(quiz).expect(409)
+      const res = await put(quiz._id.toHexString(), token)
+        .send(quiz)
+        .expect(409)
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors).toHaveLength(1)
       expect(res.body.errors[0]).toHaveProperty('questions')
@@ -445,7 +463,9 @@ describe('/api/quizzes', () => {
           }
         ]
       }
-      const res = await put(quiz._id, token).send(quiz).expect(409)
+      const res = await put(quiz._id.toHexString(), token)
+        .send(quiz)
+        .expect(409)
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors).toHaveLength(1)
       expect(res.body.errors[0]).toHaveProperty('questions')
@@ -486,12 +506,12 @@ describe('/api/quizzes', () => {
       let { token } = res.body
       const quiz = await quizzes.findOne({ title: 'test quiz' })
 
-      await deleteQuiz(quiz._id, token).expect(403)
+      await deleteQuiz(quiz._id.toHexString(), token).expect(403)
     })
 
     it('if user does own quiz returns status 204', async () => {
       const quiz = await quizzes.findOne({ title: 'test quiz' })
-      await deleteQuiz(quiz._id, token).expect(204)
+      await deleteQuiz(quiz._id.toHexString(), token).expect(204)
     })
   })
 })

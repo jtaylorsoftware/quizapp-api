@@ -1,8 +1,10 @@
 import { ObjectId } from 'mongodb'
 import Model from './model'
 
-interface Answer {
-  choice: string
+export interface Answer {
+  choice: number
+  correctAnswer?: number
+  isCorrect?: boolean
 }
 
 /**

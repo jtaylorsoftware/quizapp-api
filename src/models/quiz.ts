@@ -22,7 +22,7 @@ interface Question {
  * @property allowMultipleResponses should multiple responses be used
  */
 export default class Quiz extends Model {
-  results: string[]
+  results: ObjectId[]
 
   constructor(
     public user: ObjectId,
@@ -30,7 +30,7 @@ export default class Quiz extends Model {
     public expiration: string,
     public isPublic: boolean = true,
     public questions: Question[] = [],
-    public allowedUsers: string[] = [],
+    public allowedUsers: ObjectId[] = [],
     public showCorrectAnswers: boolean = true, // TODO - in validation and client allow user to toggle
     public allowMultipleResponses: boolean = false // TODO - in validation and client allow user to toggle
   ) {

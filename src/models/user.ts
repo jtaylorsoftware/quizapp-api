@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb'
 import Model from './model'
 
 /**
@@ -7,8 +8,8 @@ import Model from './model'
  * @property password
  */
 export default class User extends Model {
-  quizzes: string[]
-  results: string[]
+  quizzes: ObjectId[]
+  results: ObjectId[]
   constructor(
     public username: string,
     public email: string,
