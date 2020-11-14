@@ -2,6 +2,7 @@ const debug = require('debug')('routes:result')
 
 import moment from 'moment'
 import { query } from 'express-validator'
+import { Request, Response, NextFunction } from 'express'
 
 import resolveErrors from 'middleware/validation/resolve-errors'
 import * as validators from 'middleware/validation/result'
@@ -37,7 +38,7 @@ export default class ResultController extends Controller({
     resolveErrors,
     authenticate({ required: true })
   ])
-  async getResult(req, res, next) {
+  async getResult(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
     const { format, user: queryUser, quiz: quizId } = req.query
     try {
@@ -122,7 +123,7 @@ export default class ResultController extends Controller({
     query('quiz', 'Quiz id is required').exists(),
     resolveErrors
   ])
-  async postResult(req, res, next) {
+  async postResult(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
     const { answers } = req.body
     const { quiz: quizId } = req.query

@@ -2,6 +2,7 @@ const debug = require('debug')('routes:user')
 
 import jwt from 'jsonwebtoken'
 import { check, query } from 'express-validator'
+import { Request, Response, NextFunction } from 'express'
 
 import resolveErrors from 'middleware/validation/resolve-errors'
 import * as validators from 'middleware/validation/user'
@@ -29,7 +30,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
    * @param req.user user with id property
    */
   @Get('/me', [authenticate({ required: true })])
-  async getUserData(req, res, next) {
+  async getUserData(req: Request, res: Response, next: NextFunction) {
     try {
       const user = await this.users.getUserById(req.user.id)
       if (!user) {
@@ -57,7 +58,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
       .optional(),
     resolveErrors
   ])
-  async getUsersQuizzes(req, res, next) {
+  async getUsersQuizzes(req: Request, res: Response, next: NextFunction) {
     const { format } = req.query
     const { id: userId } = req.user
     try {
@@ -107,7 +108,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
       .optional(),
     resolveErrors
   ])
-  async getUsersResults(req, res, next) {
+  async getUsersResults(req: Request, res: Response, next: NextFunction) {
     const { format } = req.query
     const { id: userId } = req.user
     try {
@@ -158,7 +159,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     validators.checkEmail,
     resolveErrors
   ])
-  async changeUserEmail(req, res, next) {
+  async changeUserEmail(req: Request, res: Response, next: NextFunction) {
     const user = req.user.id
     const { email } = req.body
     try {
@@ -189,7 +190,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     validators.checkPassword,
     resolveErrors
   ])
-  async changeUserPassword(req, res, next) {
+  async changeUserPassword(req: Request, res: Response, next: NextFunction) {
     const user = req.user.id
     const { password } = req.body
     try {
@@ -208,7 +209,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
    * @param req.user user with id property
    */
   @Delete('/me', [authenticate({ required: true })])
-  async deleteUser(req, res, next) {
+  async deleteUser(req: Request, res: Response, next: NextFunction) {
     const userId = req.user.id
     try {
       const user = await this.users.getUserById(userId)
@@ -261,7 +262,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
    * @param req.params.id id of user to find
    */
   @Get('/:id')
-  async getUserById(req, res, next) {
+  async getUserById(req: Request, res: Response, next: NextFunction) {
     try {
       const userData = await this.users.getUserById(req.params.id)
       if (!userData) {
@@ -295,7 +296,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     }),
     resolveErrors
   ])
-  async authorizeUser(req, res, next) {
+  async authorizeUser(req: Request, res: Response, next: NextFunction) {
     const { username, password } = req.body
     try {
       const [userId, errors] = await this.users.authorizeUser(
@@ -338,7 +339,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     validators.checkPassword,
     resolveErrors
   ])
-  async registerUser(req, res, next) {
+  async registerUser(req: Request, res: Response, next: NextFunction) {
     const { username, email, password } = req.body
     try {
       const [userId, errors] = await this.users.registerUser({

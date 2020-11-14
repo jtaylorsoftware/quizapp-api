@@ -1,6 +1,8 @@
 const debug = require('debug')('routes:quiz')
+
 import { isValidExpiration } from '../middleware/validation/quiz'
 import { query } from 'express-validator'
+import { Request, Response, NextFunction } from 'express'
 
 import authenticate from '../middleware/auth'
 import resolveErrors from 'middleware/validation/resolve-errors'
@@ -34,7 +36,7 @@ export default class QuizController extends Controller({
     resolveErrors,
     authenticate({ required: true })
   ])
-  async getQuiz(req, res, next) {
+  async getQuiz(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
     const { id: quizId } = req.params
     const { format } = req.query
@@ -74,7 +76,7 @@ export default class QuizController extends Controller({
    * Returns a quiz as a form for a user to answer
    */
   @Get('/:id/form', [authenticate({ required: true })])
-  async getQuizForm(req, res, next) {
+  async getQuizForm(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
     const { id: quizId } = req.params
     try {
@@ -111,7 +113,7 @@ export default class QuizController extends Controller({
     validators.checkQuestions,
     resolveErrors
   ])
-  async createQuiz(req, res, next) {
+  async createQuiz(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
     const { title, isPublic, questions, ...quiz } = req.body
     const expiration = new Date(req.body.expiration).toISOString()
@@ -152,7 +154,7 @@ export default class QuizController extends Controller({
     validators.checkQuestions,
     resolveErrors
   ])
-  async editQuiz(req, res, next) {
+  async editQuiz(req: Request, res: Response, next: NextFunction) {
     const { user } = req
     const quizEdits = req.body
     const { id: quizId } = req.params
@@ -233,7 +235,7 @@ export default class QuizController extends Controller({
    * Deletes a quiz
    */
   @Delete('/:id', [authenticate({ required: true })])
-  async deleteQuiz(req, res, next) {
+  async deleteQuiz(req: Request, res: Response, next: NextFunction) {
     const { user } = req
     const { id: quizId } = req.params
 
