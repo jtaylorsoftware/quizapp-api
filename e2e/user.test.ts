@@ -44,7 +44,7 @@ describe('/api/users', () => {
         .expect('Content-Type', /json/)
         .expect(200)
       expect(res.body).toHaveProperty('token')
-      const decodedToken = jwt.decode(res.body.token)
+      const decodedToken: any = jwt.decode(res.body.token)
       const user = await users.findOne({ username })
       expect(decodedToken.user.id).toEqual(`${user._id}`)
     })
@@ -185,7 +185,7 @@ describe('/api/users', () => {
         .expect(200)
 
       expect(res.body).toHaveProperty('token')
-      const decodedToken = jwt.decode(res.body.token)
+      const decodedToken: any = jwt.decode(res.body.token)
       const user = await users.findOne({ username })
       expect(decodedToken.user.id).toEqual(`${user._id}`)
     })
