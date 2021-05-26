@@ -11,7 +11,7 @@ bootstrap()
   .then(({ app, client, config }) => {
     const DEFAULT_PORT = 8080
     let port = Number.parseInt(process.env.PORT)
-    port = port == NaN ? DEFAULT_PORT : port
+    port = Number.isNaN(port) ? DEFAULT_PORT : port
     const name =
       (config?.name && 'Application "' + config.name + '"') || 'Application'
 
