@@ -2,22 +2,22 @@ FROM node:14.17 as build
 
 WORKDIR /usr/local/src/quizapp
 
-# Copy server source
+# Install server deps
 COPY package*.json ./
+RUN npm ci
+
+# Install client deps
+COPY client/package*.json client/
+RUN npm ci --prefix client
+
+# Copy server source
 COPY src src
 COPY build.tsconfig.json .
 
 # Copy client source
 COPY client/public client/public
 COPY client/src client/src
-COPY client/package*.json client/
 COPY client/tsconfig.json client/
-
-# Install server deps
-RUN npm ci
-
-# Install client deps
-RUN npm ci --prefix client
 
 # Build server
 RUN npx tsc -p build.tsconfig.json
