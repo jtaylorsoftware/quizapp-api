@@ -40,4 +40,5 @@ EXPOSE 8080
 
 ENV NODE_ENV=production
 ENV NODE_PATH=./
+ENV DEBUG=routes:*,middleware:*,express:router
 ENTRYPOINT ["node", "start.js"]
