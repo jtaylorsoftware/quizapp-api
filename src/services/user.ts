@@ -174,7 +174,7 @@ export default class UserService extends Service() {
   async registerUser({
     email,
     username,
-    password
+    password,
   }: Partial<User>): Promise<[ObjectId, any[]]> {
     const errors = []
 
@@ -194,8 +194,8 @@ export default class UserService extends Service() {
       const salt = await bcrypt.genSalt(10)
       user.password = await bcrypt.hash(password, salt)
 
-      user = await this.userRepository.repo.insert(user)
-      return [user._id, undefined]
+      const userId = await this.userRepository.repo.insert(user)
+      return [userId, undefined]
     } else {
       return [undefined, errors]
     }

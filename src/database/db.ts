@@ -10,9 +10,7 @@ export interface DbConnection {
 }
 
 export default async function (config: DbConfig): Promise<DbConnection> {
-  const client = await MongoClient.connect(config.url, {
-    useUnifiedTopology: true,
-    useNewUrlParser: true,
-  })
+  const client = new MongoClient(config.url)
+  await client.connect()
   return { client, db: client.db() }
 }

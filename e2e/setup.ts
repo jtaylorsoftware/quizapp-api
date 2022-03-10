@@ -2,7 +2,7 @@ import Quiz from 'models/quiz'
 import Result from 'models/result'
 import User from 'models/user'
 import moment from 'moment'
-import mongo from 'mongodb'
+import { MongoClient, Collection, ObjectId, OptionalId } from 'mongodb'
 import bcrypt from 'bcryptjs'
 
 require('dotenv').config()
@@ -16,19 +16,19 @@ require('dotenv').config()
 export const teacher = {
   username: 'teacher',
   email: 'teacher@email.com',
-  password: 'password'
+  password: 'password',
 }
 
 export const student = {
   username: 'student',
   email: 'student@email.com',
-  password: 'password'
+  password: 'password',
 }
 
 export const extraUser = {
   username: 'extrauser',
   email: 'extrauser@email.com',
-  password: 'password'
+  password: 'password',
 }
 
 export const users = [
@@ -36,26 +36,26 @@ export const users = [
     ...teacher,
     date: moment().toISOString(),
     quizzes: [],
-    results: []
+    results: [],
   },
   {
     ...student,
     date: moment().toISOString(),
     quizzes: [],
-    results: []
+    results: [],
   },
   {
     ...extraUser,
     date: moment().toISOString(),
     quizzes: [],
-    results: []
-  }
+    results: [],
+  },
 ]
 
-const teacherQuizzes = [
+const teacherQuizzes: OptionalId<Quiz>[] = [
   // public quiz
   {
-    user: '',
+    user: new ObjectId(),
     title: 'public quiz',
     expiration: moment().add(1, 'd').toISOString(),
     isPublic: true,
@@ -65,20 +65,23 @@ const teacherQuizzes = [
         correctAnswer: 0,
         answers: [
           {
-            text: 'answer 1'
+            choice: 'answer 1',
           },
           {
-            text: 'answer 2'
-          }
-        ]
-      }
+            choice: 'answer 2',
+          },
+        ],
+      },
     ],
     results: [],
-    allowedUsers: []
+    allowedUsers: [],
+    date: moment().toISOString(),
+    showCorrectAnswers: true,
+    allowMultipleResponses: false,
   },
   // private quiz
   {
-    user: '',
+    user: new ObjectId(),
     title: 'private quiz',
     expiration: moment().add(1, 'd').toISOString(),
     isPublic: false,
@@ -88,22 +91,25 @@ const teacherQuizzes = [
         correctAnswer: 0,
         answers: [
           {
-            text: 'answer 1'
+            choice: 'answer 1',
           },
           {
-            text: 'answer 2'
-          }
-        ]
-      }
+            choice: 'answer 2',
+          },
+        ],
+      },
     ],
     results: [],
-    allowedUsers: [] // will contain extraUser
-  }
+    allowedUsers: [],
+    date: moment().toISOString(),
+    showCorrectAnswers: true,
+    allowMultipleResponses: false,
+  },
 ]
 
-const studentQuizzes = [
+const studentQuizzes: OptionalId<Quiz>[] = [
   {
-    user: '',
+    user: new ObjectId(),
     title: 'student quiz',
     expiration: moment().add(1, 'd').toISOString(),
     isPublic: true,
@@ -113,75 +119,81 @@ const studentQuizzes = [
         correctAnswer: 0,
         answers: [
           {
-            text: 'answer 1'
+            choice: 'answer 1',
           },
           {
-            text: 'answer 2'
-          }
-        ]
-      }
+            choice: 'answer 2',
+          },
+        ],
+      },
     ],
     results: [],
-    allowedUsers: []
-  }
+    allowedUsers: [],
+    date: moment().toISOString(),
+    showCorrectAnswers: true,
+    allowMultipleResponses: false,
+  },
 ]
 
 export const quizzes = [...teacherQuizzes, ...studentQuizzes]
 
-export const results = [
+export const results: OptionalId<Result>[] = [
   {
-    user: '',
-    quiz: '',
-    quizOwner: '',
+    user: new ObjectId(),
+    quiz: new ObjectId(),
+    quizOwner: new ObjectId(),
     answers: [
       {
-        choice: 0
-      }
+        choice: 0,
+      },
     ],
-    score: 0
+    score: 0,
+    date: moment().toISOString(),
   },
   {
-    user: '',
-    quiz: '',
-    quizOwner: '',
+    user: new ObjectId(),
+    quiz: new ObjectId(),
+    quizOwner: new ObjectId(),
     answers: [
       {
-        choice: 0
-      }
+        choice: 0,
+      },
     ],
-    score: 1.0
+    score: 1.0,
+    date: moment().toISOString(),
   },
   {
-    user: '',
-    quiz: '',
-    quizOwner: '',
+    user: new ObjectId(),
+    quiz: new ObjectId(),
+    quizOwner: new ObjectId(),
     answers: [
       {
-        choice: 0
-      }
+        choice: 0,
+      },
     ],
-    score: 1.0
-  }
+    score: 1.0,
+    date: moment().toISOString(),
+  },
 ]
 
-let usersCol: mongo.Collection
-let quizzesCol: mongo.Collection
-let resultsCol: mongo.Collection
+let usersCol: Collection<User>
+let quizzesCol: Collection<Quiz>
+let resultsCol: Collection<Result>
 
 const addUsers = async () => {
   const salt = await bcrypt.genSalt(10)
-  const IDs: mongo.ObjectID[] = await Promise.all(
+  const IDs: ObjectId[] = await Promise.all(
     users.map(async user => {
       user.password = await bcrypt.hash(user.password, salt)
       const { insertedId } = await usersCol.insertOne(user)
       return insertedId
-    })
+    }),
   )
 
   {
     const id = users.find(user => user.username === teacher.username)['_id']
     const extraUserID = users.find(
-      user => user.username === extraUser.username
+      user => user.username === extraUser.username,
     )['_id']
     teacherQuizzes.forEach(quiz => {
       quiz.user = id
@@ -221,10 +233,10 @@ const addQuizzes = async () => {
       {
         $addToSet: {
           quizzes: {
-            $each: ids
-          }
-        }
-      }
+            $each: ids,
+          },
+        },
+      },
     )
   }
 
@@ -232,7 +244,7 @@ const addQuizzes = async () => {
     // add student's quizzes
     const promises = studentQuizzes.map(async quiz => {
       const { insertedId } = await quizzesCol.insertOne(quiz)
-      return insertedId.toString()
+      return insertedId
     })
     const ids = await Promise.all(promises)
 
@@ -241,10 +253,10 @@ const addQuizzes = async () => {
       {
         $addToSet: {
           quizzes: {
-            $each: ids
-          }
-        }
-      }
+            $each: ids,
+          },
+        },
+      },
     )
   }
 
@@ -264,15 +276,15 @@ const addResults = async () => {
     users.map(async (user, ind) => {
       await usersCol.updateOne(
         {
-          username: user.username
+          username: user.username,
         },
         {
           $addToSet: {
-            results: ids[ind]
-          }
-        }
+            results: ids[ind],
+          },
+        },
       )
-    })
+    }),
   )
 
   await Promise.all(
@@ -281,19 +293,17 @@ const addResults = async () => {
         { title: quiz.title },
         {
           $addToSet: {
-            results: results[ind]['_id']
-          }
-        }
+            results: results[ind]['_id'],
+          },
+        },
       )
-    })
+    }),
   )
 }
 
 export default async () => {
-  const client = await mongo.connect(process.env.DB_URL, {
-    useUnifiedTopology: true,
-    useNewUrlParser: true
-  })
+  const client = new MongoClient(process.env.DB_URL)
+  await client.connect()
   const db = await client.db()
   usersCol = db.collection<User>('users')
   quizzesCol = db.collection<Quiz>('quizzes')

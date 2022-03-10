@@ -1,23 +1,25 @@
-import { ObjectId } from 'mongodb'
+import { Collection, ObjectId } from 'mongodb'
 import { Inject, Service } from 'express-di'
-import Repository from './repository'
 import DbService from 'services/db'
 import Result from 'models/result'
+import Repository from './repository'
 
 @Inject
 export default class ResultRepository extends Service() {
-  private _repo: Repository<Result>
+  private _repoBase: Repository<Result>
+  private collection: Collection<Result>
 
   constructor(private db: DbService) {
     super()
   }
 
   get repo(): Repository<Result> {
-    return this._repo
+    return this._repoBase
   }
 
   onInit() {
-    this._repo = new Repository(this.db.results)
+    this._repoBase = new Repository<Result>(this.db.results)
+    this.collection = this.db.results
   }
 
   /**
@@ -32,9 +34,9 @@ export default class ResultRepository extends Service() {
     if (!ObjectId.isValid(userId) || !ObjectId.isValid(quizId)) {
       return null
     }
-    return await this._repo.store.findOne({
+    return await this.collection.findOne({
       user: { $eq: new ObjectId(userId) },
-      quiz: { $eq: new ObjectId(quizId) }
+      quiz: { $eq: new ObjectId(quizId) },
     })
   }
 }

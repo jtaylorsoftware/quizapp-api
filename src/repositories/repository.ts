@@ -1,26 +1,26 @@
-import Quiz from 'models/quiz'
-import Result from 'models/result'
-import User from 'models/user'
 import {
   Collection,
-  Condition,
-  FilterQuery,
   ObjectId,
-  OptionalId,
-  WithId
+  OptionalUnlessRequiredId,
+  Filter,
+  WithId,
+  UpdateFilter,
 } from 'mongodb'
+import Model from '../models/model'
 
-export default class Repository<T extends User | Quiz | Result> {
-  constructor(public store: Collection<any>) {}
+export default class Repository<T extends Model> {
+  constructor(private _collection: Collection<T>) {}
 
   /**
    * Adds an entity to the repository
    * @param doc entity document
    * @returns Inserted document
    */
-  async insert(doc: T): Promise<T> {
-    const { ops } = await this.store.insertOne(doc)
-    return ops[0]
+  async insert(doc: T): Promise<ObjectId> {
+    const { insertedId } = await this._collection.insertOne(
+      doc as OptionalUnlessRequiredId<T>
+    )
+    return insertedId
   }
 
   /**
@@ -28,22 +28,22 @@ export default class Repository<T extends User | Quiz | Result> {
    * @param id
    * @returns Quiz data
    */
-  async findById(id: string | ObjectId): Promise<T | null> {
+  findById(id: string | ObjectId): Promise<WithId<T> | null> {
     if (!ObjectId.isValid(id)) {
       return null
     }
-    return await this.store.findOne({ _id: new ObjectId(id) })
+    return this._collection.findOne({ _id: new ObjectId(id) } as Filter<T>)
   }
 
   /**
    * Deletes a single entity by id
-   * @param ID
+   * @param id
    */
   async delete(id: string | ObjectId): Promise<void> {
     if (!ObjectId.isValid(id)) {
       return
     }
-    await this.store.deleteOne({ _id: new ObjectId(id) })
+    await this._collection.deleteOne({ _id: new ObjectId(id) } as Filter<T>)
   }
 
   /**
@@ -56,9 +56,9 @@ export default class Repository<T extends User | Quiz | Result> {
       return
     }
     const { _id, ...doc } = entity
-    await this.store.findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: { ...doc } }
+    await this._collection.findOneAndUpdate(
+      { _id: new ObjectId(id) } as Filter<T>,
+      { $set: { ...doc } } as UpdateFilter<T>
     )
   }
 }

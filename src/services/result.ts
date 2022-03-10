@@ -88,10 +88,10 @@ export default class ResultService extends Service() {
       }
     }
     if (errors.length === 0) {
-      const result = await this.resultRepository.repo.insert(
+      const resultId = await this.resultRepository.repo.insert(
         new Result(new ObjectId(userId), quiz._id, quiz.user, answers, score)
       )
-      return [result._id, undefined]
+      return [resultId, undefined]
     } else {
       return [undefined, errors]
     }

@@ -1,23 +1,25 @@
-import { ObjectId } from 'mongodb'
+import { Collection, ObjectId } from 'mongodb'
 import { Inject, Service } from 'express-di'
-import Repository from './repository'
 import DbService from 'services/db'
 import User from 'models/user'
+import Repository from './repository'
 
 @Inject
 export default class UserRepository extends Service() {
-  private _repo: Repository<User>
+  private _repoBase: Repository<User>
+  private collection: Collection<User>
 
   constructor(private db: DbService) {
     super()
   }
 
   get repo(): Repository<User> {
-    return this._repo
+    return this._repoBase
   }
 
   onInit() {
-    this._repo = new Repository(this.db.users)
+    this._repoBase = new Repository<User>(this.db.users)
+    this.collection = this.db.users
   }
 
   /**
@@ -34,12 +36,12 @@ export default class UserRepository extends Service() {
     }
     const _id: ObjectId = new ObjectId(user)
     const quizId: ObjectId = new ObjectId(quiz)
-    await this._repo.store.updateOne(
+    await this.collection.updateOne(
       { _id },
       {
         $addToSet: {
-          quizzes: quizId
-        }
+          quizzes: quizId,
+        },
       }
     )
   }
@@ -58,12 +60,12 @@ export default class UserRepository extends Service() {
     }
     const _id: ObjectId = new ObjectId(user)
     const resultId: ObjectId = new ObjectId(result)
-    await this._repo.store.updateOne(
+    await this.collection.updateOne(
       { _id },
       {
         $addToSet: {
-          results: resultId
-        }
+          results: resultId,
+        },
       }
     )
   }
@@ -82,12 +84,12 @@ export default class UserRepository extends Service() {
     }
     const _id: ObjectId = new ObjectId(user)
     const quizId: ObjectId = new ObjectId(quiz)
-    await this._repo.store.updateOne(
+    await this.collection.updateOne(
       { _id },
       {
         $pull: {
-          quizzes: quizId
-        }
+          quizzes: quizId,
+        },
       }
     )
   }
@@ -106,12 +108,12 @@ export default class UserRepository extends Service() {
     }
     const _id: ObjectId = new ObjectId(user)
     const resultId: ObjectId = new ObjectId(result)
-    await this._repo.store.updateOne(
+    await this.collection.updateOne(
       { _id },
       {
         $pull: {
-          results: resultId
-        }
+          results: resultId,
+        },
       }
     )
   }
@@ -121,12 +123,13 @@ export default class UserRepository extends Service() {
    * @param ids
    */
   async getUsernames(ids: Array<string | ObjectId>): Promise<string[]> {
-    ids = ids.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))
-    const users = await this._repo.store
-      .find({ _id: { $in: ids } })
-      .map(user => user.username)
+    const objectIds = ids
+      .filter((id) => ObjectId.isValid(id))
+      .map((id) => new ObjectId(id))
+    return await this.collection
+      .find({ _id: { $in: objectIds } })
+      .map((user) => user.username)
       .toArray()
-    return users
   }
 
   /**
@@ -135,11 +138,10 @@ export default class UserRepository extends Service() {
    * @returns ids of users with related usernames
    */
   async getUserIds(usernames: string[]): Promise<ObjectId[]> {
-    const users = await this._repo.store
+    return await this.collection
       .find({ username: { $in: usernames } })
-      .map(user => user._id)
+      .map((user) => user._id)
       .toArray()
-    return users
   }
 
   /**
@@ -148,7 +150,7 @@ export default class UserRepository extends Service() {
    * @returns User entity without sensitive information
    */
   async findByEmail(email: string): Promise<User> {
-    return await this._repo.store.findOne({ email })
+    return await this.collection.findOne({ email })
   }
 
   /**
@@ -157,7 +159,7 @@ export default class UserRepository extends Service() {
    * @returns User entity without sensitive information
    */
   async findByUsername(username: string): Promise<User> {
-    return await this._repo.store.findOne({ username })
+    return await this.collection.findOne({ username })
   }
 
   /**
@@ -170,7 +172,7 @@ export default class UserRepository extends Service() {
       return
     }
     const _id: ObjectId = new ObjectId(user)
-    await this._repo.store.findOneAndUpdate({ _id }, { $set: { email } })
+    await this.collection.findOneAndUpdate({ _id }, { $set: { email } })
   }
 
   /**
@@ -186,6 +188,6 @@ export default class UserRepository extends Service() {
       return
     }
     const _id: ObjectId = new ObjectId(user)
-    await this._repo.store.findOneAndUpdate({ _id }, { $set: { password } })
+    await this.collection.findOneAndUpdate({ _id }, { $set: { password } })
   }
 }

@@ -1,6 +1,9 @@
 import { Collection, Db, MongoClient } from 'mongodb'
 import { Inject, Service } from 'express-di'
 import connectToDb, { DbConnection } from 'database/db'
+import Quiz from 'models/quiz'
+import User from 'models/user'
+import Result from 'models/result'
 
 async function tryConnectToDb(): Promise<DbConnection> {
   let attempts = 1
@@ -19,9 +22,9 @@ async function tryConnectToDb(): Promise<DbConnection> {
 
 @Inject
 export default class DbService extends Service() {
-  quizzes: Collection<any>
-  users: Collection<any>
-  results: Collection<any>
+  quizzes: Collection<Quiz>
+  users: Collection<User>
+  results: Collection<Result>
   client: MongoClient
   db: Db
   async onInit() {

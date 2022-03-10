@@ -15,8 +15,7 @@ export default class QuizService extends Service() {
    * @returns
    */
   async getQuizById(quizId: string | ObjectId) {
-    const quiz = await this.quizRepository.repo.findById(quizId)
-    return quiz
+    return this.quizRepository.repo.findById(quizId)
   }
 
   /**
@@ -48,15 +47,15 @@ export default class QuizService extends Service() {
     expiration,
     isPublic,
     questions,
-    allowedUsers
+    allowedUsers,
   }: Partial<Quiz>) {
     // const allowedUserIds = await this._getUserIds(allowedUsers)
-    const quiz = await this.quizRepository.repo.insert(
+    const quizId = await this.quizRepository.repo.insert(
       new Quiz(user, title, expiration, isPublic, questions, allowedUsers)
     )
 
     // await this.userRepository.addQuiz(user, quiz)
-    return quiz._id
+    return quizId
   }
 
   /**
@@ -74,7 +73,7 @@ export default class QuizService extends Service() {
       isPublic,
       questions,
       expiration,
-      allowedUsers
+      allowedUsers,
     })
   }
 
