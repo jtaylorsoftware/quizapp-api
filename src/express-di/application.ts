@@ -17,7 +17,11 @@ export default function Application(config?: ApplicationConfig) {
     ex = express()
     config = config
     constructor() {
-      this.ex.use(helmet())
+      this.ex.use(
+        helmet({
+          contentSecurityPolicy: false,
+        })
+      )
       this.ex.use(express.json())
       this.ex.use((error, req, res, next) => {
         if (error instanceof SyntaxError) {
@@ -29,15 +33,15 @@ export default function Application(config?: ApplicationConfig) {
     }
   }
   Object.defineProperty(_ApplicationInternal.prototype, 'routes', {
-    value: new Array<RequestHandler>()
+    value: new Array<RequestHandler>(),
   })
   Object.defineProperty(_ApplicationInternal.prototype, 'bindRoutes', {
     value: function <T extends _ApplicationInternal>(instance: T) {
       instance['routes'].forEach((route: Route) => {
-        const boundCallbacks = route.callbacks.map(cb => cb.bind(instance))
+        const boundCallbacks = route.callbacks.map((cb) => cb.bind(instance))
         instance.ex[route.method](route.url, boundCallbacks)
       })
-    }
+    },
   })
   return DisableInjection(_ApplicationInternal)
 }
