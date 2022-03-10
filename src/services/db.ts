@@ -10,7 +10,7 @@ async function tryConnectToDb(): Promise<DbConnection> {
       return await connectToDb({ url: process.env.DB_URL })
     } catch (err) {
       error = err
-      console.error(`Could not connect to mongodb (attempt ${attempts})`)
+      console.error(`(${attempts}) Could not connect to mongodb: ${error}`)
     }
     attempts += 1
   }
