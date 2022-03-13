@@ -1,0 +1,11 @@
+.idea
+.circleci
+.github
+.git
+.gitignore
+.prettierrc
+docker-compose.yaml
+README.md
+
+client
+node_modules

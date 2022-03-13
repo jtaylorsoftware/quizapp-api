@@ -1,11 +1,26 @@
+import * as http from 'http'
+
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config()
 }
 
 import express from 'express'
 import path from 'path'
+import { createTerminus, TerminusOptions } from '@godaddy/terminus'
 
 import bootstrap from './bootstrap-app'
+
+async function onSignal () {
+  console.log('server is starting cleanup')
+}
+
+async function onShutdown () {
+  console.log('cleanup finished, server is shutting down');
+}
+
+async function onHealthCheck () {
+  return 'OK'
+}
 
 bootstrap()
   .then(({ app, client, config }) => {
@@ -15,14 +30,21 @@ bootstrap()
     const name =
       (config?.name && 'Application "' + config.name + '"') || 'Application'
 
-    if (process.env.NODE_ENV === 'production') {
-      app.use(express.static('client/build'))
-      app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'))
-      })
+    const server = http.createServer(app)
+
+    const options: Partial<TerminusOptions> = {
+      healthChecks: {
+        '/healthcheck': onHealthCheck,
+        verbatim: true,
+      },
+      signals: ['SIGINT', 'SIGTERM'],
+      onSignal,
+      onShutdown
     }
 
-    app.listen(port, () => {
+    createTerminus(server, options)
+
+    server.listen(port, () => {
       console.log(`${name} started on port ${port}`)
     })
   })

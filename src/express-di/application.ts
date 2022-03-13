@@ -1,10 +1,13 @@
 import express, { Express } from 'express'
-import helmet from 'helmet'
+import helmet, { HelmetOptions } from 'helmet'
 import { DisableInjection } from './injection'
 import { RequestHandler, Route } from './route'
+import cors, { CorsOptions, CorsOptionsDelegate } from 'cors'
 
 export interface ApplicationConfig {
   name?: string
+  helmetOptions?: Readonly<HelmetOptions>
+  corsConfig?: CorsOptions | CorsOptionsDelegate
 }
 
 export interface ApplicationBase {
@@ -16,12 +19,10 @@ export default function Application(config?: ApplicationConfig) {
   class _ApplicationInternal implements ApplicationBase {
     ex = express()
     config = config
+
     constructor() {
-      this.ex.use(
-        helmet({
-          contentSecurityPolicy: false,
-        })
-      )
+      this.ex.use(helmet(config?.helmetOptions))
+      this.ex.use(cors(config?.corsConfig))
       this.ex.use(express.json())
       this.ex.use((error, req, res, next) => {
         if (error instanceof SyntaxError) {
@@ -32,6 +33,7 @@ export default function Application(config?: ApplicationConfig) {
       })
     }
   }
+
   Object.defineProperty(_ApplicationInternal.prototype, 'routes', {
     value: new Array<RequestHandler>(),
   })

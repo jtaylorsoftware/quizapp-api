@@ -1,10 +1,15 @@
 version: '3.8'
 services:
-  app:
-    build: .
-    image: quizapp:latest
+  web:
+    build: ./client
+    image: quizapp-web:dev
     ports:
-      - 31000:8080
+      -  "80:80"
+  api:
+    build: .
+    image: quizapp-api:dev
+    ports:
+      - "31000:8080"
     env_file:
       - .env
   mongodb:

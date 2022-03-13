@@ -1,44 +1,41 @@
-FROM node:14.17 as build
+FROM node:14.17 as base
 
 WORKDIR /usr/local/src/quizapp
 
-# Install server deps
+# Install deps
 COPY package*.json ./
 RUN npm ci
 
-# Install client deps
-COPY client/package*.json client/
-RUN npm ci --prefix client
-
-# Copy server source
+# Copy source
 COPY src src
+
+FROM base AS dev
+COPY tsconfig.json .
+RUN npx tsc
+ENV NODE_PATH=./build
+ENV DEBUG=routes:*,middleware:*,express:router
+ENTRYPOINT ["npx", "nodemon", "build/start.js"]
+
+FROM dev AS test
+COPY e2e .
+COPY e2e.jest.config.ts .
+ENTRYPOINT ["npm", "run", "test:e2e"]
+
+FROM base AS build
 COPY build.tsconfig.json .
+RUN npm run build
 
-# Copy client source
-COPY client/public client/public
-COPY client/src client/src
-COPY client/tsconfig.json client/
+FROM node:14.17-alpine AS prod
 
-# Build server
-RUN npx tsc -p build.tsconfig.json
+WORKDIR /usr/local/quizapp
 
-# Build client
-RUN SKIP_PREFLIGHT_CHECK=true npm run build --prefix client
-
-FROM node:14.17-alpine  
-
-WORKDIR /usr/local/src/quizapp
-
-# Copy compiled server src & deps
+# Copy compiled src and deps
 COPY --from=build /usr/local/src/quizapp/build .
-COPY --from=build /usr/local/src/quizapp/node_modules node_modules
-
-# Copy client prod build
-COPY --from=build /usr/local/src/quizapp/client/build ./client/build
+COPY --from=build /usr/local/src/quizapp/node_modules .
 
 EXPOSE 8080
 
 ENV NODE_ENV=production
 ENV NODE_PATH=./
-ENV DEBUG=routes:*,middleware:*,express:router
-ENTRYPOINT ["node", "start.js"]
+ENV DEBUG=routes:*,express:router
+ENTRYPOINT ["node", "/usr/local/quizapp/start.js"]
