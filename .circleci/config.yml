@@ -1,0 +1,54 @@
+version: 2.1
+
+jobs:
+  test_and_build:
+    machine:
+      image: ubuntu-2004:202111-02
+      docker_layer_caching: true
+    steps:
+      - checkout
+      - run:
+          name: Build and run the test Docker image
+          command: |
+            docker build -t ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:test --target test .
+            docker run --rm quizapp-api:test
+      - run:
+          name: Build and persist the production Docker image
+          command: |
+            docker build -t ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH} --target prod .
+            mkdir images && docker save -o images/prod.tar ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}
+      - persist_to_workspace:
+          root: .
+          paths:
+            - images
+  push_ghcr:
+    machine:
+      image: ubuntu-2004:202111-02
+      docker_layer_caching: true
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Load saved prod Docker image
+          command: docker load -i ./images/prod.tar
+      - run:
+          name: Login to GHCR and push
+          command: |
+            echo "$GHCR_PAT" | docker login ghcr.io -u ${CIRCLE_PROJECT_USERNAME} --password-stdin
+            docker push ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}
+
+workflows:
+  test_build_push:
+    jobs:
+      - test_and_build
+      - push_ghcr:
+          requires:
+            - test_and_build
+          context:
+            - ghcr
+          filters:
+            branches:
+              only:
+                - latest
+                - /^\d\.\d\.\d$/
+
