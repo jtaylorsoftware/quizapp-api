@@ -1,16 +1,18 @@
 version: '3.8'
 services:
-  web:
-    build: ./client
-    image: quizapp-web:dev
-    ports:
-      -  "80:80"
   api:
-    build: .
+    build:
+      context: .
+      target: dev
     image: quizapp-api:dev
     ports:
       - "31000:8080"
-    env_file:
-      - .env
-  mongodb:
+    environment:
+      JWT_SECRET: aGVsbG93b3JsZAo=
+      DB_URL: mongodb://mongo:27017
+    depends_on:
+      - mongo
+  mongo:
     image: mongo
+    logging:
+      driver: "none"
