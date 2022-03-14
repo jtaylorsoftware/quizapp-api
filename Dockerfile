@@ -17,7 +17,7 @@ ENV DEBUG=routes:*,middleware:*,express:router
 ENTRYPOINT ["npx", "nodemon", "build/start.js"]
 
 FROM dev AS test
-COPY e2e .
+COPY e2e e2e
 COPY e2e.jest.config.ts .
 ENTRYPOINT ["npm", "run", "test:e2e"]
 
@@ -30,12 +30,12 @@ FROM node:14.17-alpine AS prod
 WORKDIR /usr/local/quizapp
 
 # Copy compiled src and deps
-COPY --from=build /usr/local/src/quizapp/build .
-COPY --from=build /usr/local/src/quizapp/node_modules .
+COPY --from=build /usr/local/src/quizapp/build build
+COPY --from=build /usr/local/src/quizapp/node_modules node_modules
 
 EXPOSE 8080
 
 ENV NODE_ENV=production
-ENV NODE_PATH=./
+ENV NODE_PATH=build
 ENV DEBUG=routes:*,express:router
-ENTRYPOINT ["node", "/usr/local/quizapp/start.js"]
+ENTRYPOINT ["node", "/usr/local/quizapp/build/start.js"]
