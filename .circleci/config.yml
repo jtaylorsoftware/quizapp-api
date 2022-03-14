@@ -8,10 +8,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Build and run the test Docker image
+          name: Build and run the test Docker image using docker-compose
           command: |
-            docker build -t ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:test --target test .
-            docker run --rm quizapp-api:test
+            docker build -t quizapp-api:test \ 
+                         -t ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:test \
+                   --target test .
+            docker-compose -f docker-compose.test.yaml up --abort-on-container-exit --exit-code-from api
       - run:
           name: Build and persist the production Docker image
           command: |
