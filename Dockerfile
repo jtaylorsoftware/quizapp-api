@@ -27,15 +27,20 @@ RUN npm run build
 
 FROM node:14.17-alpine AS prod
 
-WORKDIR /usr/local/quizapp
+RUN mkdir -p /home/node/quizapp \
+    && chown -R node:node /home/node/quizapp
+
+WORKDIR /home/node/quizapp
 
 # Copy compiled src and deps
-COPY --from=build /usr/local/src/quizapp/build build
-COPY --from=build /usr/local/src/quizapp/node_modules node_modules
+COPY --chown=node:node --from=build /usr/local/src/quizapp/build build
+COPY --chown=node:node --from=build /usr/local/src/quizapp/node_modules node_modules
+
+USER node
 
 EXPOSE 8080
 
 ENV NODE_ENV=production
 ENV NODE_PATH=build
 ENV DEBUG=routes:*,express:router
-ENTRYPOINT ["node", "/usr/local/quizapp/build/start.js"]
+ENTRYPOINT ["node", "build/start.js"]
