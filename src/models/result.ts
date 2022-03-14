@@ -1,11 +1,6 @@
 import { ObjectId } from 'mongodb'
 import Model from './model'
-
-export interface Answer {
-  choice: number
-  correctAnswer?: number
-  isCorrect?: boolean
-}
+import { GradedAnswer } from './answertypes'
 
 /**
  * Represents a quiz result document
@@ -20,7 +15,7 @@ export default class Result extends Model {
     public user: ObjectId,
     public quiz: ObjectId,
     public quizOwner: ObjectId,
-    public answers: Array<Answer>,
+    public answers: Array<GradedAnswer>,
     public score: number
   ) {
     super()

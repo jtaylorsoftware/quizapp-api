@@ -1,7 +1,7 @@
 import Quiz from 'models/quiz'
 import QuizRepository from 'repositories/quiz'
 import { Inject, Service } from 'express-di'
-import { ObjectId, OptionalId } from 'mongodb'
+import { ObjectId } from 'mongodb'
 
 @Inject
 export default class QuizService extends Service() {
@@ -49,13 +49,9 @@ export default class QuizService extends Service() {
     questions,
     allowedUsers,
   }: Partial<Quiz>) {
-    // const allowedUserIds = await this._getUserIds(allowedUsers)
-    const quizId = await this.quizRepository.repo.insert(
+    return await this.quizRepository.repo.insert(
       new Quiz(user, title, expiration, isPublic, questions, allowedUsers)
     )
-
-    // await this.userRepository.addQuiz(user, quiz)
-    return quizId
   }
 
   /**
@@ -67,7 +63,6 @@ export default class QuizService extends Service() {
     quizId,
     { title, expiration, isPublic, questions, allowedUsers }
   ) {
-    // const allowedUserIds = await this._getUserIds(allowedUsers)
     await this.quizRepository.repo.update(quizId, <Quiz>{
       title,
       isPublic,

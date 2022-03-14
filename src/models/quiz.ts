@@ -1,15 +1,6 @@
 import { ObjectId } from 'mongodb'
 import Model from './model'
-
-interface Answer {
-  choice: string
-}
-
-interface Question {
-  text: string
-  correctAnswer: number
-  answers: Answer[]
-}
+import { Question } from './questiontypes'
 
 /**
  * Representation of a Quiz document
@@ -35,14 +26,7 @@ export default class Quiz extends Model {
     public allowMultipleResponses: boolean = false // TODO - in validation and client allow user to toggle
   ) {
     super()
-    this.user = ObjectId.isValid(user) ? new ObjectId(user) : null
-    this.title = title
-    this.allowedUsers = allowedUsers
-    this.questions = questions
+    this.user = ObjectId.isValid(user) ? user : new ObjectId()
     this.results = []
-    this.showCorrectAnswers = showCorrectAnswers
-    this.allowMultipleResponses = allowMultipleResponses
-    this.isPublic = isPublic
-    this.expiration = expiration
   }
 }

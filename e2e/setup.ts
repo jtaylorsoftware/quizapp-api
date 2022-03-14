@@ -61,14 +61,15 @@ const teacherQuizzes: OptionalId<Quiz>[] = [
     isPublic: true,
     questions: [
       {
+        type: 'MultipleChoice',
         text: 'q1',
         correctAnswer: 0,
         answers: [
           {
-            choice: 'answer 1',
+            text: 'answer 1',
           },
           {
-            choice: 'answer 2',
+            text: 'answer 2',
           },
         ],
       },
@@ -87,14 +88,15 @@ const teacherQuizzes: OptionalId<Quiz>[] = [
     isPublic: false,
     questions: [
       {
+        type: 'MultipleChoice',
         text: 'q1',
         correctAnswer: 0,
         answers: [
           {
-            choice: 'answer 1',
+            text: 'answer 1',
           },
           {
-            choice: 'answer 2',
+            text: 'answer 2',
           },
         ],
       },
@@ -115,14 +117,15 @@ const studentQuizzes: OptionalId<Quiz>[] = [
     isPublic: true,
     questions: [
       {
+        type: 'MultipleChoice',
         text: 'q1',
         correctAnswer: 0,
         answers: [
           {
-            choice: 'answer 1',
+            text: 'answer 1',
           },
           {
-            choice: 'answer 2',
+            text: 'answer 2',
           },
         ],
       },
@@ -144,6 +147,7 @@ export const results: OptionalId<Result>[] = [
     quizOwner: new ObjectId(),
     answers: [
       {
+        type: 'MultipleChoice',
         choice: 0,
       },
     ],
@@ -156,6 +160,7 @@ export const results: OptionalId<Result>[] = [
     quizOwner: new ObjectId(),
     answers: [
       {
+        type: 'MultipleChoice',
         choice: 0,
       },
     ],
@@ -168,6 +173,7 @@ export const results: OptionalId<Result>[] = [
     quizOwner: new ObjectId(),
     answers: [
       {
+        type: 'MultipleChoice',
         choice: 0,
       },
     ],

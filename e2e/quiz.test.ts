@@ -8,6 +8,7 @@ import Quiz from 'models/quiz'
 
 import { teacher, extraUser } from './setup'
 import moment from 'moment'
+import { MultipleChoiceQuestion } from '../src/models/questiontypes'
 
 describe('/api/quizzes', () => {
   let dbClient: mongo.MongoClient
@@ -425,8 +426,8 @@ describe('/api/quizzes', () => {
 
     it('if a question correctAnswer has changed returns status 409 and errors', async () => {
       const quiz = await quizzes.findOne({ title: 'test quiz' })
-      quiz.questions[0].correctAnswer =
-        (quiz.questions[0].correctAnswer + 1) % quiz.questions[0].answers.length
+      const question = quiz.questions[0] as MultipleChoiceQuestion
+      question.correctAnswer = (question.correctAnswer + 1) % question.answers.length
 
       const res = await put(quiz._id.toHexString(), token)
         .send(quiz)
