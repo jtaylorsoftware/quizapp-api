@@ -70,6 +70,7 @@ function injectImpl(target: Constructor, cache: {}) {
       throw new Error('Null parameter received for dependency injection.')
     }
     cache = injectImpl(param, cache)
+    // @ts-ignore
     return cache[param.name]
   })
   return {

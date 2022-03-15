@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb'
 export default abstract class Model {
   _id?: ObjectId
   date: string
-  constructor() {
+  protected constructor() {
     this.date = new Date().toISOString()
   }
 }

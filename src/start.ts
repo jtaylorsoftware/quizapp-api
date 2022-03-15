@@ -14,7 +14,7 @@ bootstrap()
     // Get port from env or default
     let port = (() => {
       const DEFAULT_PORT = 8080
-      const envPort = Number.parseInt(process.env.PORT)
+      const envPort = Number.parseInt(process.env.PORT ?? '')
       return Number.isNaN(envPort) ? DEFAULT_PORT : envPort
     })()
 

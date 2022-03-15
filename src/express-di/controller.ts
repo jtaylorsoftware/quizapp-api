@@ -22,8 +22,10 @@ export default function Controller(config?: ControllerConfig) {
   })
   Object.defineProperty(_ControllerInternal.prototype, 'bindRoutes', {
     value: function <T extends _ControllerInternal>(instance: T) {
+      // @ts-ignore
       instance['routes'].forEach((route: Route) => {
         const boundCallbacks = route.callbacks.map(cb => cb.bind(instance))
+        // @ts-ignore
         instance.router[route.method](route.url, boundCallbacks)
       })
     }

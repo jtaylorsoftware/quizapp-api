@@ -61,6 +61,7 @@ describe('result (answer) validators', () => {
         answer: '',
       }
       expect(answerIsValid.bind(null, invalid)).toThrow('must not be empty')
+      // @ts-ignore
       invalid.answer = undefined
       expect(answerIsValid.bind(null, invalid)).toThrow('must not be empty')
     })
@@ -75,6 +76,7 @@ describe('result (answer) validators', () => {
         choice: -1,
       }
       expect(answerIsValid.bind(null, invalid)).toThrow('must be a number')
+      // @ts-ignore
       invalid.choice = undefined
       expect(answerIsValid.bind(null, invalid)).toThrow('must be a number')
     })

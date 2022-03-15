@@ -1,10 +1,11 @@
 import { validationResult, ValidationError } from 'express-validator'
+import { Request, Response, NextFunction } from 'express'
 
 function errorFormatter({ msg, param, value }: ValidationError) {
   return { [param]: msg, value: value }
 }
 
-export default function(req, res, next) {
+export default function(req: Request, res: Response, next: NextFunction) {
   const errors = validationResult(req).formatWith(errorFormatter)
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() })

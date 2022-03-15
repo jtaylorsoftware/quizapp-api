@@ -6,6 +6,7 @@ import { Inject, Service } from 'express-di'
 import { ObjectId } from 'mongodb'
 import Quiz from 'models/quiz'
 import { Answer, GradedAnswer, MultipleChoiceGradedAnswer } from '../models/answertypes'
+import { Question, QuestionType } from '../models/questiontypes'
 
 @Inject
 export default class ResultService extends Service() {
@@ -13,13 +14,13 @@ export default class ResultService extends Service() {
     super()
   }
 
-  async getResult(resultId): Promise<Result | null> {
+  async getResult(resultId: ObjectId): Promise<Result | null> {
     return await this.resultRepository.repo.findById(
       resultId,
     )
   }
 
-  async deleteResult(resultId: string | ObjectId) {
+  async deleteResult(resultId: ObjectId): Promise<void> {
     await this.resultRepository.repo.delete(resultId)
   }
 
@@ -41,9 +42,9 @@ export default class ResultService extends Service() {
    */
   async createResult(
     answers: Answer[],
-    userId: string | ObjectId,
+    userId: string,
     quiz: Quiz,
-  ): Promise<[ObjectId, any[]]> {
+  ): Promise<[ObjectId | null, string[]]> {
     const errors = []
 
     if (!ObjectId.isValid(userId)) {
@@ -60,7 +61,7 @@ export default class ResultService extends Service() {
           const result = <Result>(
             await this.resultRepository.repo.findById(resultId)
           )
-          return result && result.user.toString() === userId
+          return result && result.user.equals(userId)
         },
       )
 
@@ -80,14 +81,10 @@ export default class ResultService extends Service() {
     let score = 0
     for (let i = 0; i < questions.length; ++i) {
       const question = questions[i]
-      const answer = answers[i]
+      question.type ??= 'MultipleChoice'
 
-      if (question.type == null) {
-        question.type = 'MultipleChoice'
-      }
-      if (answer.type == null) {
-        answer.type = 'MultipleChoice'
-      }
+      const answer = answers[i]
+      answer.type ??= 'MultipleChoice'
 
       if (question.type != answer.type || question.type != 'MultipleChoice') {
         throw Error('Unsupported Question or Answer type')
@@ -120,11 +117,11 @@ export default class ResultService extends Service() {
     }
     if (errors.length === 0) {
       const resultId = await this.resultRepository.repo.insert(
-        new Result(new ObjectId(userId), quiz._id, quiz.user, gradedAnswers, score),
+        new Result(new ObjectId(userId), quiz._id as ObjectId, quiz.user, gradedAnswers, score),
       )
-      return [resultId, undefined]
+      return [resultId, []]
     } else {
-      return [undefined, errors]
+      return [null, errors]
     }
   }
 }

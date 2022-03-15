@@ -17,8 +17,8 @@ export const checkExpiration = body(
   'Expiration must be a date and time in the future',
 ).custom(isValidExpiration)
 
-export function isValidTitle(title: string) {
-  return title.length > 0
+export function isValidTitle(title?: string) {
+  return title != null && title.length > 0
 }
 
 export const checkTitle = body('title', 'Title can\'t be empty')
@@ -77,7 +77,7 @@ export function answersAreValid(answers: MultipleChoiceAnswer[]) {
 }
 
 export function isValidQuestionBody(question?: Partial<Question>): boolean {
-  if (!(question instanceof Object)) {
+  if (question == null) {
     throw Error('Invalid question value')
   }
 
@@ -86,9 +86,7 @@ export function isValidQuestionBody(question?: Partial<Question>): boolean {
   }
 
   // Allow undefined, in which case assume MC
-  if (question.type == null) {
-    question.type = 'MultipleChoice'
-  }
+  question.type ??= 'MultipleChoice'
 
   switch (question.type) {
     case 'FillIn':

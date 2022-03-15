@@ -6,8 +6,8 @@ import Repository from './repository'
 
 @Inject
 export default class ResultRepository extends Service() {
-  private _repoBase: Repository<Result>
-  private collection: Collection<Result>
+  private _repoBase!: Repository<Result>
+  private collection!: Collection<Result>
 
   constructor(private db: DbService) {
     super()

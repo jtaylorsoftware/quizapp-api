@@ -31,24 +31,24 @@ export const extraUser = {
   password: 'password',
 }
 
-export const users = [
+export const users: OptionalId<User>[] = [
   {
     ...teacher,
     date: moment().toISOString(),
-    quizzes: [],
-    results: [],
+    quizzes: [] as ObjectId[],
+    results: [] as ObjectId[],
   },
   {
     ...student,
     date: moment().toISOString(),
-    quizzes: [],
-    results: [],
+    quizzes: [] as ObjectId[],
+    results: [] as ObjectId[],
   },
   {
     ...extraUser,
     date: moment().toISOString(),
-    quizzes: [],
-    results: [],
+    quizzes: [] as ObjectId[],
+    results: [] as ObjectId[],
   },
 ]
 
@@ -197,10 +197,10 @@ const addUsers = async () => {
   )
 
   {
-    const id = users.find(user => user.username === teacher.username)['_id']
+    const id = users.find(user => user.username === teacher.username)!!._id!!
     const extraUserID = users.find(
       user => user.username === extraUser.username,
-    )['_id']
+    )!!._id!!
     teacherQuizzes.forEach(quiz => {
       quiz.user = id
       if (!quiz.isPublic) {
@@ -210,7 +210,7 @@ const addUsers = async () => {
   }
 
   {
-    const id = users.find(user => user.username === student.username)['_id']
+    const id = users.find(user => user.username === student.username)!!._id!!
     studentQuizzes.forEach(quiz => {
       quiz.user = id
     })
@@ -267,7 +267,7 @@ const addQuizzes = async () => {
   }
 
   results.forEach((result, ind) => {
-    result.quiz = quizzes[ind]['_id']
+    result.quiz = quizzes[ind]._id!!
   })
 }
 
@@ -308,7 +308,7 @@ const addResults = async () => {
 }
 
 export default async () => {
-  const client = new MongoClient(process.env.DB_URL)
+  const client = new MongoClient(process.env.DB_URL as string)
   await client.connect()
   const db = await client.db()
   usersCol = db.collection<User>('users')

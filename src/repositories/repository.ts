@@ -28,7 +28,7 @@ export default class Repository<T extends Model> {
    * @param id
    * @returns Quiz data
    */
-  findById(id: string | ObjectId): Promise<WithId<T> | null> {
+  async findById(id: string | ObjectId): Promise<WithId<T> | null> {
     if (!ObjectId.isValid(id)) {
       return null
     }

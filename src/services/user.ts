@@ -1,9 +1,12 @@
 import bcrypt from 'bcryptjs'
 
 import UserRepository from 'repositories/user'
-import User from 'models/user'
+import User, { UserWithoutPassword } from 'models/user'
 import { Inject, Service } from 'express-di'
 import { ObjectId } from 'mongodb'
+import { ServiceError } from './errors'
+
+export type UserDto = Omit<User, '_id' | 'date' | 'quizzes' | 'results'>
 
 @Inject
 export default class UserService extends Service() {
@@ -16,8 +19,8 @@ export default class UserService extends Service() {
    * @param userId
    * @returns user data
    */
-  async getUserById(userId: string | ObjectId) {
-    const user = <User>await this.userRepository.repo.findById(userId)
+  async getUserById(userId: string | ObjectId): Promise<UserWithoutPassword | null> {
+    const user = await this.userRepository.repo.findById(userId)
     if (user) {
       const { password, ...userData } = user
       return userData
@@ -30,7 +33,7 @@ export default class UserService extends Service() {
    * @param username
    * @returns user data
    */
-  async getUserByUsername(username: string) {
+  async getUserByUsername(username: string): Promise<UserWithoutPassword | null> {
     const user = await this.userRepository.findByUsername(username)
     if (user) {
       const { password, ...userData } = user
@@ -43,25 +46,23 @@ export default class UserService extends Service() {
    * Returns a list of usernames with matching user ids
    * @param userIds
    */
-  async getUsernamesFromIds(userIds: Array<string | ObjectId>) {
-    const usernames = await this.userRepository.getUsernames(userIds)
-    return usernames
+  async getUsernamesFromIds(userIds: Array<string | ObjectId>): Promise<string[]> {
+    return await this.userRepository.getUsernames(userIds)
   }
 
   /**
    * Returns a list of user ids with matching usernames
    * @param usernames
    */
-  async getIdsFromUsernames(usernames: string[]) {
-    const ids = await this.userRepository.getUserIds(usernames)
-    return ids
+  async getIdsFromUsernames(usernames: string[]): Promise<ObjectId[]> {
+    return await this.userRepository.getUserIds(usernames)
   }
 
   /**
    * Gets user's quizzes
    * @param userId
    */
-  async getUserQuizzes(userId: string | ObjectId) {
+  async getUserQuizzes(userId: string | ObjectId): Promise<ObjectId[]> {
     const user = <User>await this.userRepository.repo.findById(userId)
     return user.quizzes
   }
@@ -70,7 +71,7 @@ export default class UserService extends Service() {
    * Gets user's results
    * @param userId
    */
-  async getUserResults(userId: string | ObjectId) {
+  async getUserResults(userId: string | ObjectId): Promise<ObjectId[]> {
     const user = <User>await this.userRepository.repo.findById(userId)
     return user.results
   }
@@ -80,7 +81,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param quizId
    */
-  async addQuiz(userId: string | ObjectId, quizId: string | ObjectId) {
+  async addQuiz(userId: string | ObjectId, quizId: string | ObjectId): Promise<void> {
     await this.userRepository.addQuiz(userId, quizId)
   }
 
@@ -89,7 +90,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param quizId
    */
-  async removeQuiz(userId: string | ObjectId, quizId: string | ObjectId) {
+  async removeQuiz(userId: string | ObjectId, quizId: string | ObjectId): Promise<void> {
     await this.userRepository.removeQuiz(userId, quizId)
   }
 
@@ -98,7 +99,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param resultId
    */
-  async addResult(userId: string | ObjectId, resultId: string | ObjectId) {
+  async addResult(userId: string | ObjectId, resultId: string | ObjectId): Promise<void> {
     await this.userRepository.addResult(userId, resultId)
   }
 
@@ -107,7 +108,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param resultId
    */
-  async removeResult(userId: string | ObjectId, resultId: string | ObjectId) {
+  async removeResult(userId: string | ObjectId, resultId: string | ObjectId): Promise<void> {
     await this.userRepository.removeResult(userId, resultId)
   }
 
@@ -117,9 +118,9 @@ export default class UserService extends Service() {
    * @param password
    * @returns string with user id if authorized, empty if not authorized
    */
-  async authorizeUser(username: string, password: string) {
-    let userId = null
-    const errors = []
+  async authorizeUser(username: string, password: string): Promise<[ObjectId | undefined, ServiceError[]]> {
+    let userId: ObjectId | undefined
+    const errors: ServiceError[] = []
     // try to find a user with a matching username
     const user = await this.userRepository.findByUsername(username)
     if (!user) {
@@ -143,7 +144,7 @@ export default class UserService extends Service() {
    * @param email
    * @returns true if email was set and not previously in use
    */
-  async changeUserEmail(userId: string | ObjectId, email: string) {
+  async changeUserEmail(userId: string | ObjectId, email: string): Promise<boolean> {
     const existingUser = await this.userRepository.findByEmail(email)
     if (!existingUser) {
       await this.userRepository.updateEmail(userId, email)
@@ -157,7 +158,7 @@ export default class UserService extends Service() {
    * @param userId
    * @param password
    */
-  async changeUserPassword(userId: string | ObjectId, password: string) {
+  async changeUserPassword(userId: string | ObjectId, password: string): Promise<void> {
     const salt = await bcrypt.genSalt(10)
     const encryptedPass = await bcrypt.hash(password, salt)
     await this.userRepository.updatePassword(userId, encryptedPass)
@@ -171,12 +172,13 @@ export default class UserService extends Service() {
    * @param user.username
    * @returns user id and array of fields that had errors
    */
-  async registerUser({
-    email,
-    username,
-    password,
-  }: Partial<User>): Promise<[ObjectId, any[]]> {
-    const errors = []
+  async registerUser(
+    {
+      email,
+      username,
+      password,
+    }: UserDto): Promise<[ObjectId | undefined, ServiceError[]]> {
+    const errors: ServiceError[] = []
 
     let existingUser = await this.userRepository.findByEmail(email)
 
@@ -195,7 +197,7 @@ export default class UserService extends Service() {
       user.password = await bcrypt.hash(password, salt)
 
       const userId = await this.userRepository.repo.insert(user)
-      return [userId, undefined]
+      return [userId, errors]
     } else {
       return [undefined, errors]
     }
@@ -205,7 +207,7 @@ export default class UserService extends Service() {
    * Deletes the user
    * @param userId
    */
-  async deleteUser(userId: string | ObjectId) {
+  async deleteUser(userId: string | ObjectId): Promise<void> {
     await this.userRepository.repo.delete(userId)
   }
 }

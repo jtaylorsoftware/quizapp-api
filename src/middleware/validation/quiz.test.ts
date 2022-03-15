@@ -38,6 +38,7 @@ describe('quiz validators', () => {
         correctAnswer: '',
       }
       expect(isValidQuestionBody.bind(null, invalid)).toThrow('empty answer text')
+      // @ts-ignore
       invalid.correctAnswer = undefined
       expect(isValidQuestionBody.bind(null, invalid)).toThrow('empty answer text')
     })
@@ -47,6 +48,7 @@ describe('quiz validators', () => {
     })
 
     it('should assume undefined type as MC Question, and pass it', () => {
+      // @ts-ignore
       validMcQuestion.type = undefined
       expect(isValidQuestionBody(validMcQuestion)).toBeTruthy()
     })
@@ -69,6 +71,7 @@ describe('quiz validators', () => {
         answers: [],
       }
       expect(isValidQuestionBody.bind(null, invalid)).toThrow('too few answers')
+      // @ts-ignore
       invalid.answers = undefined
       expect(isValidQuestionBody.bind(null, invalid)).toThrow('too few answers')
     })
@@ -82,6 +85,7 @@ describe('quiz validators', () => {
           text: undefined,
         }],
       }
+      // @ts-ignore
       expect(isValidQuestionBody.bind(null, invalid)).toThrow('empty answer text')
     })
 

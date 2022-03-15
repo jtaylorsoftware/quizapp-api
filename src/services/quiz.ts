@@ -1,7 +1,10 @@
 import Quiz from 'models/quiz'
 import QuizRepository from 'repositories/quiz'
 import { Inject, Service } from 'express-di'
-import { ObjectId } from 'mongodb'
+import { ObjectId, WithId } from 'mongodb'
+
+export type QuizDto = Omit<Quiz,
+  '_id' | 'date' | 'showCorrectAnswers' | 'allowMultipleResponses' | 'results'>
 
 @Inject
 export default class QuizService extends Service() {
@@ -12,9 +15,8 @@ export default class QuizService extends Service() {
   /**
    * Gets a quiz by id
    * @param quizId
-   * @returns
    */
-  async getQuizById(quizId: string | ObjectId) {
+  async getQuizById(quizId: string | ObjectId): Promise<WithId<Quiz> | null> {
     return this.quizRepository.repo.findById(quizId)
   }
 
@@ -23,7 +25,7 @@ export default class QuizService extends Service() {
    * @param quizId
    * @param resultId
    */
-  async addResult(quizId: string | ObjectId, resultId: string | ObjectId) {
+  async addResult(quizId: string | ObjectId, resultId: string | ObjectId): Promise<void> {
     await this.quizRepository.addResult(quizId, resultId)
   }
 
@@ -32,7 +34,7 @@ export default class QuizService extends Service() {
    * @param quizId
    * @param resultId
    */
-  async removeResult(quizId: string | ObjectId, resultId: string | ObjectId) {
+  async removeResult(quizId: string | ObjectId, resultId: string | ObjectId): Promise<void> {
     await this.quizRepository.removeResult(quizId, resultId)
   }
 
@@ -41,16 +43,17 @@ export default class QuizService extends Service() {
    * @param quiz quiz data
    * @returns {string} created quiz's id
    */
-  async createQuiz({
-    user,
-    title,
-    expiration,
-    isPublic,
-    questions,
-    allowedUsers,
-  }: Partial<Quiz>) {
+  async createQuiz(
+    {
+      user,
+      title,
+      expiration,
+      isPublic,
+      questions,
+      allowedUsers,
+    }: QuizDto): Promise<ObjectId> {
     return await this.quizRepository.repo.insert(
-      new Quiz(user, title, expiration, isPublic, questions, allowedUsers)
+      new Quiz(user, title, expiration, isPublic, questions, allowedUsers),
     )
   }
 
@@ -60,9 +63,9 @@ export default class QuizService extends Service() {
    * @param quiz data to replace current data with
    */
   async updateQuiz(
-    quizId,
-    { title, expiration, isPublic, questions, allowedUsers }
-  ) {
+    quizId: ObjectId,
+    { title, expiration, isPublic, questions, allowedUsers }: QuizDto,
+  ): Promise<void> {
     await this.quizRepository.repo.update(quizId, <Quiz>{
       title,
       isPublic,
@@ -76,7 +79,7 @@ export default class QuizService extends Service() {
    * Deletes a quiz by id
    * @param quizId
    */
-  async deleteQuiz(quizId) {
+  async deleteQuiz(quizId: ObjectId): Promise<void> {
     await this.quizRepository.repo.delete(quizId)
   }
 }

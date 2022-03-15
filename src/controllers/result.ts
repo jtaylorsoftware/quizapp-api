@@ -1,3 +1,5 @@
+import { ResultWithExtras } from '../models/result'
+
 const debug = require('debug')('routes:result')
 
 import moment from 'moment'
@@ -60,14 +62,15 @@ export default class ResultController extends Controller({
         for (const resultId of quiz.results) {
           const result = await this.results.getResult(resultId)
           if (result) {
+            const resultWithExtras: ResultWithExtras = { ...result }
             const resultUser = await this.users.getUserById(result.user)
             if (resultUser) {
-              result['username'] = resultUser['username']
+              resultWithExtras.username = resultUser.username
             }
             if (!format || format === 'full') {
-              results.push(result)
+              results.push(resultWithExtras)
             } else {
-              const { answers, ...listing } = result
+              const { answers, ...listing } = resultWithExtras
               results.push(listing)
             }
           }
@@ -88,24 +91,27 @@ export default class ResultController extends Controller({
           res.status(403).end()
           return next()
         }
+
+        const resultWithExtras: ResultWithExtras = { ...result }
+
         const resultUser = await this.users.getUserById(result.user)
         if (resultUser) {
-          result['username'] = resultUser['username']
+          resultWithExtras.username = resultUser.username
         }
 
         // get the quiz title and created by
         const quiz = await this.quizzes.getQuizById(<string>quizId)
         if (quiz) {
-          result['quizTitle'] = quiz.title
+          resultWithExtras.quizTitle = quiz.title
           const owner = await this.users.getUserById(result.quizOwner)
           if (owner) {
-            result['ownerUsername'] = owner['username']
+            resultWithExtras.ownerUsername = owner['username']
           }
         }
         if (!format || format === 'full') {
-          res.json(result)
+          res.json(resultWithExtras)
         } else {
-          const { answers, ...listing } = result
+          const { answers, ...listing } = resultWithExtras
           res.json(listing)
         }
       }

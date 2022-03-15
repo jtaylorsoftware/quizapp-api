@@ -24,7 +24,10 @@ export default function Application(config?: ApplicationConfig) {
       this.ex.use(helmet(config?.helmetOptions))
       this.ex.use(cors(config?.corsConfig))
       this.ex.use(express.json())
+
+      // @ts-ignore
       this.ex.use((error, req, res, next) => {
+        // noinspection SuspiciousTypeOfGuard
         if (error instanceof SyntaxError) {
           res.status(400).json({ errors: [{ msg: 'Invalid JSON format' }] })
         } else {
@@ -39,8 +42,10 @@ export default function Application(config?: ApplicationConfig) {
   })
   Object.defineProperty(_ApplicationInternal.prototype, 'bindRoutes', {
     value: function <T extends _ApplicationInternal>(instance: T) {
+      // @ts-ignore
       instance['routes'].forEach((route: Route) => {
         const boundCallbacks = route.callbacks.map((cb) => cb.bind(instance))
+        // @ts-ignore
         instance.ex[route.method](route.url, boundCallbacks)
       })
     },

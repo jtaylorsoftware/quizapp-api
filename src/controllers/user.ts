@@ -1,3 +1,5 @@
+import { ResultWithExtras } from '../models/result'
+
 const debug = require('debug')('routes:user')
 
 import jwt from 'jsonwebtoken'
@@ -19,7 +21,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
   constructor(
     private quizzes: QuizService,
     private results: ResultService,
-    private users: UserService
+    private users: UserService,
   ) {
     super()
   }
@@ -44,6 +46,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     }
     return next()
   }
+
   /**
    * Returns the user's quizzes as either listing or full data.
    * By default, full if no query string supplied.
@@ -56,7 +59,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     query('format', 'Valid formats: listing, full')
       .custom(format => format === 'listing' || format === 'full')
       .optional(),
-    resolveErrors
+    resolveErrors,
   ])
   async getUsersQuizzes(req: Request, res: Response, next: NextFunction) {
     const { format } = req.query
@@ -74,16 +77,18 @@ export default class UserController extends Controller({ root: '/api/users' }) {
           if (!format || format === 'full') {
             // convert allowed users to usernames
             const allowedUsernames = await this.users.getUsernamesFromIds(
-              quiz.allowedUsers
+              quiz.allowedUsers,
             )
             const { allowedUsers, ...quizWithUsernames } = quiz
-            quizWithUsernames['allowedUsers'] = allowedUsernames
-            quizzes.push(quizWithUsernames)
+            quizzes.push({ ...quizWithUsernames, allowedUsers: allowedUsernames })
           } else {
             const { questions, results, allowedUsers, ...listing } = quiz
-            listing['resultsCount'] = results.length
-            listing['questionCount'] = questions.length
-            quizzes.push(listing)
+
+            quizzes.push({
+              ...listing,
+              resultsCount: results.length,
+              questionCount: questions?.length
+            })
           }
         }
       }
@@ -107,7 +112,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     query('format', 'Valid formats: listing, full')
       .custom(format => format === 'listing' || format === 'full')
       .optional(),
-    resolveErrors
+    resolveErrors,
   ])
   async getUsersResults(req: Request, res: Response, next: NextFunction) {
     const { format } = req.query
@@ -125,10 +130,11 @@ export default class UserController extends Controller({ root: '/api/users' }) {
           // get the quiz title and created by
           const quiz = await this.quizzes.getQuizById(result.quiz)
           if (quiz) {
-            result['quizTitle'] = quiz.title
+            const resultWithExtras: ResultWithExtras = { ...result }
+            resultWithExtras.quizTitle = quiz.title
             const owner = await this.users.getUserById(result.quizOwner)
             if (owner) {
-              result['ownerUsername'] = owner.username
+              resultWithExtras.ownerUsername = owner.username
             }
           }
           if (!format || format === 'full') {
@@ -158,7 +164,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
   @Put('/me/email', [
     authenticate({ required: true }),
     validators.checkEmail,
-    resolveErrors
+    resolveErrors,
   ])
   async changeUserEmail(req: Request, res: Response, next: NextFunction) {
     const user = req.user.id
@@ -167,7 +173,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
       const emailWasSet = await this.users.changeUserEmail(user, email)
       if (!emailWasSet) {
         res.status(409).json({
-          errors: [{ email: 'Email is already in use.', value: email }]
+          errors: [{ email: 'Email is already in use.', value: email }],
         })
         return next()
       }
@@ -189,7 +195,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
   @Put('/me/password', [
     authenticate({ required: true }),
     validators.checkPassword,
-    resolveErrors
+    resolveErrors,
   ])
   async changeUserPassword(req: Request, res: Response, next: NextFunction) {
     const user = req.user.id
@@ -289,20 +295,20 @@ export default class UserController extends Controller({ root: '/api/users' }) {
   @Post('/auth', [
     check('username', 'Please enter your username.').isLength({
       min: 1,
-      max: 50
+      max: 50,
     }),
     check('password', 'Please enter your password.').isLength({
       min: 1,
-      max: 50
+      max: 50,
     }),
-    resolveErrors
+    resolveErrors,
   ])
   async authorizeUser(req: Request, res: Response, next: NextFunction) {
     const { username, password } = req.body
     try {
       const [userId, errors] = await this.users.authorizeUser(
         username,
-        password
+        password,
       )
       if (!userId) {
         return res.status(400).json({ errors: errors })
@@ -310,13 +316,13 @@ export default class UserController extends Controller({ root: '/api/users' }) {
       // the jwt will contain the user's id
       const payload = {
         user: {
-          id: userId
-        }
+          id: userId,
+        },
       }
 
       // use jwt to sign the payload with the secret
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: 3600 * 24
+      const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
+        expiresIn: 3600 * 24,
       })
       res.json({ token })
     } catch (error) {
@@ -338,7 +344,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     validators.checkUsername,
     validators.checkEmail,
     validators.checkPassword,
-    resolveErrors
+    resolveErrors,
   ])
   async registerUser(req: Request, res: Response, next: NextFunction) {
     const { username, email, password } = req.body
@@ -346,7 +352,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
       const [userId, errors] = await this.users.registerUser({
         username,
         email,
-        password
+        password,
       })
 
       if (!userId) {
@@ -356,12 +362,12 @@ export default class UserController extends Controller({ root: '/api/users' }) {
 
       const payload = {
         user: {
-          id: userId
-        }
+          id: userId,
+        },
       }
 
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: 3600 * 24
+      const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
+        expiresIn: 3600 * 24,
       })
       res.json({ token })
     } catch (error) {

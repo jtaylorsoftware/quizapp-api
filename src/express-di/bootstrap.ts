@@ -82,9 +82,11 @@ function bindRoutes(
   controllers: ControllerBase[]
 ) {
   // Bind application first so it takes priority over controllers
+  // @ts-ignore
   ;(application['bindRoutes'] as Function)(application)
 
   controllers.forEach(controller => {
+    // @ts-ignore
     ;(controller['bindRoutes'] as Function)(controller)
     application.ex.use(controller.config?.root ?? '', controller.router)
   })

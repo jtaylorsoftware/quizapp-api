@@ -9,8 +9,8 @@ export const MIN_ANSWERS: number = 2
 
 @Inject
 export default class QuizRepository extends Service() {
-  private _repoBase: Repository<Quiz>
-  private collection: Collection<Quiz>
+  private _repoBase!: Repository<Quiz>
+  private collection!: Collection<Quiz>
 
   constructor(private db: DbService) {
     super()

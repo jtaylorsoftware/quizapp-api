@@ -1,4 +1,4 @@
-import { Collection, ObjectId } from 'mongodb'
+import { Collection, ObjectId, WithId } from 'mongodb'
 import { Inject, Service } from 'express-di'
 import DbService from 'services/db'
 import User from 'models/user'
@@ -6,8 +6,8 @@ import Repository from './repository'
 
 @Inject
 export default class UserRepository extends Service() {
-  private _repoBase: Repository<User>
-  private collection: Collection<User>
+  private _repoBase!: Repository<User>
+  private collection!: Collection<User>
 
   constructor(private db: DbService) {
     super()
@@ -149,7 +149,7 @@ export default class UserRepository extends Service() {
    * @param email
    * @returns User entity without sensitive information
    */
-  async findByEmail(email: string): Promise<User> {
+  async findByEmail(email: string): Promise<WithId<User> | null> {
     return await this.collection.findOne({ email })
   }
 
@@ -158,7 +158,7 @@ export default class UserRepository extends Service() {
    * @param username
    * @returns User entity without sensitive information
    */
-  async findByUsername(username: string): Promise<User> {
+  async findByUsername(username: string): Promise<WithId<User> | null> {
     return await this.collection.findOne({ username })
   }
 

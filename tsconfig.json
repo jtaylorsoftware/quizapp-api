@@ -10,7 +10,8 @@
     "module": "commonjs",
     "baseUrl": "src",
     "emitDecoratorMetadata": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "strict": true
   },
   "include": ["src/**/*", "e2e/**/*"],
   "exclude": ["./client", "./build"]

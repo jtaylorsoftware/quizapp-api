@@ -1,27 +1,31 @@
+
 const debug = require('debug')('routes:quiz')
 
-import { isValidExpiration } from '../middleware/validation/quiz'
-import { query } from 'express-validator'
 import { Request, Response, NextFunction } from 'express'
-
-import authenticate from '../middleware/auth'
-import resolveErrors from 'middleware/validation/resolve-errors'
-import * as validators from 'middleware/validation/quiz'
+import { query } from 'express-validator'
 
 import { Get, Put, Post, Delete, Controller, Inject } from 'express-di'
+
+import { isValidExpiration } from 'middleware/validation/quiz'
+import authenticate from 'middleware/auth'
+import resolveErrors from 'middleware/validation/resolve-errors'
+import * as validators from 'middleware/validation/quiz'
 
 import QuizService from 'services/quiz'
 import ResultService from 'services/result'
 import UserService from 'services/user'
+import { ObjectId, WithId } from 'mongodb'
+import Quiz, { QuizForm } from 'models/quiz'
+import {  Question } from 'models/questiontypes'
 
 @Inject
 export default class QuizController extends Controller({
-  root: '/api/quizzes'
+  root: '/api/quizzes',
 }) {
   constructor(
     private quizzes: QuizService,
     private results: ResultService,
-    private users: UserService
+    private users: UserService,
   ) {
     super()
   }
@@ -34,7 +38,7 @@ export default class QuizController extends Controller({
       .custom(format => format === 'listing' || format === 'full')
       .optional(),
     resolveErrors,
-    authenticate({ required: true })
+    authenticate({ required: true }),
   ])
   async getQuiz(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
@@ -54,16 +58,21 @@ export default class QuizController extends Controller({
       if (!format || format === 'full') {
         // convert allowed users to usernames
         const allowedUsernames = await this.users.getUsernamesFromIds(
-          quiz.allowedUsers
+          quiz.allowedUsers,
         )
-        const { allowedUsers, ...quizWithUsernames } = quiz
-        quizWithUsernames['allowedUsers'] = allowedUsernames
-        res.json(quizWithUsernames)
+
+        res.json({
+          ...quiz,
+          allowedUsers: allowedUsernames,
+        })
       } else {
+
         const { questions, results, allowedUsers, ...listing } = quiz
-        listing['resultsCount'] = results.length
-        listing['questionCount'] = questions.length
-        res.json(listing)
+        res.json({
+          ...listing,
+          resultsCount: results.length,
+          questionCount: questions?.length,
+        })
       }
     } catch (error) {
       debug(error)
@@ -91,7 +100,7 @@ export default class QuizController extends Controller({
         return next()
       }
       const answerForm = this.convertToAnswerForm(quiz)
-      const [username] = await this.users.getUsernamesFromIds([answerForm.user])
+      const [username] = await this.users.getUsernamesFromIds([quiz.user])
       answerForm.user = username
       res.json(answerForm)
     } catch (error) {
@@ -111,7 +120,7 @@ export default class QuizController extends Controller({
     validators.checkExpiration,
     validators.checkAllowedUsers,
     validators.checkQuestions,
-    resolveErrors
+    resolveErrors,
   ])
   async createQuiz(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
@@ -124,7 +133,7 @@ export default class QuizController extends Controller({
         return next()
       }
       const allowedUsers = await this.users.getIdsFromUsernames(
-        quiz.allowedUsers || []
+        quiz.allowedUsers || [],
       )
       const quizId = await this.quizzes.createQuiz({
         user: user._id,
@@ -132,7 +141,7 @@ export default class QuizController extends Controller({
         expiration,
         isPublic,
         questions,
-        allowedUsers
+        allowedUsers,
       })
       await this.users.addQuiz(userId, quizId)
       res.json({ id: quizId })
@@ -152,7 +161,7 @@ export default class QuizController extends Controller({
     validators.checkIsPublic,
     validators.checkAllowedUsers,
     validators.checkQuestions,
-    resolveErrors
+    resolveErrors,
   ])
   async editQuiz(req: Request, res: Response, next: NextFunction) {
     const { user } = req
@@ -177,24 +186,31 @@ export default class QuizController extends Controller({
           errors: [
             {
               expiration: 'Expiration must be a date and time in the future',
-              value: quizEdits.expiration
-            }
-          ]
+              value: quizEdits.expiration,
+            },
+          ],
         })
         return next()
       }
 
-      const questionsCompatible = (q1, q2) => {
+      const questionsCompatible = (q1: Question, q2: Question) => {
+        q1.type ??= 'MultipleChoice'
+        q2.type ??= 'MultipleChoice'
+
         return (
+          q1.type === 'MultipleChoice' && q2.type === 'MultipleChoice' &&
           q1.correctAnswer === q2.correctAnswer &&
           q1.answers.length === q2.answers.length
+        ) || (
+          q1.type === 'FillIn' && q2.type === 'FillIn' &&
+          q1.correctAnswer === q2.correctAnswer
         )
       }
 
       if (
         existingQuiz.questions.length !== quizEdits.questions.length ||
         !existingQuiz.questions.every((question, ind) =>
-          questionsCompatible(question, quizEdits.questions[ind])
+          questionsCompatible(question, quizEdits.questions[ind]),
         )
       ) {
         res.status(409).json({
@@ -202,26 +218,30 @@ export default class QuizController extends Controller({
             {
               questions:
                 'Cannot change correctAnswers or number of questions for existing quiz',
-              value: quizEdits
-            }
-          ]
+              value: quizEdits,
+            },
+          ],
         })
         return next()
       }
       const allowedUsers = new Set(
-        await this.users.getIdsFromUsernames(quizEdits.allowedUsers || [])
+        await this.users.getIdsFromUsernames(quizEdits.allowedUsers || []),
       )
 
       // Merge user IDs from existing results with the edit's IDs so
       // the edit cannot remove users that have already taken quiz.
       for (const resultId of existingQuiz.results) {
         const result = await this.results.getResult(resultId)
-        const user = await this.users.getUserById(result.user)
-        allowedUsers.add(user._id)
+        if (result != null) {
+          const user = await this.users.getUserById(result.user)
+          if (user != null) {
+            allowedUsers.add(user._id as ObjectId)
+          }
+        }
       }
       quizEdits.allowedUsers = [...allowedUsers]
 
-      await this.quizzes.updateQuiz(quizId, quizEdits)
+      await this.quizzes.updateQuiz(existingQuiz._id, quizEdits)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -257,7 +277,7 @@ export default class QuizController extends Controller({
         }
       }
       await this.users.removeQuiz(quiz.user, quizId)
-      await this.quizzes.deleteQuiz(quizId)
+      await this.quizzes.deleteQuiz(quiz._id)
       res.status(204).end()
     } catch (error) {
       debug(error)
@@ -266,29 +286,36 @@ export default class QuizController extends Controller({
     return next()
   }
 
-  private userOwnsQuiz(userId, quiz) {
-    return userId === quiz.user.toString()
+  private userOwnsQuiz(userId: string, quiz: WithId<Quiz>) {
+    return quiz.user.equals(userId)
   }
 
-  private canUserViewQuiz(userId, quiz) {
+  private canUserViewQuiz(userId: string, quiz: WithId<Quiz>) {
     return (
       quiz.isPublic ||
       quiz.user.toString() === userId ||
-      quiz.allowedUsers.some(id => id.toString() === userId)
+      quiz.allowedUsers.some((id: ObjectId) => id.equals(userId))
     )
   }
 
-  private convertToAnswerForm(quiz) {
+  // Converts a Quiz to a QuizForm by removing extra data that users shouldn't see,
+  // such as the "correctAnswer" value so that users can't cheat by inspecting the object
+  // or obtain sensitive data.
+  private convertToAnswerForm(quiz: WithId<Quiz>): QuizForm {
     const {
+      user,
       allowedUsers,
       showCorrectAnswers,
       allowMultipleResponses,
       isPublic,
       results,
-      ...answerForm
+      questions,
+      ...form
     } = quiz
+    const answerForm: QuizForm = { ...form }
+    answerForm.questions = new Array(questions?.length ?? 0)
     for (let i = 0; i < answerForm.questions.length; ++i) {
-      const { correctAnswer, ...question } = answerForm.questions[i]
+      const { correctAnswer, ...question } = questions[i]
       answerForm.questions[i] = question
     }
     return answerForm

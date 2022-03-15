@@ -13,7 +13,7 @@ export class App extends Application({
     origin: process.env.NODE_ENV == 'production' ? 'http://www.makequizzes.online' : '*'
   }
 }) {
-  dbClient: MongoClient
+  dbClient!: MongoClient
   constructor(private db: DbService) {
     super()
   }

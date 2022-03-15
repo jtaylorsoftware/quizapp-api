@@ -1,5 +1,7 @@
-import { ObjectId } from 'mongodb'
+import { ObjectId, WithId } from 'mongodb'
 import Model from './model'
+
+export type UserWithoutPassword = Omit<WithId<User>, 'password'>
 
 /**
  * Represents a user document
@@ -8,18 +10,14 @@ import Model from './model'
  * @property password
  */
 export default class User extends Model {
-  quizzes: ObjectId[]
-  results: ObjectId[]
+  quizzes: ObjectId[] = []
+  results: ObjectId[] = []
+
   constructor(
     public username: string,
     public email: string,
-    public password: string
+    public password: string,
   ) {
     super()
-    this.username = username
-    this.email = email
-    this.password = password
-    this.quizzes = []
-    this.results = []
   }
 }

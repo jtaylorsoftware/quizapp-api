@@ -7,26 +7,27 @@ import Result from 'models/result'
 
 async function tryConnectToDb(): Promise<DbConnection> {
   let attempts = 1
-  let error: Error
+  let error: any
   while (attempts <= 3) {
     try {
-      return await connectToDb({ url: process.env.DB_URL })
+      return await connectToDb({ url: process.env.DB_URL as string })
     } catch (err) {
       error = err
       console.error(`(${attempts}) Could not connect to mongodb: ${error}`)
     }
     attempts += 1
   }
+  // Throw the latest error after failing all attempts
   throw error
 }
 
 @Inject
 export default class DbService extends Service() {
-  quizzes: Collection<Quiz>
-  users: Collection<User>
-  results: Collection<Result>
-  client: MongoClient
-  db: Db
+  quizzes!: Collection<Quiz>
+  users!: Collection<User>
+  results!: Collection<Result>
+  client!: MongoClient
+  db!: Db
   async onInit() {
     const { client, db } = await tryConnectToDb()
     this.client = client
