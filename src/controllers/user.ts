@@ -127,10 +127,11 @@ export default class UserController extends Controller({ root: '/api/users' }) {
       for (const id of resultIds) {
         const result = await this.results.getResult(id)
         if (result) {
+          const resultWithExtras: ResultWithExtras = { ...result }
+
           // get the quiz title and created by
           const quiz = await this.quizzes.getQuizById(result.quiz)
           if (quiz) {
-            const resultWithExtras: ResultWithExtras = { ...result }
             resultWithExtras.quizTitle = quiz.title
             const owner = await this.users.getUserById(result.quizOwner)
             if (owner) {
@@ -140,7 +141,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
           if (!format || format === 'full') {
             results.push(result)
           } else {
-            const { answers, ...listing } = result
+            const { answers, ...listing } = resultWithExtras
             results.push(listing)
           }
         }
