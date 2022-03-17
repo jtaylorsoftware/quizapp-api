@@ -5,8 +5,8 @@ import Result from 'models/result'
 import { Inject, Service } from 'express-di'
 import { ObjectId } from 'mongodb'
 import Quiz from 'models/quiz'
-import { Answer, GradedAnswer, MultipleChoiceGradedAnswer } from '../models/answertypes'
-import { Question, QuestionType } from '../models/questiontypes'
+import { Answer, FillInGradedAnswer, GradedAnswer, MultipleChoiceGradedAnswer } from '../models/answertypes'
+import { FillInQuestion, MultipleChoiceQuestion } from '../models/questiontypes'
 
 @Inject
 export default class ResultService extends Service() {
@@ -52,6 +52,7 @@ export default class ResultService extends Service() {
       return [null, errors]
     }
 
+    // Check to see if this would be the user's second time responding
     if (!quiz.allowMultipleResponses) {
       // This is a valid use of async.some - with no callback supplied it returns Promise
       // noinspection JSVoidFunctionReturnValueUsed
@@ -71,12 +72,14 @@ export default class ResultService extends Service() {
       }
     }
 
+    // Ensure same number of response answers as questions
     const questions = quiz.questions
     if (answers.length !== questions.length) {
       errors.push('answers')
       return [null, errors]
     }
 
+    // Grade all the questions
     const gradedAnswers: GradedAnswer[] = []
     let score = 0
     for (let i = 0; i < questions.length; ++i) {
@@ -86,15 +89,31 @@ export default class ResultService extends Service() {
       const answer = answers[i]
       answer.type ??= 'MultipleChoice'
 
-      if (question.type != answer.type || question.type != 'MultipleChoice') {
-        throw Error('Unsupported Question or Answer type')
+      // Ensure that the response answer is for this question type
+      if (question.type != answer.type) {
+        errors.push(`answer ${i + 1}`)
+        continue
       }
 
+      // Grade the question depending on its type
       switch (answer.type) {
         case 'FillIn':
-          throw Error('Unsupported Question or Answer type')
+          if (answer.answer.length === 0) {
+            errors.push(`answer ${i + 1}`)
+          } else {
+            const gradedAnswer: FillInGradedAnswer = {
+              type: 'FillIn',
+              answer: answer.answer,
+            }
+            gradedAnswer.isCorrect = (question as FillInQuestion).correctAnswer === answer.answer
+            if (gradedAnswer.isCorrect) {
+              score += 1 / questions.length
+            }
+            gradedAnswers.push(gradedAnswer)
+          }
+          break
         case 'MultipleChoice':
-          if (answer.choice >= question.answers.length) {
+          if (answer.choice >= (question as MultipleChoiceQuestion).answers.length) {
             errors.push(`answer ${i + 1}`)
           } else {
             const gradedAnswer: MultipleChoiceGradedAnswer = {
@@ -102,10 +121,10 @@ export default class ResultService extends Service() {
               choice: answer.choice
             }
 
-            const correctAnswer = question.correctAnswer
+            const correctAnswer = (question as MultipleChoiceQuestion).correctAnswer
             gradedAnswer.isCorrect = correctAnswer === answer.choice
             if (gradedAnswer.isCorrect) {
-              score += 1 / answers.length
+              score += 1 / questions.length
             }
             if (quiz.showCorrectAnswers) {
               gradedAnswer.correctAnswer = correctAnswer
