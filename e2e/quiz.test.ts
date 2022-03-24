@@ -12,7 +12,7 @@ import { teacher, extraUser } from './setup'
 import moment from 'moment'
 import { MultipleChoiceQuestion } from '../src/models/questiontypes'
 
-describe('/api/quizzes', () => {
+describe('/api/v1/quizzes', () => {
   let dbClient: mongo.MongoClient
   let app: express.Express
 
@@ -36,7 +36,7 @@ describe('/api/quizzes', () => {
 
     const get = (id: string, token?: string, format?: string) => {
       const url =
-        `/api/quizzes/${id}` + (format != null ? `?format=${format}` : '')
+        `/api/v1/quizzes/${id}` + (format != null ? `?format=${format}` : '')
       return request(app)
         .get(url)
         .set('x-auth-token', token ?? '')
@@ -44,7 +44,7 @@ describe('/api/quizzes', () => {
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
     })
@@ -55,7 +55,7 @@ describe('/api/quizzes', () => {
 
     it('if user does not own quiz returns status 403', async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username: extraUser.username, password })
       let { token } = res.body
 
@@ -65,7 +65,7 @@ describe('/api/quizzes', () => {
     })
 
     it('by default or if format=full returns status 200 and full quiz', async () => {
-      const expectQuizIsFull = quiz => {
+      const expectQuizIsFull = (quiz) => {
         expect(quiz).toHaveProperty('allowedUsers')
         expect(quiz).toHaveProperty('results')
         expect(quiz).toHaveProperty('questions')
@@ -81,7 +81,7 @@ describe('/api/quizzes', () => {
     })
 
     it('if format=listing returns status 200 and quiz in listing format', async () => {
-      const expectQuizIsListing = quiz => {
+      const expectQuizIsListing = (quiz) => {
         expect(quiz).toHaveProperty('resultsCount')
         expect(quiz).toHaveProperty('questionCount')
         expect(quiz).not.toHaveProperty('allowedUsers')
@@ -99,13 +99,13 @@ describe('/api/quizzes', () => {
 
     describe('/form', () => {
       const get = (id: string, token?: string) => {
-        const url = `/api/quizzes/${id}/form`
+        const url = `/api/v1/quizzes/${id}/form`
         return request(app)
           .get(url)
           .set('x-auth-token', token ?? '')
       }
 
-      const expectIsAnswerForm = quiz => {
+      const expectIsAnswerForm = (quiz) => {
         expect(quiz).not.toHaveProperty('allowedUsers')
         expect(quiz).not.toHaveProperty('showCorrectAnswers')
         expect(quiz).not.toHaveProperty('allowMultipleResponses')
@@ -131,7 +131,7 @@ describe('/api/quizzes', () => {
 
       it('if quiz is public returns the quiz form for any user', async () => {
         let res = await request(app)
-          .post('/api/users/auth')
+          .post('/api/v1/users/auth')
           .send({ username: extraUser.username, password })
 
         let { token } = res.body
@@ -142,7 +142,7 @@ describe('/api/quizzes', () => {
 
       it('if user is in allowedUsers list of private quiz returns the quiz form', async () => {
         let res = await request(app)
-          .post('/api/users/auth')
+          .post('/api/v1/users/auth')
           .send({ username: extraUser.username, password })
 
         let { token } = res.body
@@ -160,13 +160,13 @@ describe('/api/quizzes', () => {
 
     const post = (token?: string) => {
       return request(app)
-        .post('/api/quizzes/')
+        .post('/api/v1/quizzes/')
         .set('x-auth-token', token ?? '')
     }
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
     })
@@ -185,14 +185,14 @@ describe('/api/quizzes', () => {
         'isPublic',
         'expiration',
         'allowedUsers',
-        'questions'
+        'questions',
       ])
       expect(res.body.errors).toHaveLength(errorNames.size)
 
       // expect every error to have a key in set errorNames
-      res.body.errors.forEach(error => {
+      res.body.errors.forEach((error) => {
         const keys = new Set(Object.keys(error))
-        keys.forEach(key => {
+        keys.forEach((key) => {
           if (key !== 'value') {
             expect(errorNames.has(key)).toBe(true)
           }
@@ -210,10 +210,10 @@ describe('/api/quizzes', () => {
             {
               text: 'q1',
               correctAnswer: 0,
-              answers: [{ text: 'a1' }, { text: 'a2' }]
-            }
+              answers: [{ text: 'a1' }, { text: 'a2' }],
+            },
           ],
-          allowedUsers: ['reallylongusernamethatisnotvalid']
+          allowedUsers: ['reallylongusernamethatisnotvalid'],
         })
         .expect(400)
       expect(res.body).toHaveProperty('errors')
@@ -230,10 +230,10 @@ describe('/api/quizzes', () => {
           questions: [
             {
               text: 'q1',
-              answers: [{ text: 'a1' }, { text: 'a2' }]
-            }
+              answers: [{ text: 'a1' }, { text: 'a2' }],
+            },
           ],
-          allowedUsers: []
+          allowedUsers: [],
         })
         .expect(400)
       expect(res.body).toHaveProperty('errors')
@@ -251,10 +251,10 @@ describe('/api/quizzes', () => {
             {
               text: 'q1',
               correctAnswer: 1,
-              answers: [{}, { text: 'a2' }]
-            }
+              answers: [{}, { text: 'a2' }],
+            },
           ],
-          allowedUsers: []
+          allowedUsers: [],
         })
         .expect(400)
       expect(res.body).toHaveProperty('errors')
@@ -272,10 +272,10 @@ describe('/api/quizzes', () => {
             {
               text: 'q1',
               correctAnswer: 0,
-              answers: [{ text: 'a1' }, { text: 'a2' }]
-            }
+              answers: [{ text: 'a1' }, { text: 'a2' }],
+            },
           ],
-          allowedUsers: []
+          allowedUsers: [],
         })
         .expect(400)
       expect(res.body).toHaveProperty('errors')
@@ -293,10 +293,10 @@ describe('/api/quizzes', () => {
             {
               text: 'q1',
               correctAnswer: 0,
-              answers: [{ text: 'a1' }, { text: 'a2' }]
-            }
+              answers: [{ text: 'a1' }, { text: 'a2' }],
+            },
           ],
-          allowedUsers: []
+          allowedUsers: [],
         })
         .expect(200)
       expect(res.body).toHaveProperty('id')
@@ -310,13 +310,13 @@ describe('/api/quizzes', () => {
 
     const put = (id: string, token?: string) => {
       return request(app)
-        .put(`/api/quizzes/${id}/edit`)
+        .put(`/api/v1/quizzes/${id}/edit`)
         .set('x-auth-token', token ?? '')
     }
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
     })
@@ -331,7 +331,7 @@ describe('/api/quizzes', () => {
 
     it('if user does not own quiz returns status 403', async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username: teacher.username, password })
 
       let { token } = res.body
@@ -346,7 +346,7 @@ describe('/api/quizzes', () => {
       const res = await put(quiz._id.toHexString(), token)
         .send({
           ...quiz,
-          title: ''
+          title: '',
         })
         .expect(400)
       expect(res.body).toHaveProperty('errors')
@@ -368,7 +368,7 @@ describe('/api/quizzes', () => {
 
     it('if allowedUsers has an invalid username returns status 400 and errors', async () => {
       const { allowedUsers, ...quiz } = await quizzes.findOne({
-        title: 'test quiz'
+        title: 'test quiz',
       })
       quiz['allowedUsers'] = [...allowedUsers, 'a really invalid username']
 
@@ -397,8 +397,8 @@ describe('/api/quizzes', () => {
       quiz.questions = [
         {
           text: 'question',
-          answers: [{ text: 'a1' }, { text: 'a2' }]
-        }
+          answers: [{ text: 'a1' }, { text: 'a2' }],
+        },
       ]
 
       const res = await put(quiz._id.toHexString(), token)
@@ -414,8 +414,8 @@ describe('/api/quizzes', () => {
       quiz.questions = [
         {
           text: 'question',
-          answers: [{}]
-        }
+          answers: [{}],
+        },
       ]
 
       const res = await put(quiz._id.toHexString(), token)
@@ -429,7 +429,8 @@ describe('/api/quizzes', () => {
     it('if a question correctAnswer has changed returns status 409 and errors', async () => {
       const quiz = await quizzes.findOne({ title: 'test quiz' })
       const question = quiz.questions[0] as MultipleChoiceQuestion
-      question.correctAnswer = (question.correctAnswer + 1) % question.answers.length
+      question.correctAnswer =
+        (question.correctAnswer + 1) % question.answers.length
 
       const res = await put(quiz._id.toHexString(), token)
         .send(quiz)
@@ -444,7 +445,7 @@ describe('/api/quizzes', () => {
       quiz.questions.push({
         text: 'q2',
         correctAnswer: 0,
-        answers: [{ text: 'a' }, { text: 'b' }]
+        answers: [{ text: 'a' }, { text: 'b' }],
       })
 
       const res = await put(quiz._id.toHexString(), token)
@@ -462,9 +463,9 @@ describe('/api/quizzes', () => {
         answers: [
           ...quiz.questions[0].answers,
           {
-            text: 'abc'
-          }
-        ]
+            text: 'abc',
+          },
+        ],
       }
       const res = await put(quiz._id.toHexString(), token)
         .send(quiz)
@@ -482,13 +483,13 @@ describe('/api/quizzes', () => {
 
     const deleteQuiz = (id: string, token?: string) => {
       return request(app)
-        .delete(`/api/quizzes/${id}`)
+        .delete(`/api/v1/quizzes/${id}`)
         .set('x-auth-token', token ?? '')
     }
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
     })
@@ -503,7 +504,7 @@ describe('/api/quizzes', () => {
 
     it('if user does not own quiz returns error 403', async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username: teacher.username, password })
 
       let { token } = res.body

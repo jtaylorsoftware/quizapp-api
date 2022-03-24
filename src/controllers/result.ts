@@ -20,7 +20,7 @@ import Quiz from 'models/quiz'
 
 @Inject
 export default class ResultController extends Controller({
-  root: '/api/results'
+  root: '/api/v1/results',
 }) {
   constructor(
     private quizzes: QuizService,
@@ -35,12 +35,12 @@ export default class ResultController extends Controller({
    */
   @Get('/', [
     query('format', 'Valid formats: listing, full')
-      .custom(format => format === 'listing' || format === 'full')
+      .custom((format) => format === 'listing' || format === 'full')
       .optional(),
     query('quiz', 'Quiz id is required').exists(),
     query('user').exists().optional(),
     resolveErrors,
-    authenticate({ required: true })
+    authenticate({ required: true }),
   ])
   async getResult(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
@@ -129,7 +129,7 @@ export default class ResultController extends Controller({
     authenticate({ required: true }),
     validators.checkAnswers,
     query('quiz', 'Quiz id is required').exists(),
-    resolveErrors
+    resolveErrors,
   ])
   async postResult(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
@@ -178,7 +178,7 @@ export default class ResultController extends Controller({
     return (
       quiz.isPublic ||
       quiz.user.toString() === userId ||
-      quiz.allowedUsers.some(id => id.toString() === userId)
+      quiz.allowedUsers.some((id) => id.toString() === userId)
     )
   }
 }

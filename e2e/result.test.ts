@@ -12,7 +12,7 @@ import Quiz from 'models/quiz'
 
 import { teacher, extraUser } from './setup'
 
-describe('/api/results', () => {
+describe('/api/v1/results', () => {
   let dbClient: mongo.MongoClient
   let app: express.Express
 
@@ -44,7 +44,7 @@ describe('/api/results', () => {
       token?: string,
       format?: string
     ) => {
-      const url = `/api/results${quizId != null ? '?quiz=' + quizId : ''}${
+      const url = `/api/v1/results${quizId != null ? '?quiz=' + quizId : ''}${
         userId != null ? `&user=${userId}` : ''
       }${format != null ? `&format=${format}` : ''}`
 
@@ -55,13 +55,13 @@ describe('/api/results', () => {
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
 
       let user = await users.findOne({ username: `${teacher.username}` })
       userId = user._id.toString()
-      quizIds = user.quizzes.map(id => id.toString())
+      quizIds = user.quizzes.map((id) => id.toString())
     })
 
     it('if no auth token in request returns status 401', async () => {
@@ -74,7 +74,7 @@ describe('/api/results', () => {
 
     it('if user does not own quiz returns status 403', async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username: extraUser.username, password })
       let { token } = res.body
 
@@ -97,7 +97,7 @@ describe('/api/results', () => {
     })
 
     it('by default or if format=full returns status 200 and full quiz', async () => {
-      const expectFullResult = result => {
+      const expectFullResult = (result) => {
         expect(result).toHaveProperty('answers')
       }
 
@@ -111,7 +111,7 @@ describe('/api/results', () => {
     })
 
     it('if format=listing returns status 200 and listings', async () => {
-      const expectResultListing = result => {
+      const expectResultListing = (result) => {
         expect(result).not.toHaveProperty('answers')
       }
 
@@ -128,7 +128,7 @@ describe('/api/results', () => {
     let quizIds = []
 
     const post = (quizId?: string, token?: string) => {
-      const url = `/api/results${quizId != null ? '?quiz=' + quizId : ''}`
+      const url = `/api/v1/results${quizId != null ? '?quiz=' + quizId : ''}`
 
       return request(app)
         .post(url)
@@ -137,14 +137,14 @@ describe('/api/results', () => {
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
 
       ;({ token } = res.body)
 
       let user = await users.findOne({ username: `${teacher.username}` })
       userId = user._id.toString()
-      quizIds = user.quizzes.map(id => id.toString())
+      quizIds = user.quizzes.map((id) => id.toString())
     })
 
     it('if no auth token in request returns status 401', async () => {
@@ -175,9 +175,9 @@ describe('/api/results', () => {
 
     it("if result for user exists returns status 400 and error 'duplicate'", async () => {
       let res = await post(quizIds[1], token).send({
-        answers: [{ choice: 0 }]
+        answers: [{ choice: 0 }],
       })
-      expect(res.body.errors.some(err => err === 'duplicate')).toBeTruthy()
+      expect(res.body.errors.some((err) => err === 'duplicate')).toBeTruthy()
     })
   })
 })

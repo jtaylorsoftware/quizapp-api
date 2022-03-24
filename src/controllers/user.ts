@@ -17,11 +17,13 @@ import ResultService from 'services/result'
 import UserService from 'services/user'
 
 @Inject
-export default class UserController extends Controller({ root: '/api/users' }) {
+export default class UserController extends Controller({
+  root: '/api/v1/users',
+}) {
   constructor(
     private quizzes: QuizService,
     private results: ResultService,
-    private users: UserService,
+    private users: UserService
   ) {
     super()
   }
@@ -57,7 +59,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
   @Get('/me/quizzes', [
     authenticate({ required: true }),
     query('format', 'Valid formats: listing, full')
-      .custom(format => format === 'listing' || format === 'full')
+      .custom((format) => format === 'listing' || format === 'full')
       .optional(),
     resolveErrors,
   ])
@@ -77,17 +79,20 @@ export default class UserController extends Controller({ root: '/api/users' }) {
           if (!format || format === 'full') {
             // convert allowed users to usernames
             const allowedUsernames = await this.users.getUsernamesFromIds(
-              quiz.allowedUsers,
+              quiz.allowedUsers
             )
             const { allowedUsers, ...quizWithUsernames } = quiz
-            quizzes.push({ ...quizWithUsernames, allowedUsers: allowedUsernames })
+            quizzes.push({
+              ...quizWithUsernames,
+              allowedUsers: allowedUsernames,
+            })
           } else {
             const { questions, results, allowedUsers, ...listing } = quiz
 
             quizzes.push({
               ...listing,
               resultsCount: results.length,
-              questionCount: questions?.length
+              questionCount: questions?.length,
             })
           }
         }
@@ -110,7 +115,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
   @Get('/me/results', [
     authenticate({ required: true }),
     query('format', 'Valid formats: listing, full')
-      .custom(format => format === 'listing' || format === 'full')
+      .custom((format) => format === 'listing' || format === 'full')
       .optional(),
     resolveErrors,
   ])
@@ -309,7 +314,7 @@ export default class UserController extends Controller({ root: '/api/users' }) {
     try {
       const [userId, errors] = await this.users.authorizeUser(
         username,
-        password,
+        password
       )
       if (!userId) {
         return res.status(400).json({ errors: errors })

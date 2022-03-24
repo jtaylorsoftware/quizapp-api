@@ -12,7 +12,7 @@ import User from 'models/user'
 
 import { teacher, student } from './setup'
 
-describe('/api/users', () => {
+describe('/api/v1/users', () => {
   let dbClient: mongo.MongoClient
   let app: express.Express
 
@@ -37,11 +37,11 @@ describe('/api/users', () => {
     it('with valid user registration returns status 200 and a jwt token', async () => {
       const username = 'testuser'
       const res = await request(app)
-        .post('/api/users/')
+        .post('/api/v1/users/')
         .send({
           username,
           password: 'password',
-          email: 'testuseremail@email.com'
+          email: 'testuseremail@email.com',
         })
         .expect('Content-Type', /json/)
         .expect(200)
@@ -54,11 +54,11 @@ describe('/api/users', () => {
     it('if username is already in use returns status 409 and errors', async () => {
       const username = teacher.username
       const res = await request(app)
-        .post('/api/users/')
+        .post('/api/v1/users/')
         .send({
           username,
           password: 'password',
-          email: 'testuseremail@email.com'
+          email: 'testuseremail@email.com',
         })
         .expect('Content-Type', /json/)
         .expect(409)
@@ -70,11 +70,11 @@ describe('/api/users', () => {
     it('if email is already in use returns status 409 and errors', async () => {
       const username = 'testuser'
       const res = await request(app)
-        .post('/api/users/')
+        .post('/api/v1/users/')
         .send({
           username,
           password: 'password',
-          email: teacher.email
+          email: teacher.email,
         })
         .expect('Content-Type', /json/)
         .expect(409)
@@ -86,11 +86,11 @@ describe('/api/users', () => {
     it('if username is < 5 chars returns status 400 and errors', async () => {
       const username = 'a'.repeat(4)
       const res = await request(app)
-        .post('/api/users/')
+        .post('/api/v1/users/')
         .send({
           username,
           password: 'password',
-          email: 'testuseremail@email.com'
+          email: 'testuseremail@email.com',
         })
         .expect('Content-Type', /json/)
         .expect(400)
@@ -103,11 +103,11 @@ describe('/api/users', () => {
     it('if username is > 12 chars returns status 400 and errors', async () => {
       const username = 'a'.repeat(13)
       const res = await request(app)
-        .post('/api/users/')
+        .post('/api/v1/users/')
         .send({
           username,
           password: 'password',
-          email: 'testuseremail@email.com'
+          email: 'testuseremail@email.com',
         })
         .expect('Content-Type', /json/)
         .expect(400)
@@ -121,11 +121,11 @@ describe('/api/users', () => {
       const username = 'testuser'
       const password = 'a'.repeat(6)
       const res = await request(app)
-        .post('/api/users/')
+        .post('/api/v1/users/')
         .send({
           username,
           password,
-          email: 'testuseremail@email.com'
+          email: 'testuseremail@email.com',
         })
         .expect('Content-Type', /json/)
         .expect(400)
@@ -139,11 +139,11 @@ describe('/api/users', () => {
       const username = 'testuser'
       const password = 'a'.repeat(21)
       const res = await request(app)
-        .post('/api/users/')
+        .post('/api/v1/users/')
         .send({
           username,
           password,
-          email: 'testuseremail@email.com'
+          email: 'testuseremail@email.com',
         })
         .expect('Content-Type', /json/)
         .expect(400)
@@ -157,11 +157,11 @@ describe('/api/users', () => {
       const username = 'testuser'
 
       const res = await request(app)
-        .post('/api/users/')
+        .post('/api/v1/users/')
         .send({
           username,
           password: 'password',
-          email: 'testuseremail' // no @email.com
+          email: 'testuseremail', // no @email.com
         })
         .expect('Content-Type', /json/)
         .expect(400)
@@ -178,10 +178,10 @@ describe('/api/users', () => {
 
     it('with correct info returns status 200 and a jwt token', async () => {
       const res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({
           username,
-          password
+          password,
         })
         .expect('Content-Type', /json/)
         .expect(200)
@@ -194,10 +194,10 @@ describe('/api/users', () => {
 
     it('if username does not exist returns status 400 and errors', async () => {
       const res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({
           username: username + 'abcdef',
-          password
+          password,
         })
         .expect('Content-Type', /json/)
         .expect(400)
@@ -208,10 +208,10 @@ describe('/api/users', () => {
 
     it('if password is invalid returns status 400 and errors', async () => {
       const res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({
           username,
-          password: password + 'abcdef'
+          password: password + 'abcdef',
         })
         .expect('Content-Type', /json/)
         .expect(400)
@@ -229,7 +229,7 @@ describe('/api/users', () => {
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
       user = await users.findOne({ username })
@@ -237,12 +237,12 @@ describe('/api/users', () => {
 
     describe('/', () => {
       it('if no auth token in request returns status 401', async () => {
-        await request(app).get('/api/users/me').expect(401)
+        await request(app).get('/api/v1/users/me').expect(401)
       })
 
       it('returns status 200 and user data if token is present', async () => {
         const res = await request(app)
-          .get('/api/users/me')
+          .get('/api/v1/users/me')
           .set('x-auth-token', token)
           .expect(200)
         expect(res.body.username).toEqual(username)
@@ -252,7 +252,8 @@ describe('/api/users', () => {
     describe('/quizzes', () => {
       const get = (token?: string, format?: string) => {
         const url =
-          '/api/users/me/quizzes' + (format != null ? `?format=${format}` : '')
+          '/api/v1/users/me/quizzes' +
+          (format != null ? `?format=${format}` : '')
         return request(app)
           .get(url)
           .set('x-auth-token', token ?? '')
@@ -269,7 +270,7 @@ describe('/api/users', () => {
       })
 
       it('by default or if format=full returns status 200 and full quizzes', async () => {
-        const expectQuizIsFull = quiz => {
+        const expectQuizIsFull = (quiz) => {
           expect(quiz).toHaveProperty('allowedUsers')
           expect(quiz).toHaveProperty('results')
           expect(quiz).toHaveProperty('questions')
@@ -285,7 +286,7 @@ describe('/api/users', () => {
       })
 
       it('if format=listing returns status 200 and listings', async () => {
-        const expectQuizIsListing = quiz => {
+        const expectQuizIsListing = (quiz) => {
           expect(quiz).toHaveProperty('resultsCount')
           expect(quiz).toHaveProperty('questionCount')
           expect(quiz).not.toHaveProperty('allowedUsers')
@@ -306,14 +307,15 @@ describe('/api/users', () => {
 
       beforeAll(async () => {
         let res = await request(app)
-          .post('/api/users/auth')
+          .post('/api/v1/users/auth')
           .send({ username, password })
         ;({ token } = res.body)
       })
 
       const get = (token?: string, format?: string) => {
         const url =
-          '/api/users/me/results' + (format != null ? `?format=${format}` : '')
+          '/api/v1/users/me/results' +
+          (format != null ? `?format=${format}` : '')
         return request(app)
           .get(url)
           .set('x-auth-token', token ?? '')
@@ -330,7 +332,7 @@ describe('/api/users', () => {
       })
 
       it('by default or if format=full returns status 200 and full results', async () => {
-        const expectFullResult = result => {
+        const expectFullResult = (result) => {
           expect(result).toHaveProperty('answers')
         }
 
@@ -344,7 +346,7 @@ describe('/api/users', () => {
       })
 
       it('if format=listing returns status 200 and listings', async () => {
-        const expectResultListing = result => {
+        const expectResultListing = (result) => {
           expect(result).not.toHaveProperty('answers')
         }
 
@@ -362,14 +364,14 @@ describe('/api/users', () => {
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
     })
 
     describe('/password', () => {
       const get = (token?: string) => {
-        const url = '/api/users/me/password'
+        const url = '/api/v1/users/me/password'
         return request(app)
           .put(url)
           .set('x-auth-token', token ?? '')
@@ -402,7 +404,7 @@ describe('/api/users', () => {
 
     describe('/email', () => {
       const get = (token?: string) => {
-        const url = '/api/users/me/email'
+        const url = '/api/v1/users/me/email'
         return request(app)
           .put(url)
           .set('x-auth-token', token ?? '')
@@ -438,7 +440,7 @@ describe('/api/users', () => {
 
     beforeAll(async () => {
       let res = await request(app)
-        .post('/api/users/auth')
+        .post('/api/v1/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
       user = await users.findOne({ username })
@@ -446,19 +448,19 @@ describe('/api/users', () => {
 
     it('removes the student user, their quizzes, and their results', async () => {
       await request(app)
-        .delete('/api/users/me')
+        .delete('/api/v1/users/me')
         .set('x-auth-token', token)
         .expect(204)
       expect(await users.findOne({ username })).toBeNull()
       await Promise.all(
-        user.quizzes.map(async quiz => {
+        user.quizzes.map(async (quiz) => {
           expect(
             await db.collection('quizzes').findOne({ _id: new ObjectId(quiz) })
           ).toBeNull()
         })
       )
       await Promise.all(
-        user.results.map(async result => {
+        user.results.map(async (result) => {
           expect(
             await db
               .collection('results')

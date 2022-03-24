@@ -1,4 +1,3 @@
-
 const debug = require('debug')('routes:quiz')
 
 import { Request, Response, NextFunction } from 'express'
@@ -16,16 +15,16 @@ import ResultService from 'services/result'
 import UserService from 'services/user'
 import { ObjectId, WithId } from 'mongodb'
 import Quiz, { QuizForm } from 'models/quiz'
-import {  Question } from 'models/questiontypes'
+import { Question } from 'models/questiontypes'
 
 @Inject
 export default class QuizController extends Controller({
-  root: '/api/quizzes',
+  root: '/api/v1/quizzes',
 }) {
   constructor(
     private quizzes: QuizService,
     private results: ResultService,
-    private users: UserService,
+    private users: UserService
   ) {
     super()
   }
@@ -35,7 +34,7 @@ export default class QuizController extends Controller({
    */
   @Get('/:id', [
     query('format', 'Valid formats: listing, full')
-      .custom(format => format === 'listing' || format === 'full')
+      .custom((format) => format === 'listing' || format === 'full')
       .optional(),
     resolveErrors,
     authenticate({ required: true }),
@@ -58,7 +57,7 @@ export default class QuizController extends Controller({
       if (!format || format === 'full') {
         // convert allowed users to usernames
         const allowedUsernames = await this.users.getUsernamesFromIds(
-          quiz.allowedUsers,
+          quiz.allowedUsers
         )
 
         res.json({
@@ -66,7 +65,6 @@ export default class QuizController extends Controller({
           allowedUsers: allowedUsernames,
         })
       } else {
-
         const { questions, results, allowedUsers, ...listing } = quiz
         res.json({
           ...listing,
@@ -133,7 +131,7 @@ export default class QuizController extends Controller({
         return next()
       }
       const allowedUsers = await this.users.getIdsFromUsernames(
-        quiz.allowedUsers || [],
+        quiz.allowedUsers || []
       )
       const quizId = await this.quizzes.createQuiz({
         user: user._id,
@@ -198,19 +196,20 @@ export default class QuizController extends Controller({
         q2.type ??= 'MultipleChoice'
 
         return (
-          q1.type === 'MultipleChoice' && q2.type === 'MultipleChoice' &&
-          q1.correctAnswer === q2.correctAnswer &&
-          q1.answers.length === q2.answers.length
-        ) || (
-          q1.type === 'FillIn' && q2.type === 'FillIn' &&
-          q1.correctAnswer === q2.correctAnswer
+          (q1.type === 'MultipleChoice' &&
+            q2.type === 'MultipleChoice' &&
+            q1.correctAnswer === q2.correctAnswer &&
+            q1.answers.length === q2.answers.length) ||
+          (q1.type === 'FillIn' &&
+            q2.type === 'FillIn' &&
+            q1.correctAnswer === q2.correctAnswer)
         )
       }
 
       if (
         existingQuiz.questions.length !== quizEdits.questions.length ||
         !existingQuiz.questions.every((question, ind) =>
-          questionsCompatible(question, quizEdits.questions[ind]),
+          questionsCompatible(question, quizEdits.questions[ind])
         )
       ) {
         res.status(409).json({
@@ -225,7 +224,7 @@ export default class QuizController extends Controller({
         return next()
       }
       const allowedUsers = new Set(
-        await this.users.getIdsFromUsernames(quizEdits.allowedUsers || []),
+        await this.users.getIdsFromUsernames(quizEdits.allowedUsers || [])
       )
 
       // Merge user IDs from existing results with the edit's IDs so
