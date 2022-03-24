@@ -2,7 +2,11 @@ import { validationResult, ValidationError } from 'express-validator'
 import { Request, Response, NextFunction } from 'express'
 
 function errorFormatter({ msg, param, value }: ValidationError) {
-  return { [param]: msg, value: value }
+  return {
+    field: param,
+    message: msg,
+    value: value,
+  }
 }
 
 export default function (req: Request, res: Response, next: NextFunction) {

@@ -10,7 +10,7 @@ import bootstrap from 'bootstrap-app'
 import User from 'models/user'
 import Quiz from 'models/quiz'
 
-import { teacher, extraUser } from './setup'
+import { teacher, extraUser, loadTestData, clearTestData } from '../data'
 
 describe('/api/v1/results', () => {
   let dbClient: mongo.MongoClient
@@ -23,11 +23,13 @@ describe('/api/v1/results', () => {
   beforeAll(async () => {
     ;({ client: dbClient, app: app } = await bootstrap())
     db = await dbClient.db()
+    await loadTestData(db)
     users = db.collection('users')
     quizzes = db.collection('quizzes')
   })
 
   afterAll(async () => {
+    await clearTestData(db)
     await dbClient.close()
   })
 

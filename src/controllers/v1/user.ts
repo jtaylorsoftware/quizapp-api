@@ -1,5 +1,3 @@
-import { ResultWithExtras } from '../models/result'
-
 const debug = require('debug')('routes:user')
 
 import jwt from 'jsonwebtoken'
@@ -12,9 +10,10 @@ import authenticate from 'middleware/auth'
 
 import { Inject, Get, Put, Post, Delete, Controller } from 'express-di'
 
-import QuizService from 'services/quiz'
-import ResultService from 'services/result'
-import UserService from 'services/user'
+import QuizService from 'services/v1/quiz'
+import ResultService from 'services/v1/result'
+import UserService from 'services/v1/user'
+import { ResultWithExtras } from 'models/result'
 
 @Inject
 export default class UserController extends Controller({

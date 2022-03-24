@@ -5,8 +5,13 @@ import Result from 'models/result'
 import { Inject, Service } from 'express-di'
 import { ObjectId } from 'mongodb'
 import Quiz from 'models/quiz'
-import { Answer, FillInGradedAnswer, GradedAnswer, MultipleChoiceGradedAnswer } from '../models/answertypes'
-import { FillInQuestion, MultipleChoiceQuestion } from '../models/questiontypes'
+import {
+  Answer,
+  FillInGradedAnswer,
+  GradedAnswer,
+  MultipleChoiceGradedAnswer,
+} from 'models/answertypes'
+import { FillInQuestion, MultipleChoiceQuestion } from 'models/questiontypes'
 
 @Inject
 export default class ResultService extends Service() {
@@ -15,9 +20,7 @@ export default class ResultService extends Service() {
   }
 
   async getResult(resultId: ObjectId): Promise<Result | null> {
-    return await this.resultRepository.repo.findById(
-      resultId,
-    )
+    return await this.resultRepository.repo.findById(resultId)
   }
 
   async deleteResult(resultId: ObjectId): Promise<void> {
@@ -26,12 +29,9 @@ export default class ResultService extends Service() {
 
   async getUserResultForQuiz(
     userId: string | ObjectId,
-    quizId: string | ObjectId,
+    quizId: string | ObjectId
   ) {
-    return await this.resultRepository.findByUserAndQuizId(
-      userId,
-      quizId,
-    )
+    return await this.resultRepository.findByUserAndQuizId(userId, quizId)
   }
 
   /**
@@ -43,7 +43,7 @@ export default class ResultService extends Service() {
   async createResult(
     answers: Answer[],
     userId: string,
-    quiz: Quiz,
+    quiz: Quiz
   ): Promise<[ObjectId | null, string[]]> {
     const errors = []
 
@@ -63,7 +63,7 @@ export default class ResultService extends Service() {
             await this.resultRepository.repo.findById(resultId)
           )
           return result && result.user.equals(userId)
-        },
+        }
       )
 
       if (duplicateResult) {
@@ -105,7 +105,8 @@ export default class ResultService extends Service() {
               type: 'FillIn',
               answer: answer.answer,
             }
-            gradedAnswer.isCorrect = (question as FillInQuestion).correctAnswer === answer.answer
+            gradedAnswer.isCorrect =
+              (question as FillInQuestion).correctAnswer === answer.answer
             if (gradedAnswer.isCorrect) {
               score += 1 / questions.length
             }
@@ -113,15 +114,18 @@ export default class ResultService extends Service() {
           }
           break
         case 'MultipleChoice':
-          if (answer.choice >= (question as MultipleChoiceQuestion).answers.length) {
+          if (
+            answer.choice >= (question as MultipleChoiceQuestion).answers.length
+          ) {
             errors.push(`answer ${i + 1}`)
           } else {
             const gradedAnswer: MultipleChoiceGradedAnswer = {
               type: 'MultipleChoice',
-              choice: answer.choice
+              choice: answer.choice,
             }
 
-            const correctAnswer = (question as MultipleChoiceQuestion).correctAnswer
+            const correctAnswer = (question as MultipleChoiceQuestion)
+              .correctAnswer
             gradedAnswer.isCorrect = correctAnswer === answer.choice
             if (gradedAnswer.isCorrect) {
               score += 1 / questions.length
@@ -136,7 +140,13 @@ export default class ResultService extends Service() {
     }
     if (errors.length === 0) {
       const resultId = await this.resultRepository.repo.insert(
-        new Result(new ObjectId(userId), quiz._id as ObjectId, quiz.user, gradedAnswers, score),
+        new Result(
+          new ObjectId(userId),
+          quiz._id as ObjectId,
+          quiz.user,
+          gradedAnswers,
+          score
+        )
       )
       return [resultId, []]
     } else {

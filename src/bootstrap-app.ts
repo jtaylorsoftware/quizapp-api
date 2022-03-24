@@ -1,29 +1,56 @@
-import { App } from 'app'
-import QuizController from 'controllers/quiz'
-import ResultController from 'controllers/result'
-import UserController from 'controllers/user'
 import { bootstrap } from 'express-di'
+
+import { App } from 'app'
+
+import DbService from 'services/db'
+
+import QuizControllerV1 from 'controllers/v1/quiz'
+import ResultControllerV1 from 'controllers/v1/result'
+import UserControllerV1 from 'controllers/v1/user'
+
+import QuizControllerV2 from 'controllers/v2/quiz'
+import ResultControllerV2 from 'controllers/v2/result'
+import UserControllerV2 from 'controllers/v2/user'
+
 import QuizRepository from 'repositories/quiz'
 import ResultRepository from 'repositories/result'
 import UserRepository from 'repositories/user'
-import DbService from 'services/db'
-import QuizService from 'services/quiz'
-import ResultService from 'services/result'
-import UserService from 'services/user'
+
+import QuizServiceV1 from 'services/v1/quiz'
+import ResultServiceV1 from 'services/v1/result'
+import UserServiceV1 from 'services/v1/user'
+
+import QuizServiceV2 from 'services/v2/quiz'
+import ResultServiceV2 from 'services/v2/result'
+import UserServiceV2 from 'services/v2/user'
 
 export default async function () {
   const app = <App>(
     await bootstrap(
       App,
-      [QuizController, ResultController, UserController],
+      [
+        QuizControllerV1,
+        ResultControllerV1,
+        UserControllerV1,
+
+        QuizControllerV2,
+        ResultControllerV2,
+        UserControllerV2,
+      ],
       [
         DbService,
+
         UserRepository,
         QuizRepository,
         ResultRepository,
-        UserService,
-        QuizService,
-        ResultService
+
+        UserServiceV1,
+        QuizServiceV1,
+        ResultServiceV1,
+
+        UserServiceV2,
+        QuizServiceV2,
+        ResultServiceV2,
       ]
     )
   )

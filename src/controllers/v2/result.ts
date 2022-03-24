@@ -1,26 +1,26 @@
-import { ResultWithExtras } from '../models/result'
-
 const debug = require('debug')('routes:result')
 
 import moment from 'moment'
 import { query } from 'express-validator'
 import { Request, Response, NextFunction } from 'express'
 
-import resolveErrors from 'middleware/validation/resolve-errors'
+import resolveErrors from 'middleware/validation/resolve-errors-v2'
 import * as validators from 'middleware/validation/result'
 import authenticate from 'middleware/auth'
 
 import { Inject, Get, Post, Controller } from 'express-di'
 
-import QuizService from 'services/quiz'
-import ResultService from 'services/result'
-import UserService from 'services/user'
+import QuizService from 'services/v2/quiz'
+import ResultService from 'services/v2/result'
+import UserService from 'services/v2/user'
 import { ObjectId } from 'mongodb'
 import Quiz from 'models/quiz'
+import { ResultWithExtras } from 'models/result'
+import { ServiceError } from 'services/v2/errors'
 
 @Inject
-export default class ResultController extends Controller({
-  root: '/api/v1/results',
+export default class ResultControllerV2 extends Controller({
+  root: '/api/v2/results',
 }) {
   constructor(
     private quizzes: QuizService,
@@ -149,7 +149,13 @@ export default class ResultController extends Controller({
 
       if (moment(quiz.expiration).diff(moment()) < 0) {
         // quiz expired
-        res.status(403).json({ errors: [{ expiration: 'Quiz has expired' }] })
+        const errors: ServiceError[] = [
+          {
+            field: 'expiration',
+            message: 'Quiz has expired',
+          },
+        ]
+        res.status(403).json({ errors: errors })
         return next()
       }
 
