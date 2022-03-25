@@ -7,27 +7,44 @@ info:
   contact:
     name: Jeremy Taylor
     url: https://github.com/jtaylorsoftware
+
 components:
   securitySchemes:
-    BearerAuth:
+    BearerToken:
       type: http
       scheme: bearer
       bearerFormat: JWT
       in: header
       name: x-auth-token
 
+  parameters:
+    ResponseFormat:
+      name: format
+      in: query
+      description: A query parameter controlling the structure of returned list data.
+      schema:
+        type: string
+        enum: [ listing, full ]
+        default: listing
+      required: false
+
   responses:
+    AuthToken:
+      description: An auth token for the new user.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
     UnauthorizedError:
       description: Bearer token is missing or invalid.
 
   schemas:
-    AuthToken:
-      type: object
-      properties:
-        token:
-          type: string
     ApiError:
       type: object
+      description: An error response object containing detailed information about an error.
       properties:
         field:
           description: The name of the field causing the error, or null for a general error.
@@ -40,14 +57,279 @@ components:
           type: string
         value:
           description: The value that caused the error, or null if a general error or the value is omitted for security.
+          anyOf:
+            - type: string
+            - type: integer
+            - type: number
         expected:
           description: If applicable, the expected value for this field.
+          anyOf:
+            - type: string
+            - type: integer
+            - type: number
+
+    Username:
+      type: string
+      minLength: 5
+      maxLength: 12
+      description: A display name for a User and also used to sign-in.
+    Email:
+      type: string
+      description: A valid email address.
+    Password:
+      type: string
+      minLength: 8
+      maxLength: 20
+
+    Date:
+      type: string
+      description: A Unix timestamp formatted using ISO-8601 representation, signifying a creation date.
+    ObjectId:
+      type: string
+      description: A unique identifier for some object.
+
+    User:
+      description: Data for an arbitrary user. It does not include private information.
+      type: object
+      properties:
+        _id:
+          $ref: '#/components/schemas/ObjectId'
+        username:
+          $ref: '#/components/schemas/Username'
+        quizzes:
+          type: array
+          description: The ids of the user's created quizzes.
+          items:
+            $ref: '#/components/schemas/ObjectId'
+      required: [ _id, username, quizzes ]
+
+    UserProfile:
+      description: Data for the signed-in user.
+      type: object
+      properties:
+        _id:
+          $ref: '#/components/schemas/ObjectId'
+        date:
+          $ref: '#/components/schemas/Date'
+        username:
+          $ref: '#/components/schemas/Username'
+        email:
+          $ref: '#/components/schemas/Email'
+        quizzes:
+          type: array
+          description: The ids of the user's created quizzes.
+          items:
+            $ref: '#/components/schemas/ObjectId'
+        results:
+          type: array
+          description: The ids of the user's created quizzes.
+          items:
+            $ref: '#/components/schemas/ObjectId'
+      required: [ _id, date, username, email, quizzes, results ]
+
+    QuestionType:
+      type: string
+      enum: [ FillIn, MultipleChoice ]
+      description: |
+        Indicates what type of question it is and how the question body is structured.
+
+    Question:
+      description: A question in a quiz. The format varies depending on type.
+      type: object
+      discriminator:
+        propertyName: type
+      properties:
+        type:
+          $ref: '#/components/schemas/QuestionType'
+        text:
+          type: string
+          description: Question prompt.
+      required: [ type, text ]
+
+    MultipleChoiceQuestion:
+      description: A multiple-choice question, with multiple choices and one correct answer.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Question'
+        - properties:
+            correctAnswer:
+              type: integer
+              description: The index of the correct answer.
+            answers:
+              type: array
+              description: The question answer choices. Only one is correct.
+              items:
+                type: object
+                properties:
+                  text:
+                    type: string
+                    description: The text of the answer.
+                required: [ text ]
+          required: [ correctAnswer, answers ]
+
+    FillInQuestion:
+      description: A fill-in-the-blank question, with exactly one correct answer.
+      allOf:
+        - $ref: '#/components/schemas/Question'
+        - type: object
+          properties:
+            correctAnswer:
+              type: string
+              description: The exact text of the correct answer.
+          required: [ correctAnswer ]
+
+    QuizListing:
+      description: |
+        A partial Quiz object that replaces large fields with summaries.
+        For example, instead of containing all questions it contains the
+        number of questions.
+      type: object
+      properties:
+        _id:
+          $ref: '#/components/schemas/ObjectId'
+        date:
+          $ref: '#/components/schemas/Date'
+        user:
+          $ref: '#/components/schemas/ObjectId'
+        title:
+          type: string
+        expiration:
+          $ref: '#/components/schemas/Date'
+        isPublic:
+          type: boolean
+        resultsCount:
+          type: integer
+        questionCount:
+          type: integer
+      required: [ _id, date, user, title, expiration, isPublic, resultsCount, questionCount ]
+
+    Quiz:
+      description: A quiz object created by a user.
+      type: object
+      properties:
+        _id:
+          $ref: '#/components/schemas/ObjectId'
+        date:
+          $ref: '#/components/schemas/Date'
+        user:
+          $ref: '#/components/schemas/ObjectId'
+        title:
+          type: string
+        expiration:
+          $ref: '#/components/schemas/Date'
+        isPublic:
+          description: Flag controlling whether to restrict access to certain users.
+          type: boolean
+          default: true
+        questions:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FillInQuestion'
+              - $ref: '#/components/schemas/MultipleChoiceQuestion'
+            discriminator:
+              propertyName: type
+              mapping:
+                FillIn: '#/components/schemas/FillInQuestion'
+                MultipleChoice: '#/components/schemas/MultipleChoiceQuestion'
+        results:
+          type: array
+          description: Ids of the results from users taking this quiz.
+          items:
+            $ref: '#/components/schemas/ObjectId'
+        allowedUsers:
+          description: |
+            The users allowed to see and take this quiz. As a request, these should be ObjectIds.
+            As a response, they will be usernames.
+          oneOf:
+            - $ref: '#/components/schemas/Username'
+            - $ref: '#/components/schemas/ObjectId'
+      required: [ user, title, expiration, isPublic, questions, results, allowedUsers ]
+
+    GradedAnswer:
+      description: A graded answer (or "response") to a question.
+      type: object
+      discriminator:
+        propertyName: type
+      properties:
+        type:
+          $ref: '#/components/schemas/QuestionType'
+        isCorrect:
+          type: boolean
+      required: [ type ]
+
+    GradedMultipleChoiceAnswer:
+      description: A graded multiple-choice response.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GradedAnswer'
+        - properties:
+            choice:
+              type: integer
+            correctAnswer:
+              type: integer
+              description: The actual correct answer, may not be supplied depending on Quiz settings.
+          required: [ choice ]
+
+    GradedFillInAnswer:
+      description: A graded multiple-choice response.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GradedAnswer'
+        - properties:
+            answer:
+              type: string
+            correctAnswer:
+              type: string
+              description: The actual correct answer, may not be supplied depending on Quiz settings.
+          required: [ answer ]
+
+    ResultListing:
+      description: |
+        A partial result object that omits the full graded answers list.
+      type: object
+      properties:
+        _id:
+          $ref: '#/components/schemas/ObjectId'
+        date:
+          $ref: '#/components/schemas/Date'
+        user:
+          $ref: '#/components/schemas/ObjectId'
+        quiz:
+          $ref: '#/components/schemas/ObjectId'
+        score:
+          type: number
+          description: The total score earned.
+        quizTitle:
+          type: string
+        ownerUsername:
+          type: string
+      required: [ _id, date, user, quiz, score ]
+
+    Result:
+      description: A full result object that includes a graded answers list.
+      allOf:
+        - $ref: '#/components/schemas/ResultListing'
+        - type: object
+          properties:
+            answers:
+              type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/GradedFillInAnswer'
+                  - $ref: '#/components/schemas/GradedMultipleChoiceAnswer'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    FillIn: '#/components/schemas/GradedFillInAnswer'
+                    MultipleChoice: '#/components/schemas/GradedMultipleChoiceAnswer'
+          required: [ answers ]
 
 paths:
   /api/v2/users/:
     post:
       summary: Registers a new user.
-      tags: [ users ]
+      tags: [ users, auth ]
       requestBody:
         required: true
         content:
@@ -56,19 +338,19 @@ paths:
               type: object
               properties:
                 username:
-                  type: string
+                  $ref: '#/components/schemas/Username'
                 email:
-                  type: string
+                  $ref: '#/components/schemas/Email'
                 password:
-                  type: string
+                  $ref: '#/components/schemas/Password'
               required: [ username, email, password ]
+              example:
+                username: 'user123'
+                email: 'user123@email.com'
+                password: 'password'
       responses:
         "200":
-          description: An auth token for the new user.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthToken'
+          $ref: '#/components/responses/AuthToken'
         "409":
           description: One of the required properties is already in use by another user.
           content:
@@ -85,6 +367,215 @@ paths:
                     - field: email
                       message: Email is already in use.
                       value: me@example.com
-        "500":
-          description: Internal server error.
-
+  /api/v2/users/auth:
+    post:
+      summary: Authenticate (sign-in) an existing user.
+      tags: [ auth, users ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  $ref: '#/components/schemas/Username'
+                password:
+                  $ref: '#/components/schemas/Password'
+              required: [ username, password ]
+              example:
+                username: 'user123'
+                password: password
+      responses:
+        "200":
+          $ref: '#/components/responses/AuthToken'
+        "400":
+          description: Authentication failed - one or more of the supplied properties are invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+                example:
+                  errors:
+                    - field: email
+                      message: Email is already in use.
+                      value: me@example.com
+  /api/v2/users/{id}:
+    get:
+      tags: [ users ]
+      description: Get a user by id.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: true
+      responses:
+        "200":
+          description: The user's data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        "404":
+          description: The user doesn't exist.
+  /api/v2/users/me:
+    description: Operations on the signed-in user.
+    get:
+      tags: [ users ]
+      description: Gets profile data.
+      security:
+        - BearerToken: [ ]
+      responses:
+        "200":
+          description: The user's profile data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags: [ users ]
+      description: Deletes the signed-in user's account.
+      security:
+        - BearerToken: [ ]
+      responses:
+        "204":
+          description: The account was deleted.
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "404":
+          description: |
+            The account doesn't exist - if the user was authorized, this means
+            that the account was already deleted recently.
+  /api/v2/users/me/quizzes:
+    description: Get the current user's created quizzes.
+    get:
+      tags: [ users ]
+      parameters:
+        - $ref: '#/components/parameters/ResponseFormat'
+      security:
+        - BearerToken: [ ]
+      responses:
+        "200":
+          description: |
+            A list of quizzes in the specified format. It may be empty
+            if the user hasn't created any quizzes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/QuizListing'
+                    - $ref: '#/components/schemas/Quiz'
+        "400":
+          description: One or more query parameter(s) is invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/v2/users/me/results:
+    description: Get the current user's graded quiz results.
+    get:
+      tags: [ users ]
+      parameters:
+        - $ref: '#/components/parameters/ResponseFormat'
+      security:
+        - BearerToken: [ ]
+      responses:
+        "200":
+          description: |
+            A list of quizzes in the specified format. It may be empty
+            if the user hasn't created any quizzes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/ResultListing'
+                    - $ref: '#/components/schemas/Result'
+        "400":
+          description: One or more query parameter(s) is invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/v2/users/me/email:
+    description: Change the current user's email.
+    put:
+      tags: [ users ]
+      security:
+        - BearerToken: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  $ref: '#/components/schemas/Email'
+              required: [ email ]
+      responses:
+        "204":
+          description: Email successfully changed.
+        "409":
+          description: Email already in use. The errors array always has one item.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+                example:
+                  errors:
+                    - field: email
+                      message: Email is already in use.
+                      value: me@example.com
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/v2/users/me/password:
+    put:
+      tags: [ users, auth ]
+      security:
+        - BearerToken: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  $ref: '#/components/schemas/Password'
+              required: [ password ]
+      responses:
+        "204":
+          description: Password successfully changed.
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
