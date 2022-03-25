@@ -1,0 +1,90 @@
+openapi: 3.0.3
+
+info:
+  title: QuizNow
+  description: An app for creating quizzes.
+  version: 1.0.0
+  contact:
+    name: Jeremy Taylor
+    url: https://github.com/jtaylorsoftware
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      in: header
+      name: x-auth-token
+
+  responses:
+    UnauthorizedError:
+      description: Bearer token is missing or invalid.
+
+  schemas:
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+    ApiError:
+      type: object
+      properties:
+        field:
+          description: The name of the field causing the error, or null for a general error.
+          type: string
+        index:
+          description: If field is a collection, contains the index in the collection.
+          type: integer
+        message:
+          description: Associated message describing the error.
+          type: string
+        value:
+          description: The value that caused the error, or null if a general error or the value is omitted for security.
+        expected:
+          description: If applicable, the expected value for this field.
+
+paths:
+  /api/v2/users/:
+    post:
+      summary: Registers a new user.
+      tags: [ users ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+              required: [ username, email, password ]
+      responses:
+        "200":
+          description: An auth token for the new user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        "409":
+          description: One of the required properties is already in use by another user.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+                example:
+                  errors:
+                    - field: email
+                      message: Email is already in use.
+                      value: me@example.com
+        "500":
+          description: Internal server error.
+
