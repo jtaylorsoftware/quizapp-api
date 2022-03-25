@@ -147,7 +147,10 @@ components:
       required: [ type, text ]
 
     MultipleChoiceQuestion:
-      description: A multiple-choice question, with multiple choices and one correct answer.
+      description: |
+        A multiple-choice question, with multiple choices and one correct answer.
+        The correctAnswer value is required when submitting a quiz.
+        In a quiz "form" the correctAnswer is omitted.
       type: object
       allOf:
         - $ref: '#/components/schemas/Question'
@@ -168,7 +171,10 @@ components:
           required: [ correctAnswer, answers ]
 
     FillInQuestion:
-      description: A fill-in-the-blank question, with exactly one correct answer.
+      description: |
+        A fill-in-the-blank question, with exactly one correct answer.
+        The correctAnswer value is required when submitting a quiz.
+        In a quiz "form" the correctAnswer is omitted.
       allOf:
         - $ref: '#/components/schemas/Question'
         - type: object
@@ -176,7 +182,7 @@ components:
             correctAnswer:
               type: string
               description: The exact text of the correct answer.
-          required: [ correctAnswer ]
+          required: [ correctAnsewr ]
 
     QuizListing:
       description: |
@@ -239,12 +245,43 @@ components:
             $ref: '#/components/schemas/ObjectId'
         allowedUsers:
           description: |
-            The users allowed to see and take this quiz. As a request, these should be ObjectIds.
-            As a response, they will be usernames.
+            The users allowed to see and take this quiz. In request or response body
+            for creating or editing quiz, these will be usernames. They may
+            be ObjectIds in some get responses.
           oneOf:
             - $ref: '#/components/schemas/Username'
             - $ref: '#/components/schemas/ObjectId'
       required: [ user, title, expiration, isPublic, questions, results, allowedUsers ]
+
+    QuizForm:
+      description: |
+        A quiz as a form for users to respond to. The correct answers
+        and other data not relevant to responders are omitted.
+      type: object
+      properties:
+        _id:
+          $ref: '#/components/schemas/ObjectId'
+        date:
+          $ref: '#/components/schemas/Date'
+        user:
+          $ref: '#/components/schemas/Username'
+        title:
+          type: string
+        expiration:
+          $ref: '#/components/schemas/Date'
+        questions:
+          type: array
+          description: Questions with 'correctAnswer' omitted.
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/FillInQuestion'
+              - $ref: '#/components/schemas/MultipleChoiceQuestion'
+            discriminator:
+              propertyName: type
+              mapping:
+                FillIn: '#/components/schemas/FillInQuestion'
+                MultipleChoice: '#/components/schemas/MultipleChoiceQuestion'
+      required: [ user, title, expiration, questions ]
 
     GradedAnswer:
       description: A graded answer (or "response") to a question.
@@ -324,6 +361,54 @@ components:
                     FillIn: '#/components/schemas/GradedFillInAnswer'
                     MultipleChoice: '#/components/schemas/GradedMultipleChoiceAnswer'
           required: [ answers ]
+
+    Response:
+      description: A response to a quiz question.
+      type: object
+      discriminator:
+        propertyName: type
+      properties:
+        type:
+          $ref: '#/components/schemas/QuestionType'
+      required: [ type ]
+
+    MultipleChoiceResponse:
+      description: A multiple-choice response.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/QuizResponse'
+        - properties:
+            choice:
+              type: integer
+              description: Index of the user's choice.
+
+    FillInResponse:
+      description: A fill-in-the-blank response.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Response'
+        - properties:
+            answer:
+              type: string
+              description: The user's input response.
+
+    QuizFormResponses:
+      description: A user's responses ("answers") to a quiz form.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ResponseAnswer'
+        - properties:
+            answers:
+              type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/MultipleChoiceResponse'
+                  - $ref: '#/components/schemas/FillInResponse'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    MultipleChoice: '#/components/schemas/MultipleChoiceResponse'
+                    FillIn: '#/components/schemas/FillInResponse'
 
 paths:
   /api/v2/users/:
@@ -579,3 +664,278 @@ paths:
           description: Password successfully changed.
         "401":
           $ref: '#/components/responses/UnauthorizedError'
+  /api/v2/quizzes/{id}:
+    get:
+      tags: [ quizzes ]
+      security:
+        - BearerToken: [ ]
+      description: Get a quiz or quiz listing by id from the signed-in user's quizzes.
+      parameters:
+        - $ref: '#/components/parameters/ResponseFormat'
+        - in: path
+          name: id
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: true
+      responses:
+        "200":
+          description: The quiz in the specified format.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/QuizListing'
+                    - $ref: '#/components/schemas/Quiz'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "403":
+          description: The user does not own the quiz.
+        "404":
+          description: The quiz doesn't exist.
+    delete:
+      tags: [ quizzes ]
+      security:
+        - BearerToken: [ ]
+      description: |
+        Delete one of the signed-in user's created quizzes.
+        Cascades by deleting results for the quiz as well.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: true
+      responses:
+        "204":
+          description: Quiz deleted successfully.
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "403":
+          description: The user does not own the quiz.
+        "404":
+          description: The quiz doesn't exist.
+  /api/v2/quizzes/{id}/form:
+    get:
+      tags: [ quizzes ]
+      security:
+        - BearerToken: [ ]
+      description: Get a quiz as a form for users to respond to (answers omitted).
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: true
+      responses:
+        "200":
+          description: The quiz form.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizForm'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "403":
+          description: The user is not allowed to view the quiz.
+        "404":
+          description: The quiz doesn't exist.
+  /api/v2/quizzes/:
+    post:
+      description: Create a new quiz.
+      tags: [ quizzes ]
+      security:
+        - BearerToken: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Quiz'
+      responses:
+        "200":
+          description: Id of the created quiz.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: '#/components/schemas/ObjectId'
+        "400":
+          description: One or more fields are invalid. Response body contains validation errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /api/v2/quizzes/{id}/edit:
+    put:
+      description: |
+        Edit a previously created quiz, but the allowed edits are restricted
+        to text fields that are not a "correctAnswer."
+      tags: [ quizzes ]
+      security:
+        - BearerToken: [ ]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Quiz'
+      responses:
+        "204":
+          description: The quiz was edited successfully.
+        "400":
+          description: One or more fields are invalid. Response body contains validation errors.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "403":
+          description: The user doesn't own the quiz they're trying to edit.
+        "409":
+          description: The edits changed a restricted field.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+                example:
+                  errors:
+                    - field: 'questions'
+                      message: 'Cannot change correctAnswers or number of questions'
+  /api/v2/results/{id}:
+    get:
+      tags: [ results ]
+      security:
+        - BearerToken: [ ]
+      description: |
+        Get either all results for a quiz, or one user's results for a quiz.
+        The former option requires that the auth user created the query quiz.
+        The latter option requires that the signed-in user was the result
+        submitter or created the quiz.
+      parameters:
+        - $ref: '#/components/parameters/ResponseFormat'
+        - in: path
+          name: id
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: true
+        - in: path
+          name: quiz
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: true
+        - in: path
+          name: user
+          description: If present, gets results for just this user.
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: false
+      responses:
+        "200":
+          description: The result(s) in the specified format.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/ResultListing'
+                    - $ref: '#/components/schemas/Result'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "403":
+          description: The response doesn't belong to this user, or they're not the quiz owner.
+        "404":
+          description: The results or quiz don't exist.
+  /api/v2/results/:
+    post:
+      tags: [ results ]
+      security:
+        - BearerToken: [ ]
+      description: Upload a response to a quiz for grading. Each user can respond to a quiz once.
+      parameters:
+        - in: path
+          name: quiz
+          schema:
+            $ref: '#/components/schemas/ObjectId'
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizFormResponses'
+      responses:
+        "200":
+          description: Id of the created response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: '#/components/schemas/ObjectId'
+        "400":
+          description: |
+            One or more fields are invalid. Response body contains validation errors.
+            Possible error fields may include 'answers,' when the 'answers' array
+            is not the same length as the number of quiz questions, and other
+            validation errors for individual responses.
+            If the user has already responded, a message-only error is also
+            returned instead of grading any responses.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+        "403":
+          description: |
+            The auth user can't view or respond to the quiz - they are not
+            in the allowedUsers, or the quiz has expired.
+          content:
+            application/json:
+              schema:
+                description: The errors when the expiration has passed.
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiError'
+                example:
+                  errors:
+                    field: 'expiration'
+                    message: 'Quiz has expired'
+        "404":
+          description: The quiz doesn't exist.
