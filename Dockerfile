@@ -11,6 +11,7 @@ COPY src src
 
 FROM base AS dev
 COPY tsconfig.json .
+COPY openapi openapi
 RUN npx tsc
 ENV NODE_PATH=./build
 ENV DEBUG=routes:*,middleware:*,express:router
