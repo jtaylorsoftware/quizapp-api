@@ -1,11 +1,8 @@
-import { Collection, ObjectId } from 'mongodb'
+import { Collection, Filter, ObjectId, WithId } from 'mongodb'
 import { Inject, Service } from 'express-di'
 import DbService from 'services/db'
 import Quiz from 'models/quiz'
 import Repository from './repository'
-
-export const MIN_QUESTIONS: number = 1
-export const MIN_ANSWERS: number = 2
 
 @Inject
 export default class QuizRepository extends Service() {
@@ -35,6 +32,7 @@ export default class QuizRepository extends Service() {
     result: string | ObjectId
   ): Promise<void> {
     if (!ObjectId.isValid(quiz) || !ObjectId.isValid(result)) {
+      // TODO throw
       return
     }
     const _id: ObjectId = new ObjectId(quiz)
@@ -50,6 +48,45 @@ export default class QuizRepository extends Service() {
   }
 
   /**
+   * Gets all quizzes created by the user with `_id` equal to `user`.
+   *
+   * @param user id of the user to search by - quizzes with a `user` field
+   * equal to this value will be returned.
+   */
+  async findByUserId(user: string | ObjectId): Promise<WithId<Quiz>[]> {
+    if (!ObjectId.isValid(user)) {
+      // TODO throw
+      return []
+    }
+
+    // TODO paging
+    return this.collection
+      .find({ user: new ObjectId(user) } as Filter<Quiz>)
+      .toArray()
+  }
+
+  /**
+   * Deletes all quizzes created by the user with `_id` equal to `user`.
+   *
+   * @param user id of the user to search by - quizzes with a `user` field
+   * equal to this value will be deleted.
+   *
+   * @returns Count deleted.
+   */
+  async deleteByUserId(user: string | ObjectId): Promise<number> {
+    if (!ObjectId.isValid(user)) {
+      // TODO throw
+      return 0
+    }
+
+    return (
+      await this.collection.deleteMany({
+        user: new ObjectId(user),
+      } as Filter<Quiz>)
+    ).deletedCount
+  }
+
+  /**
    * Removes a result from the quiz's list of results
    * @param quiz quiz id
    * @param result
@@ -59,6 +96,7 @@ export default class QuizRepository extends Service() {
     result: string | ObjectId
   ): Promise<void> {
     if (!ObjectId.isValid(quiz) || !ObjectId.isValid(result)) {
+      // TODO throw
       return
     }
     const _id: ObjectId = new ObjectId(quiz)

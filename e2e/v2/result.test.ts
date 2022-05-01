@@ -8,7 +8,7 @@ import bootstrap from 'bootstrap-app'
 import User from 'models/user'
 import Quiz from 'models/quiz'
 
-import { ServiceError } from 'services/v2/errors'
+import { ValidationError } from 'services/v2/errors'
 import { teacher, extraUser, clearTestData, loadTestData } from '../data'
 
 describe('/api/v2/results', () => {
@@ -195,7 +195,7 @@ describe('/api/v2/results', () => {
         answers: [{ choice: 0 }],
       })
       expect(
-        res.body.errors.some((err: ServiceError) =>
+        res.body.errors.some((err: ValidationError) =>
           err.message!!.includes('already responded')
         )
       ).toBeTruthy()

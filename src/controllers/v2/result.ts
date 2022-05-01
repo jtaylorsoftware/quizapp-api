@@ -1,32 +1,20 @@
-const debug = require('debug')('routes:result')
-
-import moment from 'moment'
+import { NextFunction, Request, Response } from 'express'
 import { query } from 'express-validator'
-import { Request, Response, NextFunction } from 'express'
 
+import authenticate from 'middleware/auth'
 import resolveErrors from 'middleware/validation/resolve-errors-v2'
 import * as validators from 'middleware/validation/result'
-import authenticate from 'middleware/auth'
 
-import { Inject, Get, Post, Controller } from 'express-di'
+import { Controller, Get, Inject, Post } from 'express-di'
 
-import QuizService from 'services/v2/quiz'
+import { ResultType } from 'models/result'
 import ResultService from 'services/v2/result'
-import UserService from 'services/v2/user'
-import { ObjectId } from 'mongodb'
-import Quiz from 'models/quiz'
-import { ResultWithExtras } from 'models/result'
-import { ServiceError } from 'services/v2/errors'
 
 @Inject
 export default class ResultControllerV2 extends Controller({
   root: '/api/v2/results',
 }) {
-  constructor(
-    private quizzes: QuizService,
-    private results: ResultService,
-    private users: UserService
-  ) {
+  constructor(private resultService: ResultService) {
     super()
   }
 
@@ -45,79 +33,58 @@ export default class ResultControllerV2 extends Controller({
   async getResult(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
     const { format, user: queryUser, quiz: quizId } = req.query
+    const requestUser = userId
+    if (
+      !(typeof quizId === 'string') ||
+      (queryUser != null && !(typeof queryUser === 'string'))
+    ) {
+      res.status(400).end()
+      return next()
+    }
+
     try {
       if (!queryUser) {
-        // get all results for the quiz
-        const quiz = await this.quizzes.getQuizById(<string>quizId)
-        if (quiz) {
-          if (quiz.user.toString() !== userId) {
-            res.status(403).end()
-            return next()
-          }
+        // No user specified in query, so return all for quiz
+        let results: ResultType<'full'>[] | ResultType<'listing'>[] // must be list of same type
+        if (!format || format === 'full') {
+          results = await this.resultService.getAllFullResultsForQuiz(
+            quizId,
+            requestUser
+          )
         } else {
-          res.status(404).end()
-          return next()
-        }
-        const results = []
-        for (const resultId of quiz.results) {
-          const result = await this.results.getResult(resultId)
-          if (result) {
-            const resultWithExtras: ResultWithExtras = { ...result }
-            const resultUser = await this.users.getUserById(result.user)
-            if (resultUser) {
-              resultWithExtras.username = resultUser.username
-            }
-            if (!format || format === 'full') {
-              results.push(resultWithExtras)
-            } else {
-              const { answers, ...listing } = resultWithExtras
-              results.push(listing)
-            }
-          }
+          results = await this.resultService.getAllResultListingForQuiz(
+            quizId,
+            requestUser
+          )
         }
         res.json({ results })
       } else {
-        const result = await this.results.getUserResultForQuiz(
-          <string>queryUser,
-          <string>quizId
-        )
-        if (!result) {
+        // User and quiz both specified, so return a single result for that user
+
+        let result: ResultType<'full' | 'listing'> | null
+        if (!format || format === 'full') {
+          result = await this.resultService.getFullUserResultForQuiz(
+            queryUser,
+            quizId,
+            requestUser
+          )
+        } else {
+          result = await this.resultService.getUserResultListingForQuiz(
+            queryUser,
+            quizId,
+            requestUser
+          )
+        }
+
+        if (result == null) {
           res.status(404).end()
           return next()
         }
-        const isResultOwner = result.user.toString() === userId
-        const isQuizOwner = result.quizOwner.toString() === userId
-        if (!isResultOwner && !isQuizOwner) {
-          res.status(403).end()
-          return next()
-        }
 
-        const resultWithExtras: ResultWithExtras = { ...result }
-
-        const resultUser = await this.users.getUserById(result.user)
-        if (resultUser) {
-          resultWithExtras.username = resultUser.username
-        }
-
-        // get the quiz title and created by
-        const quiz = await this.quizzes.getQuizById(<string>quizId)
-        if (quiz) {
-          resultWithExtras.quizTitle = quiz.title
-          const owner = await this.users.getUserById(result.quizOwner)
-          if (owner) {
-            resultWithExtras.ownerUsername = owner['username']
-          }
-        }
-        if (!format || format === 'full') {
-          res.json(resultWithExtras)
-        } else {
-          const { answers, ...listing } = resultWithExtras
-          res.json(listing)
-        }
+        res.json(result)
       }
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      next(error)
     }
     return next()
   }
@@ -136,55 +103,27 @@ export default class ResultControllerV2 extends Controller({
     const { answers } = req.body
     const { quiz: quizId } = req.query
 
+    if (!(typeof quizId === 'string')) {
+      res.status(400).end()
+      return next()
+    }
+
     try {
-      const quiz = await this.quizzes.getQuizById(<string>quizId)
-      if (!quiz) {
-        res.status(404).end()
-        return next()
-      }
-      if (!this.canUserViewQuiz(userId, quiz)) {
-        res.status(403).end()
-        return next()
-      }
-
-      if (moment(quiz.expiration).diff(moment()) < 0) {
-        // quiz expired
-        const errors: ServiceError[] = [
-          {
-            field: 'expiration',
-            message: 'Quiz has expired',
-          },
-        ]
-        res.status(403).json({ errors: errors })
-        return next()
-      }
-
-      const [resultId, errors] = await this.results.createResult(
+      const [resultId, errors] = await this.resultService.createResult(
         answers,
         userId,
-        quiz
+        quizId
       )
 
       if (!resultId) {
         res.status(400).json({ errors: [...errors] })
         return next()
       }
-      await this.users.addResult(userId, resultId)
-      await this.quizzes.addResult(quiz._id, resultId)
 
       res.json({ id: resultId })
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      next(error)
     }
     return next()
-  }
-
-  private canUserViewQuiz(userId: string, quiz: Quiz) {
-    return (
-      quiz.isPublic ||
-      quiz.user.toString() === userId ||
-      quiz.allowedUsers.some((id) => id.toString() === userId)
-    )
   }
 }

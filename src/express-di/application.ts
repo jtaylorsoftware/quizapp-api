@@ -36,10 +36,19 @@ export default function Application(config?: ApplicationConfig) {
 
       if (config?.openApi != null) {
         try {
-          const document = YAML.parse(fs.readFileSync(config.openApi.documentPath, 'utf8'))
-          this.ex.use(config.openApi.path, swaggerUi.serve, swaggerUi.setup(document))
+          const document = YAML.parse(
+            fs.readFileSync(config.openApi.documentPath, 'utf8')
+          )
+          this.ex.use(
+            config.openApi.path,
+            swaggerUi.serve,
+            swaggerUi.setup(document)
+          )
         } catch (err) {
-          console.error(`Could not open OpenAPI document ${config.openApi.documentPath}: `, err)
+          console.error(
+            `Could not open OpenAPI document ${config.openApi.documentPath}: `,
+            err
+          )
         }
       }
 
@@ -47,7 +56,7 @@ export default function Application(config?: ApplicationConfig) {
       this.ex.use((error, req, res, next) => {
         // noinspection SuspiciousTypeOfGuard
         if (error instanceof SyntaxError) {
-          res.status(400).json({ errors: [{ msg: 'Invalid JSON format' }] })
+          res.status(400).json({ errors: [{ message: 'Invalid JSON format' }] })
         } else {
           return next()
         }

@@ -5,7 +5,12 @@ import { GradedAnswer } from './answertypes'
 /**
  * A Result that includes extra details.
  */
-export type ResultWithExtras = Result & {
+export type ResultWithExtras = Result & ResultExtras
+
+/**
+ * Extra computed data for a Result.
+ */
+export type ResultExtras = {
   // Name of the user for this result
   username?: string
 
@@ -16,6 +21,19 @@ export type ResultWithExtras = Result & {
   ownerUsername?: string
 }
 
+/**
+ * A brief format for a quiz Result. It omits large data types such as lists or nested
+ * objects.
+ */
+export type ResultListing = Omit<Result, 'answers'> & ResultExtras
+
+export type ResultFormat = 'full' | 'listing'
+
+export type ResultType<FormatType> = FormatType extends 'full'
+  ? ResultWithExtras
+  : FormatType extends 'listing'
+  ? ResultListing
+  : never
 
 /**
  * Represents a quiz result document
@@ -31,7 +49,7 @@ export default class Result extends Model {
     public quiz: ObjectId,
     public quizOwner: ObjectId,
     public answers: Array<GradedAnswer>,
-    public score: number,
+    public score: number
   ) {
     super()
     this.user = ObjectId.isValid(user) ? user : new ObjectId()

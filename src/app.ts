@@ -21,6 +21,7 @@ export class App extends Application({
   },
   openApi: openApiOptions,
 }) {
+  // Stored in App so that bootstrap can return this reference easily to main
   dbClient!: MongoClient
 
   constructor(private db: DbService) {

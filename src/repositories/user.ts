@@ -56,6 +56,7 @@ export default class UserRepository extends Service() {
     result: string | ObjectId
   ): Promise<void> {
     if (!ObjectId.isValid(user) || !ObjectId.isValid(result)) {
+      // TODO throw
       return
     }
     const _id: ObjectId = new ObjectId(user)
@@ -80,6 +81,7 @@ export default class UserRepository extends Service() {
     quiz: string | ObjectId
   ): Promise<void> {
     if (!ObjectId.isValid(user) || !ObjectId.isValid(quiz)) {
+      // TODO throw
       return
     }
     const _id: ObjectId = new ObjectId(user)
@@ -104,6 +106,7 @@ export default class UserRepository extends Service() {
     result: string | ObjectId
   ): Promise<void> {
     if (!ObjectId.isValid(user) || !ObjectId.isValid(result)) {
+      // TODO throw
       return
     }
     const _id: ObjectId = new ObjectId(user)
@@ -169,6 +172,7 @@ export default class UserRepository extends Service() {
    */
   async updateEmail(user: string | ObjectId, email: string): Promise<void> {
     if (!ObjectId.isValid(user)) {
+      // TODO throw
       return
     }
     const _id: ObjectId = new ObjectId(user)
@@ -185,6 +189,7 @@ export default class UserRepository extends Service() {
     password: string
   ): Promise<void> {
     if (!ObjectId.isValid(user)) {
+      // TODO throw
       return
     }
     const _id: ObjectId = new ObjectId(user)

@@ -15,12 +15,18 @@ COPY openapi openapi
 RUN npx tsc
 ENV NODE_PATH=./build
 ENV DEBUG=routes:*,middleware:*,express:router
-ENTRYPOINT ["npx", "nodemon", "build/start.js"]
+ENTRYPOINT ["npx", "nodemon", "--inspect=0.0.0.0:9229", "build/start.js"]
 
 FROM dev AS test
 COPY e2e e2e
 COPY e2e.jest.config.ts .
-ENTRYPOINT ["npm", "run", "test:e2e"]
+ENV DEBUG='middleware:errorHandler'
+ENTRYPOINT ["node", \
+    "--inspect=0.0.0.0:9229", \
+    "./node_modules/.bin/jest", \
+    "--testPathPattern=e2e", \
+    "--config=e2e.jest.config.ts", \
+    "--runInBand"]
 
 FROM base AS build
 COPY build.tsconfig.json .
