@@ -50,4 +50,5 @@ EXPOSE 8080
 ENV NODE_ENV=production
 ENV NODE_PATH=build
 ENV DEBUG=routes:*,express:router
+ENV ALLOWED_ORIGIN='https://www.makequizzes.online'
 ENTRYPOINT ["node", "build/start.js"]
