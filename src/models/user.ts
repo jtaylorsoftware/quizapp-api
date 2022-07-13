@@ -3,6 +3,11 @@ import Model from './model'
 
 export type UserWithoutPassword = Omit<WithId<User>, 'password'>
 
+export type PublicUserView = Omit<
+  UserWithoutPassword,
+  'email' | 'date' | 'results'
+>
+
 /**
  * Represents a user document
  * @property username
@@ -16,7 +21,7 @@ export default class User extends Model {
   constructor(
     public username: string,
     public email: string,
-    public password: string,
+    public password: string
   ) {
     super()
   }

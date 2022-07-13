@@ -30,6 +30,7 @@ export default class Repository<T extends Model> {
    */
   async findById(id: string | ObjectId): Promise<WithId<T> | null> {
     if (!ObjectId.isValid(id)) {
+      // TODO throw
       return null
     }
     return this._collection.findOne({ _id: new ObjectId(id) } as Filter<T>)
@@ -41,6 +42,7 @@ export default class Repository<T extends Model> {
    */
   async delete(id: string | ObjectId): Promise<void> {
     if (!ObjectId.isValid(id)) {
+      // TODO throw
       return
     }
     await this._collection.deleteOne({ _id: new ObjectId(id) } as Filter<T>)
@@ -51,8 +53,9 @@ export default class Repository<T extends Model> {
    * @param id
    * @param entity document to replace current values
    */
-  async update(id: string | ObjectId, entity: T): Promise<void> {
+  async update(id: string | ObjectId, entity: Partial<T>): Promise<void> {
     if (!ObjectId.isValid(id)) {
+      // TODO throw
       return
     }
     const { _id, ...doc } = entity

@@ -1,5 +1,5 @@
 // Common error type used by Services returned when some function fails in a predictable way.
-export type ServiceError = {
+export type ValidationError = {
   // The name causing the error, or null for a general error.
   field?: string
 
@@ -14,4 +14,15 @@ export type ServiceError = {
 
   // If applicable, the expected value for this field.
   expected?: any
+}
+
+/**
+ * An Error type thrown by Services when processing of a request
+ * could absolutely not continue.
+ */
+export class ServiceError extends Error {
+  constructor(public code: number, public reason?: string) {
+    super(`status: ${code}, reason: ${reason ?? 'could not process request'}`)
+    this.name = this.constructor.name
+  }
 }

@@ -1,59 +1,51 @@
-const debug = require('debug')('routes:user')
-
-import jwt from 'jsonwebtoken'
+import { NextFunction, Request, Response } from 'express'
 import { check, query } from 'express-validator'
-import { Request, Response, NextFunction } from 'express'
 
+import authenticate from 'middleware/auth'
 import resolveErrors from 'middleware/validation/resolve-errors-v2'
 import * as validators from 'middleware/validation/user'
-import authenticate from 'middleware/auth'
 
-import { Inject, Get, Put, Post, Delete, Controller } from 'express-di'
+import { Controller, Delete, Get, Inject, Post, Put } from 'express-di'
 
+import { QuizType } from 'models/quiz'
+import { ResultType } from 'models/result'
 import QuizService from 'services/v2/quiz'
 import ResultService from 'services/v2/result'
 import UserService from 'services/v2/user'
-import { ResultWithExtras } from 'models/result'
 
 @Inject
 export default class UserControllerV2 extends Controller({
   root: '/api/v2/users',
 }) {
   constructor(
-    private quizzes: QuizService,
-    private results: ResultService,
-    private users: UserService
+    private quizService: QuizService,
+    private resultService: ResultService,
+    private userService: UserService
   ) {
     super()
   }
 
   /**
-   * Returns an authenticated user's info without sensitive info,
-   * @param req request object
-   * @param req.user user with id property
+   * Returns an authenticated user's info without sensitive info.
    */
   @Get('/me', [authenticate({ required: true })])
   async getUserData(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await this.users.getUserById(req.user.id)
+      const user = await this.userService.getUserById(req.user.id)
       if (!user) {
         res.status(401).end()
         return next()
       }
       res.json(user)
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }
 
   /**
-   * Returns the user's quizzes as either listing or full data.
-   * By default, full if no query string supplied.
-   * @param req request object
-   * @param req.query request query object
-   * @param req.query.format string describing if format is full or listing
+   * Returns the request user's quizzes as either listing or full data.
+   * By default, returns full format if no query string supplied.
    */
   @Get('/me/quizzes', [
     authenticate({ required: true }),
@@ -66,50 +58,21 @@ export default class UserControllerV2 extends Controller({
     const { format } = req.query
     const { id: userId } = req.user
     try {
-      const quizIds = await this.users.getUserQuizzes(userId)
-      if (quizIds.length === 0) {
-        res.json([])
-        return next()
+      let quizzes: QuizType<'full'>[] | QuizType<'listing'>[] // list must be all same type
+      if (!format || format === 'full') {
+        quizzes = await this.quizService.getFullQuizzesByUser(userId)
+      } else {
+        quizzes = await this.quizService.getQuizzesByUserAsListing(userId)
       }
-      const quizzes = []
-      for (const id of quizIds) {
-        const quiz = await this.quizzes.getQuizById(id)
-        if (quiz) {
-          if (!format || format === 'full') {
-            // convert allowed users to usernames
-            const allowedUsernames = await this.users.getUsernamesFromIds(
-              quiz.allowedUsers
-            )
-            const { allowedUsers, ...quizWithUsernames } = quiz
-            quizzes.push({
-              ...quizWithUsernames,
-              allowedUsers: allowedUsernames,
-            })
-          } else {
-            const { questions, results, allowedUsers, ...listing } = quiz
-
-            quizzes.push({
-              ...listing,
-              resultsCount: results.length,
-              questionCount: questions?.length,
-            })
-          }
-        }
-      }
-
       res.json(quizzes)
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }
 
   /**
    * Returns the user's results for all quizzes as listing or full format.
-   * @param req request object
-   * @param req.query request query object
-   * @param req.query.format string describing if format is full or listing
    */
   @Get('/me/results', [
     authenticate({ required: true }),
@@ -121,50 +84,29 @@ export default class UserControllerV2 extends Controller({
   async getUsersResults(req: Request, res: Response, next: NextFunction) {
     const { format } = req.query
     const { id: userId } = req.user
+    const requestUser = userId
     try {
-      const resultIds = await this.users.getUserResults(userId)
-      if (resultIds.length === 0) {
-        res.json([])
-        return next()
+      let results: ResultType<'full'>[] | ResultType<'listing'>[] // list must be all same type
+      if (!format || format === 'full') {
+        results = await this.resultService.getFullResultsByUser(
+          userId,
+          requestUser
+        )
+      } else {
+        results = await this.resultService.getAllResultsByUserAsListing(
+          userId,
+          requestUser
+        )
       }
-      const results = []
-      for (const id of resultIds) {
-        const result = await this.results.getResult(id)
-        if (result) {
-          const resultWithExtras: ResultWithExtras = { ...result }
-
-          // get the quiz title and created by
-          const quiz = await this.quizzes.getQuizById(result.quiz)
-          if (quiz) {
-            resultWithExtras.quizTitle = quiz.title
-            const owner = await this.users.getUserById(result.quizOwner)
-            if (owner) {
-              resultWithExtras.ownerUsername = owner.username
-            }
-          }
-          if (!format || format === 'full') {
-            results.push(result)
-          } else {
-            const { answers, ...listing } = resultWithExtras
-            results.push(listing)
-          }
-        }
-      }
-
       res.json(results)
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }
 
   /**
    * Updates the authenticated user's email
-   * @param req request object
-   * @param req.user user with id property
-   * @param req.body json body of request
-   * @param req.body.email the new email to use
    */
   @Put('/me/email', [
     authenticate({ required: true }),
@@ -175,29 +117,20 @@ export default class UserControllerV2 extends Controller({
     const user = req.user.id
     const { email } = req.body
     try {
-      const emailWasSet = await this.users.changeUserEmail(user, email)
-      if (!emailWasSet) {
-        res.status(409).json({
-          errors: [
-            { field: 'email', email: 'Email is already in use.', value: email },
-          ],
-        })
+      const [success, err] = await this.userService.changeUserEmail(user, email)
+      if (!success) {
+        res.status(409).json({ errors: [err] })
         return next()
       }
       res.status(204).end()
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }
 
   /**
    * Updates the authenticated user's password
-   * @param req request object
-   * @param req.user user with id property
-   * @param req.body json body of request
-   * @param req.body.password the new password to use
    */
   @Put('/me/password', [
     authenticate({ required: true }),
@@ -208,96 +141,50 @@ export default class UserControllerV2 extends Controller({
     const user = req.user.id
     const { password } = req.body
     try {
-      await this.users.changeUserPassword(user, password)
+      await this.userService.changeUserPassword(user, password)
       res.status(204).end()
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }
 
   /**
    * Deletes a user
-   * @param req request object
-   * @param req.user user with id property
    */
   @Delete('/me', [authenticate({ required: true })])
   async deleteUser(req: Request, res: Response, next: NextFunction) {
     const userId = req.user.id
     try {
-      const user = await this.users.getUserById(userId)
-      if (!user) {
-        res.status(404).end()
-        return next()
-      }
-      // Clean up user's results
-      const results = user.results
-      for (const resultId of results) {
-        const result = await this.results.getResult(resultId)
-        if (result) {
-          const quiz = await this.quizzes.getQuizById(result.quiz)
-          if (quiz) {
-            await this.quizzes.removeResult(quiz._id, resultId)
-          }
-          await this.results.deleteResult(resultId)
-        }
-      }
-      // Clean up users's quizzes completley including results to those quizzes
-      const quizzes = user.quizzes
-      for (const quizId of quizzes) {
-        const quiz = await this.quizzes.getQuizById(quizId)
-        if (quiz) {
-          const quizResults = quiz.results
-          for (const resultId of quizResults) {
-            const result = await this.results.getResult(resultId)
-            if (result) {
-              await this.results.deleteResult(resultId)
-              await this.users.removeResult(result.user, resultId)
-            }
-          }
-          await this.quizzes.deleteQuiz(quizId)
-        }
-      }
-
-      await this.users.deleteUser(userId)
+      await this.userService.deleteUser(userId)
       res.status(204).end()
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }
 
   /**
    * Returns a user by their id without their email, password, or registration date
-   * @param req request object
-   * @param req.params request params
-   * @param req.params.id id of user to find
+   * TODO: change omission of date to omission of results (not sure why I omitted date - not really sensitive)
    */
   @Get('/:id')
   async getUserById(req: Request, res: Response, next: NextFunction) {
     try {
-      const userData = await this.users.getUserById(req.params.id)
-      if (!userData) {
+      const userData = await this.userService.getPublicUserById(req.params.id)
+      if (userData == null) {
         res.status(404).end()
         return next()
       }
-      const { email, date, results, ...user } = userData
-      res.json(user)
+      res.json(userData)
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }
 
   /**
    * Authorizes a user
-   * @param req request object
-   * @param req.body json body of request
-   * @param req.body.username the user's username
-   * @param req.body.password the user's password
    */
   @Post('/auth', [
     check('username', 'Please enter your username.').isLength({
@@ -313,39 +200,23 @@ export default class UserControllerV2 extends Controller({
   async authorizeUser(req: Request, res: Response, next: NextFunction) {
     const { username, password } = req.body
     try {
-      const [userId, errors] = await this.users.authorizeUser(
+      const [token, err] = await this.userService.authorizeUser(
         username,
         password
       )
-      if (!userId) {
-        return res.status(400).json({ errors: errors })
-      }
-      // the jwt will contain the user's id
-      const payload = {
-        user: {
-          id: userId,
-        },
+      if (token == null) {
+        return res.status(400).json({ errors: [err] })
       }
 
-      // use jwt to sign the payload with the secret
-      const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
-        expiresIn: 3600 * 24,
-      })
       res.json({ token })
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }
 
   /**
    * Registers a user
-   * @param req request object
-   * @param req.body json body of request
-   * @param req.body.username the user's username
-   * @param req.body.password the user's password
-   * @param req.body.email the user's email
    */
   @Post('/', [
     validators.checkUsername,
@@ -356,30 +227,24 @@ export default class UserControllerV2 extends Controller({
   async registerUser(req: Request, res: Response, next: NextFunction) {
     const { username, email, password } = req.body
     try {
-      const [userId, errors] = await this.users.registerUser({
+      const [token, errors] = await this.userService.registerUser({
         username,
         email,
         password,
       })
 
-      if (!userId) {
-        res.status(409).json({ errors: [...errors] })
+      if (token == null) {
+        if (errors != null) {
+          res.status(409).json({ errors: [...errors] })
+        } else {
+          res.status(400).end()
+        }
         return next()
       }
 
-      const payload = {
-        user: {
-          id: userId,
-        },
-      }
-
-      const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
-        expiresIn: 3600 * 24,
-      })
       res.json({ token })
     } catch (error) {
-      debug(error)
-      res.status(500).end()
+      return next(error)
     }
     return next()
   }

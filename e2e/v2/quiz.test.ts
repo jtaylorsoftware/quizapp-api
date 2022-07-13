@@ -8,7 +8,7 @@ import Quiz from 'models/quiz'
 
 import moment from 'moment'
 import { MultipleChoiceQuestion } from 'models/questiontypes'
-import { ServiceError } from 'services/v2/errors'
+import { ValidationError } from 'services/v2/errors'
 import { teacher, extraUser, loadTestData, clearTestData } from '../data'
 
 describe('/api/v2/quizzes', () => {
@@ -201,7 +201,7 @@ describe('/api/v2/quizzes', () => {
       expect(res.body.errors).toHaveLength(errorNames.size)
 
       // expect every error to have a key in set errorNames
-      res.body.errors.forEach((error: ServiceError) => {
+      res.body.errors.forEach((error: ValidationError) => {
         expect(error.field).not.toBeNull()
         // @ts-ignore
         expect(errorNames.has(error.field)).toBe(true)

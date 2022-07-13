@@ -3,6 +3,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 import { createServer } from 'http'
+
 import { createTerminus, TerminusOptions } from '@godaddy/terminus'
 
 import bootstrap from './bootstrap-app'
@@ -43,12 +44,17 @@ bootstrap()
       onSignal,
       onShutdown,
     }
+
     const server = createServer(app)
     createTerminus(server, options)
 
     // Start serving requests
     server.listen(port, () => {
-      console.log(`Application${config?.name ? ' ' + config?.name : ''} started on port ${port}`)
+      console.log(
+        `Application${
+          config?.name ? ' ' + config?.name : ''
+        } started on port ${port}`
+      )
     })
   })
   .catch((err) => console.error('Error starting server:\n', err))
