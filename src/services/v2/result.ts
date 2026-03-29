@@ -43,20 +43,19 @@ export default class ResultServiceV2 extends Service() {
     userId: string,
     requestUserId: string
   ): Promise<ResultType<'listing'>[]> {
+    const results = await this.resultRepo.findByUserId(userId)
     return Promise.all(
-      (await this.resultRepo.findByUserId(userId)).map(async (result) => {
-        if (!this.canUserViewResult(requestUserId, result)) {
-          throw new ServiceError(403)
-        }
+      results
+        .filter(result => this.canUserViewResult(requestUserId, result))
+        .map(async (result) => {
+          const extras = await this.getExtrasForResult(result)
+          const { answers, ...listing } = result
 
-        const extras = await this.getExtrasForResult(result)
-        const { answers, ...listing } = result
-
-        return {
-          ...listing,
-          ...extras,
-        }
-      })
+          return {
+            ...listing,
+            ...extras,
+          }
+        })
     )
   }
 
@@ -67,23 +66,22 @@ export default class ResultServiceV2 extends Service() {
    *
    * @return A list of quiz results for the user.
    */
-  async getFullResultsByUser(
+  async getAllResultsByUserAsFull(
     userId: string,
     requestUserId: string
   ): Promise<ResultType<'full'>[]> {
+    const results = await this.resultRepo.findByUserId(userId)
     return Promise.all(
-      (await this.resultRepo.findByUserId(userId)).map(async (result) => {
-        if (!this.canUserViewResult(requestUserId, result)) {
-          throw new ServiceError(403)
-        }
+      results
+        .filter(result => this.canUserViewResult(requestUserId, result))
+        .map(async (result) => {
+          const extras = await this.getExtrasForResult(result)
 
-        const extras = await this.getExtrasForResult(result)
-
-        return {
-          ...result,
-          ...extras,
-        }
-      })
+          return {
+            ...result,
+            ...extras,
+          }
+        })
     )
   }
 
@@ -120,12 +118,27 @@ export default class ResultServiceV2 extends Service() {
   ): Promise<ResultWithExtras | null> {
     const result = await this.resultRepo.findByUserAndQuizId(userId, quizId)
     if (result == null) {
-      return null
+      throw new ServiceError(404)
     }
     if (!this.canUserViewResult(requestUserId, result)) {
       throw new ServiceError(403)
     }
+
+    // Look up the quiz to check if results have been published
+    const quiz = await this.quizRepo.repo.findById(quizId)
+    if (quiz == null) {
+      throw new ServiceError(404)
+    }
+
     const extras = await this.getExtrasForResult(result)
+
+    if (!quiz.publishResults) {
+      const { answers, score, ...rest } = result
+      return {
+        ...rest,
+        ...extras,
+      }
+    }
 
     return {
       ...result,
@@ -145,12 +158,28 @@ export default class ResultServiceV2 extends Service() {
   ): Promise<ResultListing | null> {
     const result = await this.resultRepo.findByUserAndQuizId(userId, quizId)
     if (result == null) {
-      return null
+      throw new ServiceError(404)
     }
     if (!this.canUserViewResult(requestUserId, result)) {
       throw new ServiceError(403)
     }
+
+    // Look up the quiz to check if results have been published
+    const quiz = await this.quizRepo.repo.findById(quizId)
+    if (quiz == null) {
+      throw new ServiceError(404)
+    }
+
     const extras = await this.getExtrasForResult(result)
+
+    if (!quiz.publishResults) {
+      const { answers, score, ...listing } = result
+      return {
+        ...listing,
+        ...extras,
+      }
+    }
+
     const { answers, ...listing } = result
     return {
       ...listing,
@@ -167,18 +196,26 @@ export default class ResultServiceV2 extends Service() {
     quizId: string,
     requestUserId: string
   ): Promise<ResultWithExtras[]> {
+    const quiz = await this.quizRepo.repo.findById(quizId)
+    if (quiz == null) {
+      throw new ServiceError(404)
+    }
+
+    // Ensure that the request user owns the quiz in order to get all results for it
+    if (quiz.user.toString() !== requestUserId) {
+      throw new ServiceError(403)
+    }
+
     const results = await this.resultRepo.findAllByQuizId(quizId)
     return Promise.all(
-      results.map(async (result) => {
-        if (!this.canUserViewResult(requestUserId, result)) {
-          throw new ServiceError(403)
-        }
-        const extras = await this.getExtrasForResult(result)
-        return {
-          ...result,
-          ...extras,
-        }
-      })
+      results
+        .map(async (result) => {
+          const extras = await this.getExtrasForResult(result)
+          return {
+            ...result,
+            ...extras,
+          }
+        })
     )
   }
 
@@ -188,21 +225,29 @@ export default class ResultServiceV2 extends Service() {
    */
   async getAllResultListingForQuiz(
     quizId: string,
-    requestUser: string
+    requestUserId: string
   ): Promise<ResultListing[]> {
+      const quiz = await this.quizRepo.repo.findById(quizId)
+    if (quiz == null) {
+      throw new ServiceError(404)
+    }
+
+    // Ensure that the request user owns the quiz in order to get all results for it
+    if (quiz.user.toString() !== requestUserId) {
+      throw new ServiceError(403)
+    }
+
     const results = await this.resultRepo.findAllByQuizId(quizId)
     return Promise.all(
-      results.map(async (result) => {
-        if (!this.canUserViewResult(requestUser, result)) {
-          throw new ServiceError(403)
-        }
-        const extras = await this.getExtrasForResult(result)
-        const { answers, ...listing } = result
-        return {
-          ...listing,
-          ...extras,
-        }
-      })
+      results
+        .map(async (result) => {
+          const extras = await this.getExtrasForResult(result)
+          const { answers, ...listing } = result
+          return {
+            ...listing,
+            ...extras,
+          }
+        })
     )
   }
 

@@ -71,6 +71,7 @@ const teacherQuizzes: OptionalId<Quiz>[] = [
     date: moment().toISOString(),
     showCorrectAnswers: true,
     allowMultipleResponses: false,
+    publishResults: true,
   },
   // private quiz
   {
@@ -98,6 +99,7 @@ const teacherQuizzes: OptionalId<Quiz>[] = [
     date: moment().toISOString(),
     showCorrectAnswers: true,
     allowMultipleResponses: false,
+    publishResults: false,
   },
 ]
 
@@ -127,6 +129,7 @@ const studentQuizzes: OptionalId<Quiz>[] = [
     date: moment().toISOString(),
     showCorrectAnswers: true,
     allowMultipleResponses: false,
+    publishResults: true,
   },
 ]
 
@@ -174,6 +177,9 @@ export const results: OptionalId<Result>[] = [
   },
 ]
 
+/**
+ * Initializes the database with user data for end-to-end tests.
+ */
 const addUsers = async (usersCol: Collection<User>) => {
   const salt = await bcrypt.genSalt(10)
   const IDs: ObjectId[] = await Promise.all(
@@ -204,15 +210,26 @@ const addUsers = async (usersCol: Collection<User>) => {
     })
   }
 
+  // Update results to have correct user IDs.
+  //
+  // This relies on the results array ordering, so that the first 
+  // result corresponds to the first user, etc.
   results.forEach((result, ind) => {
     const id = IDs[ind]
     //@ts-ignore
     result.user = id
-    //@ts-ignore
-    result.quizOwner = id
   })
 }
 
+/**
+ * Initializes the database with quiz data for end-to-end tests.
+ * 
+ * Also updates the related user documents to include references to the quizzes,
+ * and updates the result documents to reference the quizzes correctly.
+ * 
+ * This function should be called after addUsers, since it relies on the users being present
+ * in the database to set up the references correctly.
+ */
 const addQuizzes = async (
   quizzesCol: Collection<Quiz>,
   usersCol: Collection<User>
@@ -257,11 +274,24 @@ const addQuizzes = async (
     )
   }
 
+  // Update results to have correct quiz IDs and quiz owner IDs.
+  //
+  // This relies on the quizzes and results array orderings, so that the first 
+  // quiz corresponds to the first result, etc.
   results.forEach((result, ind) => {
     result.quiz = quizzes[ind]._id!!
+    result.quizOwner = quizzes[ind].user
   })
 }
 
+/**
+ * Initializes the database with result data for end-to-end tests.
+ * 
+ * Also updates the related quiz and user documents to include references to the results.
+ * 
+ * This function should be called after addUsers and addQuizzes, since it relies on the 
+ * users and quizzes being present in the database to set up the references correctly.
+ */
 const addResults = async (
   resultsCol: Collection<Result>,
   usersCol: Collection<User>,

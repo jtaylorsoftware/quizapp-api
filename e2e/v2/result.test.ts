@@ -9,22 +9,22 @@ import User from 'models/user'
 import Quiz from 'models/quiz'
 
 import { ValidationError } from 'services/v2/errors'
-import { teacher, extraUser, clearTestData, loadTestData } from '../data'
+import { teacher, extraUser, clearTestData, loadTestData, users, student, quizzes } from '../data'
 
 describe('/api/v2/results', () => {
   let dbClient: mongo.MongoClient
   let app: express.Express
 
   let db: mongo.Db
-  let users: mongo.Collection<User>
-  let quizzes: mongo.Collection<Quiz>
+  let usersCol: mongo.Collection<User>
+  let quizzesCol: mongo.Collection<Quiz>
 
   beforeAll(async () => {
     ;({ client: dbClient, app: app } = await bootstrap())
     db = await dbClient.db()
     await loadTestData(db)
-    users = db.collection('users')
-    quizzes = db.collection('quizzes')
+    usersCol = db.collection('users')
+    quizzesCol = db.collection('quizzes')
   })
 
   afterAll(async () => {
@@ -38,7 +38,7 @@ describe('/api/v2/results', () => {
     let token = ''
     let userId = ''
     // @ts-ignore
-    let quizIds = []
+    let quizIds: string[] = []
 
     const get = (
       quizId?: string,
@@ -56,12 +56,14 @@ describe('/api/v2/results', () => {
     }
 
     beforeAll(async () => {
+      // Set up the test harness by authenticating as the teacher user
+      // and saving their token, so requests are made as the teacher by default.
       let res = await request(app)
         .post('/api/v2/users/auth')
         .send({ username, password })
       ;({ token } = res.body)
 
-      let user = await users.findOne({ username: `${teacher.username}` })
+      let user = await usersCol.findOne({ username: `${teacher.username}` })
       // @ts-ignore
       userId = user._id.toString()
       // @ts-ignore
@@ -76,17 +78,17 @@ describe('/api/v2/results', () => {
       await get().expect(400)
     })
 
-    it('if user does not own quiz returns status 403', async () => {
+    it('returns status 403 when requesting all quiz results if user does not own the quiz', async () => {
+      // Get the token for a different user that doesn't own the quiz
       let res = await request(app)
         .post('/api/v2/users/auth')
         .send({ username: extraUser.username, password })
-      let { token } = res.body
-      // @ts-ignore
-      res = await get(quizIds[0], undefined, token).expect(403)
+      let { token: testToken } = res.body
+      res = await get(quizIds[0], undefined, testToken).expect(403)
     })
 
     it('if userId is not part of query, returns all results for quiz', async () => {
-      let quiz = await quizzes.findOne({ title: 'public quiz' })
+      let quiz = await quizzesCol.findOne({ title: 'public quiz' })
       // @ts-ignore
       let resultCount = quiz.results.length
       expect(resultCount).toBeGreaterThanOrEqual(1)
@@ -101,32 +103,103 @@ describe('/api/v2/results', () => {
       expect(res.body.user).toEqual(userId)
     })
 
-    it('by default or if format=full returns status 200 and full quiz', async () => {
+    it('returns status 200 and full quiz by default or if format=full ', async () => {
       // @ts-ignore
       const expectFullResult = (result) => {
         expect(result).toHaveProperty('answers')
+        expect(result).toHaveProperty('score')
       }
 
       // default case
       // @ts-ignore
       let res = await get(quizIds[0], undefined, token).expect(200)
+      expect(res.body.results).not.toHaveLength(0)
       res.body.results.forEach(expectFullResult)
 
       // try with full query string
       // @ts-ignore
       await get(quizIds[0], undefined, token, 'full').expect(200)
+      expect(res.body.results).not.toHaveLength(0)
       res.body.results.forEach(expectFullResult)
     })
 
-    it('if format=listing returns status 200 and listings', async () => {
+    it('returns results with answers and scores if user owns quiz, format=full, quiz results not published', async () => {
+      // @ts-ignore
+      const expectResultListing = (result) => {
+        expect(result).toHaveProperty('answers')
+        expect(result).toHaveProperty('score')
+      }
+
+      // quizIds[1] has publishResults set to false
+      let res = await get(quizIds[1], undefined, token, 'full').expect(200)
+      expect(res.body.results).not.toHaveLength(0)
+      res.body.results.forEach(expectResultListing)
+    })
+
+    it('returns results without answers or scores if user does not own quiz, format=full, quiz results not published', async () => {
+      // Get the token for a different user that doesn't own the quiz
+      let authRes = await request(app)
+        .post('/api/v2/users/auth')
+        .send({ username: student.username, password })
+      let { token: testToken } = authRes.body
+
+      const studentId = users.find((user) => user.username === student.username)!!._id!!.toString()
+
+      // quizIds[1] has publishResults set to false
+      let resultRes = await get(quizIds[1], studentId, testToken, 'full').expect(200)
+
+      // A single result should be returned since userId is in query, so results should not be an array
+      expect(resultRes.body.results).not.toBeDefined()
+
+      const result = resultRes.body
+      expect(result).not.toHaveProperty('answers')
+      expect(result).not.toHaveProperty('score')
+    })
+
+    it('returns status 200 and listings if format=listing', async () => {
       // @ts-ignore
       const expectResultListing = (result) => {
         expect(result).not.toHaveProperty('answers')
+        expect(result).toHaveProperty('score')
       }
 
       // @ts-ignore
       let res = await get(quizIds[0], undefined, token, 'listing').expect(200)
+      expect(res.body.results).not.toHaveLength(0)
       res.body.results.forEach(expectResultListing)
+    })
+
+    it('returns results without answers but with score if user owns quiz, format=listing, quiz results not published', async () => {
+      // @ts-ignore
+      const expectResultListing = (result) => {
+        expect(result).not.toHaveProperty('answers')
+        expect(result).toHaveProperty('score')
+      }
+
+      // quizIds[1] has publishResults set to false
+      let res = await get(quizIds[1], undefined, token, 'listing').expect(200)
+      expect(res.body.results).not.toHaveLength(0)
+      res.body.results.forEach(expectResultListing)
+    })
+
+    it('returns results without answers or scores if user does not own quiz, format=listing, quiz results not published', async () => {
+      // Get the token for a different user that doesn't own the quiz
+      let authRes = await request(app)
+        .post('/api/v2/users/auth')
+        .send({ username: student.username, password })
+      let { token: testToken } = authRes.body
+
+      const studentId = users.find((user) => user.username === student.username)!!._id!!.toString()
+
+      // quizIds[1] has publishResults set to false
+      let resultRes = await get(quizIds[1], studentId, testToken, 'listing').expect(200)
+
+      // A single result should be returned since userId is in query, so results should not be an array
+      expect(resultRes.body.results).not.toBeDefined()
+
+      const result = resultRes.body
+      expect(result).not.toHaveProperty('answers')
+      expect(result).not.toHaveProperty('score')
     })
   })
 
@@ -153,7 +226,7 @@ describe('/api/v2/results', () => {
 
       ;({ token } = res.body)
 
-      let user = await users.findOne({ username: `${teacher.username}` })
+      let user = await usersCol.findOne({ username: `${teacher.username}` })
       // @ts-ignore
       userId = user._id.toString()
       // @ts-ignore

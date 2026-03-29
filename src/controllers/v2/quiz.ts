@@ -89,7 +89,15 @@ export default class QuizControllerV2 extends Controller({
   ])
   async createQuiz(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
-    const { title, isPublic, questions, allowedUsers, ...rest } = req.body
+    const {
+      title,
+      isPublic,
+      questions,
+      allowedUsers,
+      showCorrectAnswers,
+      allowMultipleResponses,
+      publishResults,
+      ...rest } = req.body
     const expiration = new Date(req.body.expiration).toISOString()
     try {
       const quizData: QuizUploadData = {
@@ -98,6 +106,9 @@ export default class QuizControllerV2 extends Controller({
         isPublic,
         questions,
         allowedUsers,
+        showCorrectAnswers,
+        allowMultipleResponses,
+        publishResults
       }
       const quizId = await this.quizService.createQuiz(quizData, userId)
       res.json({ id: quizId })
