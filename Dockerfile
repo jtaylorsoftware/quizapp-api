@@ -20,7 +20,7 @@ ENTRYPOINT ["npx", "nodemon", "--inspect=0.0.0.0:9229", "build/start.js"]
 FROM dev AS test
 COPY e2e e2e
 COPY e2e.jest.config.ts .
-ENV DEBUG='middleware:errorHandler'
+ENV DEBUG=''
 ENTRYPOINT ["node", \
     "--inspect=0.0.0.0:9229", \
     "./node_modules/.bin/jest", \
