@@ -158,7 +158,7 @@ export default class ResultServiceV2 extends Service() {
 
     const extras = await this.getExtrasForResult(result)
 
-    if (!quiz.publishResults) {
+    if (quiz.user.toString() !== requestUserId && !quiz.publishResults) {
       const { answers, score, ...rest } = result
       return {
         ...rest,
@@ -198,7 +198,7 @@ export default class ResultServiceV2 extends Service() {
 
     const extras = await this.getExtrasForResult(result)
 
-    if (!quiz.publishResults) {
+    if (quiz.user.toString() !== requestUserId && !quiz.publishResults) {
       const { answers, score, ...listing } = result
       return {
         ...listing,
