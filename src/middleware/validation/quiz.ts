@@ -30,6 +30,11 @@ export const checkIsPublic = body(
   'Public setting must be a boolean',
 ).isBoolean()
 
+export const checkPublishResults = body(
+  'publishResults',
+  'Publish results setting must be a boolean',
+).isBoolean()
+
 export function allowedUsersAreValid(allowedUsers: string[]) {
   return allowedUsers.every(user => userValidation.isValidUsername(user))
 }

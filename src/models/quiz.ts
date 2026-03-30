@@ -44,7 +44,7 @@ export type QuizType<FormatType> = FormatType extends 'full'
   : never
 
 /**
- * The data necessary to upload a new Quiz.
+ * The data necessary to upload a new Quiz or edit an existing Quiz.
  */
 export type QuizUploadData = Omit<
   Quiz,

@@ -49,8 +49,21 @@ export default class ResultServiceV2 extends Service() {
         .filter(result => this.canUserViewResult(requestUserId, result))
         .map(async (result) => {
           const extras = await this.getExtrasForResult(result)
-          const { answers, ...listing } = result
 
+          // Look up the quiz to check if results have been published
+          const quiz = await this.quizRepo.repo.findById(result.quiz)
+          if (quiz == null) {
+            throw new ServiceError(404)
+          }
+          if (!quiz.publishResults) {
+            const { answers, score, ...rest } = result
+            return {
+              ...rest,
+              ...extras,
+            }
+          }
+
+          const { answers, ...listing } = result
           return {
             ...listing,
             ...extras,
@@ -76,6 +89,19 @@ export default class ResultServiceV2 extends Service() {
         .filter(result => this.canUserViewResult(requestUserId, result))
         .map(async (result) => {
           const extras = await this.getExtrasForResult(result)
+
+          // Look up the quiz to check if results have been published
+          const quiz = await this.quizRepo.repo.findById(result.quiz)
+          if (quiz == null) {
+            throw new ServiceError(404)
+          }
+          if (!quiz.publishResults) {
+            const { answers, score, ...rest } = result
+            return {
+              ...rest,
+              ...extras,
+            }
+          }
 
           return {
             ...result,
@@ -227,7 +253,7 @@ export default class ResultServiceV2 extends Service() {
     quizId: string,
     requestUserId: string
   ): Promise<ResultListing[]> {
-      const quiz = await this.quizRepo.repo.findById(quizId)
+    const quiz = await this.quizRepo.repo.findById(quizId)
     if (quiz == null) {
       throw new ServiceError(404)
     }
@@ -393,14 +419,13 @@ export default class ResultServiceV2 extends Service() {
         case 'MultipleChoice':
           if (
             answer.choice >=
-              (question as MultipleChoiceQuestion).answers.length ||
+            (question as MultipleChoiceQuestion).answers.length ||
             answer.choice < 0
           ) {
             errors.push({
               field: 'answers',
-              message: `Answer choice must be between 0 and ${
-                (question as MultipleChoiceQuestion).answers.length
-              }`,
+              message: `Answer choice must be between 0 and ${(question as MultipleChoiceQuestion).answers.length
+                }`,
               index: i,
               value: answer.choice,
             })

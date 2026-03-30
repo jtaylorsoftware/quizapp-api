@@ -8,7 +8,7 @@ import bootstrap from 'bootstrap-app'
 
 import User from 'models/user'
 
-import { teacher, student, clearTestData, loadTestData } from '../data'
+import { teacher, student, clearTestData, loadTestData, extraUser } from '../data'
 
 describe('/api/v2/users', () => {
   let dbClient: mongo.MongoClient
@@ -337,9 +337,32 @@ describe('/api/v2/users', () => {
       })
 
       it('by default or if format=full returns status 200 and full results', async () => {
+        // Authenticate as a user that has a graded quiz result with published results
+        let authRes = await request(app)
+          .post('/api/v2/users/auth')
+          .send({ username: extraUser.username, password })
+        const testToken = authRes.body.token
+
         // @ts-ignore
         const expectFullResult = (result) => {
           expect(result).toHaveProperty('answers')
+          expect(result).toHaveProperty('score')
+        }
+
+        let res = await get(testToken).expect(200)
+        expect(res.body).toHaveLength(user.results.length)
+        res.body.forEach(expectFullResult)
+
+        res = await get(testToken, 'full').expect(200)
+        expect(res.body).toHaveLength(user.results.length)
+        res.body.forEach(expectFullResult)
+      })
+
+      it('returns status 200 and results without answers or score for full format when quiz results are not published', async () => {
+        // @ts-ignore
+        const expectFullResult = (result) => {
+          expect(result).not.toHaveProperty('answers')
+          expect(result).not.toHaveProperty('score')
         }
 
         let res = await get(token).expect(200)
@@ -352,9 +375,28 @@ describe('/api/v2/users', () => {
       })
 
       it('if format=listing returns status 200 and listings', async () => {
+        // Authenticate as a user that has a graded quiz result with published results
+        let authRes = await request(app)
+          .post('/api/v2/users/auth')
+          .send({ username: extraUser.username, password })
+        const testToken = authRes.body.token
+        
         // @ts-ignore
         const expectResultListing = (result) => {
           expect(result).not.toHaveProperty('answers')
+          expect(result).toHaveProperty('score')
+        }
+
+        const res = await get(testToken, 'listing').expect(200)
+        expect(res.body).toHaveLength(user.results.length)
+        res.body.forEach(expectResultListing)
+      })
+
+      it('returns status 200 and listings with no score when quiz results are not published', async () => {
+        // @ts-ignore
+        const expectResultListing = (result) => {
+          expect(result).not.toHaveProperty('answers')
+          expect(result).not.toHaveProperty('score')
         }
 
         const res = await get(token, 'listing').expect(200)

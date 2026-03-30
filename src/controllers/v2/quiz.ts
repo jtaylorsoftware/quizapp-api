@@ -82,6 +82,7 @@ export default class QuizControllerV2 extends Controller({
     authenticate({ required: true }),
     validators.checkTitle,
     validators.checkIsPublic,
+    validators.checkPublishResults,
     validators.checkExpiration,
     validators.checkAllowedUsers,
     validators.checkQuestions,
@@ -125,13 +126,14 @@ export default class QuizControllerV2 extends Controller({
     authenticate({ required: true }),
     validators.checkTitle,
     validators.checkIsPublic,
+    validators.checkPublishResults,
     validators.checkAllowedUsers,
     validators.checkQuestions,
     resolveErrors,
   ])
   async editQuiz(req: Request, res: Response, next: NextFunction) {
     const { user } = req
-    const { title, isPublic, expiration, questions, allowedUsers, ...rest } =
+    const { title, isPublic, publishResults, expiration, questions, allowedUsers, ...rest } =
       req.body
     const { id: quizId } = req.params
 
@@ -140,6 +142,7 @@ export default class QuizControllerV2 extends Controller({
         title,
         expiration,
         isPublic,
+        publishResults,
         questions,
         allowedUsers,
       }
