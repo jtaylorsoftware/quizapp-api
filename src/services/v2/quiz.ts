@@ -347,7 +347,6 @@ export default class QuizServiceV2 extends Service() {
       allowedUsers,
       showCorrectAnswers,
       allowMultipleResponses,
-      publishResults,
       isPublic,
       results,
       questions,

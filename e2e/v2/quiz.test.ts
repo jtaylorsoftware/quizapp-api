@@ -118,6 +118,7 @@ describe('/api/v2/quizzes', () => {
         expect(quiz).not.toHaveProperty('allowMultipleResponses')
         expect(quiz).not.toHaveProperty('isPublic')
         expect(quiz).not.toHaveProperty('results')
+        expect(quiz).toHaveProperty('publishResults')
       }
 
       it('if no auth token in request returns status 401', async () => {
