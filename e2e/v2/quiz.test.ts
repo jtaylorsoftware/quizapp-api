@@ -118,6 +118,7 @@ describe('/api/v2/quizzes', () => {
         expect(quiz).not.toHaveProperty('allowMultipleResponses')
         expect(quiz).not.toHaveProperty('isPublic')
         expect(quiz).not.toHaveProperty('results')
+        expect(quiz).toHaveProperty('publishResults')
       }
 
       it('if no auth token in request returns status 401', async () => {
@@ -197,6 +198,7 @@ describe('/api/v2/quizzes', () => {
         'expiration',
         'allowedUsers',
         'questions',
+        'publishResults',
       ])
       expect(res.body.errors).toHaveLength(errorNames.size)
 
@@ -214,6 +216,7 @@ describe('/api/v2/quizzes', () => {
           title: 'test quiz',
           isPublic: false,
           expiration: moment().add(1, 'd').toISOString(),
+          publishResults: true,
           questions: [
             {
               text: 'q1',
@@ -235,6 +238,7 @@ describe('/api/v2/quizzes', () => {
           title: 'test quiz',
           isPublic: true,
           expiration: moment().add(1, 'd').toISOString(),
+          publishResults: true,
           questions: [
             {
               text: 'q1',
@@ -255,6 +259,7 @@ describe('/api/v2/quizzes', () => {
           title: 'test quiz',
           isPublic: true,
           expiration: moment().add(1, 'd').toISOString(),
+          publishResults: true,
           questions: [
             {
               text: 'q1',
@@ -276,6 +281,7 @@ describe('/api/v2/quizzes', () => {
           title: 'test quiz',
           isPublic: false,
           expiration: moment().subtract(1, 'd').toISOString(),
+          publishResults: true,
           questions: [
             {
               text: 'q1',
@@ -297,6 +303,7 @@ describe('/api/v2/quizzes', () => {
           title: 'test quiz',
           isPublic: true,
           expiration: moment().add(1, 'd').toISOString(),
+          publishResults: true,
           questions: [
             {
               text: 'q1',

@@ -82,6 +82,7 @@ export default class QuizControllerV2 extends Controller({
     authenticate({ required: true }),
     validators.checkTitle,
     validators.checkIsPublic,
+    validators.checkPublishResults,
     validators.checkExpiration,
     validators.checkAllowedUsers,
     validators.checkQuestions,
@@ -89,7 +90,15 @@ export default class QuizControllerV2 extends Controller({
   ])
   async createQuiz(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user
-    const { title, isPublic, questions, allowedUsers, ...rest } = req.body
+    const {
+      title,
+      isPublic,
+      questions,
+      allowedUsers,
+      showCorrectAnswers,
+      allowMultipleResponses,
+      publishResults,
+      ...rest } = req.body
     const expiration = new Date(req.body.expiration).toISOString()
     try {
       const quizData: QuizUploadData = {
@@ -98,6 +107,9 @@ export default class QuizControllerV2 extends Controller({
         isPublic,
         questions,
         allowedUsers,
+        showCorrectAnswers,
+        allowMultipleResponses,
+        publishResults
       }
       const quizId = await this.quizService.createQuiz(quizData, userId)
       res.json({ id: quizId })
@@ -114,13 +126,14 @@ export default class QuizControllerV2 extends Controller({
     authenticate({ required: true }),
     validators.checkTitle,
     validators.checkIsPublic,
+    validators.checkPublishResults,
     validators.checkAllowedUsers,
     validators.checkQuestions,
     resolveErrors,
   ])
   async editQuiz(req: Request, res: Response, next: NextFunction) {
     const { user } = req
-    const { title, isPublic, expiration, questions, allowedUsers, ...rest } =
+    const { title, isPublic, publishResults, expiration, questions, allowedUsers, ...rest } =
       req.body
     const { id: quizId } = req.params
 
@@ -129,6 +142,7 @@ export default class QuizControllerV2 extends Controller({
         title,
         expiration,
         isPublic,
+        publishResults,
         questions,
         allowedUsers,
       }

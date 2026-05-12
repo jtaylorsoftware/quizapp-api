@@ -3,9 +3,33 @@ import Model from './model'
 import { GradedAnswer } from './answertypes'
 
 /**
- * A Result that includes extra details.
+ * Represents a quiz result document
  */
-export type ResultWithExtras = Result & ResultExtras
+export default class Result extends Model {
+
+  /**
+   * Creates a quiz result document
+   * @param user ID of user submitting result
+   * @param quiz ID of quiz the result is for
+   * @param quizOwner ID of owner of the quiz
+   * @param answers The user's answers to the quiz, along with grading information for each answer
+   * @param score The computed score (percent correct)
+   */
+  constructor(
+    public user: ObjectId,
+    public quiz: ObjectId,
+    public quizOwner: ObjectId,
+    public answers?: GradedAnswer[],
+    public score?: number
+  ) {
+    super()
+    this.user = ObjectId.isValid(user) ? user : new ObjectId()
+    this.quiz = ObjectId.isValid(quiz) ? quiz : new ObjectId()
+    this.quizOwner = ObjectId.isValid(quizOwner) ? quizOwner : new ObjectId()
+    this.answers = answers
+    this.score = score
+  }
+}
 
 /**
  * Extra computed data for a Result.
@@ -22,6 +46,11 @@ export type ResultExtras = {
 }
 
 /**
+ * A Result that includes extra details.
+ */
+export type ResultWithExtras = Result & ResultExtras
+
+/**
  * A brief format for a quiz Result. It omits large data types such as lists or nested
  * objects.
  */
@@ -34,28 +63,3 @@ export type ResultType<FormatType> = FormatType extends 'full'
   : FormatType extends 'listing'
   ? ResultListing
   : never
-
-/**
- * Represents a quiz result document
- * @property user id of user submitting result
- * @property quiz id of quiz the result is for
- * @property quizOwner id of owner of the quiz
- * @property answers
- * @property score the computed score (percent correct)
- */
-export default class Result extends Model {
-  constructor(
-    public user: ObjectId,
-    public quiz: ObjectId,
-    public quizOwner: ObjectId,
-    public answers: Array<GradedAnswer>,
-    public score: number
-  ) {
-    super()
-    this.user = ObjectId.isValid(user) ? user : new ObjectId()
-    this.quiz = ObjectId.isValid(quiz) ? quiz : new ObjectId()
-    this.quizOwner = ObjectId.isValid(quizOwner) ? quizOwner : new ObjectId()
-    this.answers = answers
-    this.score = score
-  }
-}

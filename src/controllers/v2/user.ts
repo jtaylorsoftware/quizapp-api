@@ -88,7 +88,7 @@ export default class UserControllerV2 extends Controller({
     try {
       let results: ResultType<'full'>[] | ResultType<'listing'>[] // list must be all same type
       if (!format || format === 'full') {
-        results = await this.resultService.getFullResultsByUser(
+        results = await this.resultService.getAllResultsByUserAsFull(
           userId,
           requestUser
         )

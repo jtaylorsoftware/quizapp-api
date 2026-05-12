@@ -44,7 +44,7 @@ export default class ResultControllerV2 extends Controller({
 
     try {
       if (!queryUser) {
-        // No user specified in query, so return all for quiz
+        // No user specified in query, so return all for quiz if user owns quiz
         let results: ResultType<'full'>[] | ResultType<'listing'>[] // must be list of same type
         if (!format || format === 'full') {
           results = await this.resultService.getAllFullResultsForQuiz(

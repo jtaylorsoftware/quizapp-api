@@ -158,11 +158,29 @@ export default class QuizServiceV2 extends Service() {
       throw new ServiceError(400)
     }
 
-    const { title, expiration, isPublic, questions, allowedUsers } = quizData
+    const {
+      title,
+      expiration,
+      isPublic,
+      questions,
+      allowedUsers,
+      showCorrectAnswers,
+      allowMultipleResponses,
+      publishResults } = quizData
     const allowedUserIds = await this.userRepo.getUserIds(allowedUsers ?? [])
 
     const quizId = await this.quizRepo.repo.insert(
-      new Quiz(user._id, title, expiration, isPublic, questions, allowedUserIds)
+      new Quiz(
+        user._id,
+        title,
+        expiration,
+        isPublic,
+        questions,
+        allowedUserIds,
+        showCorrectAnswers,
+        allowMultipleResponses,
+        publishResults
+      )
     )
 
     await this.userRepo.addQuiz(user._id, quizId)
