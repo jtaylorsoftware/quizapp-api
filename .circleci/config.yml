@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   test_and_build:
     machine:
-      image: ubuntu-2004:202111-02
+      image: ubuntu-2404:2025.09.1
       docker_layer_caching: true
     steps:
       - checkout
@@ -12,22 +12,21 @@ jobs:
           command: >
             docker build
             -t quizapp-api:test 
-            -t ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:test
             --target test .
             
             docker-compose -f docker-compose.test.yaml up --abort-on-container-exit --exit-code-from api
       - run:
           name: Build and persist the production Docker image
           command: |
-            docker build -t ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH} --target prod .
-            mkdir images && docker save -o images/prod.tar ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}
+            docker build -t quizapp-api:prod --target prod .
+            mkdir images && docker save -o images/prod.tar quizapp-api:prod
       - persist_to_workspace:
           root: .
           paths:
             - images
   push_ghcr:
     machine:
-      image: ubuntu-2004:202111-02
+      image: ubuntu-2404:2025.09.1
       docker_layer_caching: true
     steps:
       - attach_workspace:
@@ -39,7 +38,8 @@ jobs:
           name: Login to GHCR and push
           command: |
             echo "$GHCR_PAT" | docker login ghcr.io -u ${CIRCLE_PROJECT_USERNAME} --password-stdin
-            docker push ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}
+            docker tag quizapp-api:prod ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}
+            docker push ghcr.io/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}
 
 workflows:
   test_build_push:
@@ -52,6 +52,7 @@ workflows:
             - ghcr
           filters:
             branches:
-              only:
-                - /^\d\.\d\.\d$/
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\d+$/
 
