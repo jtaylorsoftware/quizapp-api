@@ -1,17 +1,9 @@
 import { Answer, FillInAnswer, MultipleChoiceAnswer } from '../../models/answertypes'
 
-jest.mock('./result')
-import { answerIsValid, answersAreValid as mockAnswersAreValid } from './result'
+import { answersAreValid, answerIsValid } from './result'
 
 describe('result (answer) validators', () => {
   describe('answersAreValid', () => {
-    const { answersAreValid } = jest.requireActual('./result')
-    const mockAnswerIsValid = jest.mocked(answerIsValid)
-
-    beforeEach(() => {
-      mockAnswerIsValid.mockReset()
-      mockAnswerIsValid.mockReturnValue(true)
-    })
 
     it('should throw on non-array values', () => {
       expect(answersAreValid.bind(null)).toThrow('must be an array')
@@ -29,14 +21,11 @@ describe('result (answer) validators', () => {
           choice: 0,
         },
       ]
-      answersAreValid(answers)
-      expect(mockAnswerIsValid).toHaveBeenCalled()
+      expect(answersAreValid(answers)).toBeTruthy()
     })
   })
 
   describe('answerIsValid', () => {
-    const { answerIsValid } = jest.requireActual('./result')
-
     let validFillInAnswer: FillInAnswer
     let validMcAnswer: MultipleChoiceAnswer
 
@@ -78,6 +67,10 @@ describe('result (answer) validators', () => {
       expect(answerIsValid.bind(null, invalid)).toThrow('must be a number')
       // @ts-ignore
       invalid.choice = undefined
+      expect(answerIsValid.bind(null, invalid)).toThrow('must be a number')
+
+      // @ts-ignore
+      invalid.choice = 'str'
       expect(answerIsValid.bind(null, invalid)).toThrow('must be a number')
     })
   })
