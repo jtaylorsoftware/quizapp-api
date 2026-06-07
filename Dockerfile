@@ -1,4 +1,4 @@
-FROM node:14.17 as base
+FROM node:24.16.0 AS base
 
 WORKDIR /usr/local/src/quizapp
 
@@ -32,7 +32,7 @@ FROM base AS build
 COPY build.tsconfig.json .
 RUN npm run build
 
-FROM node:14.17-alpine AS prod
+FROM node:24.16.0-alpine AS prod
 
 RUN mkdir -p /home/node/quizapp \
     && chown -R node:node /home/node/quizapp
