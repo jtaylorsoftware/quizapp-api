@@ -9,7 +9,7 @@ import User from 'models/user'
 import Quiz from 'models/quiz'
 
 import { ValidationError } from 'services/v2/errors'
-import { teacher, extraUser, clearTestData, loadTestData, users, student, quizzes } from '../data'
+import { teacherA, studentB, clearTestData, loadTestData, users, teacherAQuizzes } from '../data'
 
 describe('/api/v2/results', () => {
   let dbClient: mongo.MongoClient
@@ -33,11 +33,10 @@ describe('/api/v2/results', () => {
   })
 
   describe('GET /', () => {
-    const username = teacher.username
+    const username = teacherA.username
     const password = 'password'
     let token = ''
     let userId = ''
-    // @ts-ignore
     let quizIds: string[] = []
 
     const get = (
@@ -63,11 +62,8 @@ describe('/api/v2/results', () => {
         .send({ username, password })
       ;({ token } = res.body)
 
-      let user = await usersCol.findOne({ username: `${teacher.username}` })
-      // @ts-ignore
-      userId = user._id.toString()
-      // @ts-ignore
-      quizIds = user.quizzes.map((id) => id.toString())
+      userId = users.teacherA._id!!.toString()
+      quizIds = teacherAQuizzes.map((quiz) => quiz._id!!.toString())
     })
 
     it('if no auth token in request returns status 401', async () => {
@@ -75,14 +71,14 @@ describe('/api/v2/results', () => {
     })
 
     it('if no quiz id in request returns status 400', async () => {
-      await get().expect(400)
+      await get(undefined, undefined, token).expect(400)
     })
 
     it('returns status 403 when requesting all quiz results if user does not own the quiz', async () => {
       // Get the token for a different user that doesn't own the quiz
       let res = await request(app)
         .post('/api/v2/users/auth')
-        .send({ username: extraUser.username, password })
+        .send({ username: studentB.username, password })
       let { token: testToken } = res.body
       res = await get(quizIds[0], undefined, testToken).expect(403)
     })
@@ -99,8 +95,8 @@ describe('/api/v2/results', () => {
 
     it('if userId is in the query, returns just the result for the user', async () => {
       // @ts-ignore
-      let res = await get(quizIds[0], userId, token).expect(200)
-      expect(res.body.user).toEqual(userId)
+      let res = await get(quizIds[0], users.studentA._id!!.toString(), token).expect(200)
+      expect(res.body.user).toEqual(users.studentA._id!!.toString())
     })
 
     it('returns status 200 and full quiz by default or if format=full ', async () => {
@@ -140,10 +136,10 @@ describe('/api/v2/results', () => {
       // Get the token for a different user that doesn't own the quiz
       let authRes = await request(app)
         .post('/api/v2/users/auth')
-        .send({ username: student.username, password })
+        .send({ username: studentB.username, password })
       let { token: testToken } = authRes.body
 
-      const studentId = users.find((user) => user.username === student.username)!!._id!!.toString()
+      const studentId = users.studentB._id!!.toString()
 
       // quizIds[1] has publishResults set to false
       let resultRes = await get(quizIds[1], studentId, testToken, 'full').expect(200)
@@ -186,10 +182,10 @@ describe('/api/v2/results', () => {
       // Get the token for a different user that doesn't own the quiz
       let authRes = await request(app)
         .post('/api/v2/users/auth')
-        .send({ username: student.username, password })
+        .send({ username: studentB.username, password })
       let { token: testToken } = authRes.body
 
-      const studentId = users.find((user) => user.username === student.username)!!._id!!.toString()
+      const studentId = users.studentB._id!!.toString()
 
       // quizIds[1] has publishResults set to false
       let resultRes = await get(quizIds[1], studentId, testToken, 'listing').expect(200)
@@ -204,12 +200,9 @@ describe('/api/v2/results', () => {
   })
 
   describe('POST /', () => {
-    const username = teacher.username
+    const username = studentB.username
     const password = 'password'
     let token = ''
-    let userId = ''
-    // @ts-ignore
-    let quizIds = []
 
     const post = (quizId?: string, token?: string) => {
       const url = `/api/v2/results${quizId != null ? '?quiz=' + quizId : ''}`
@@ -225,12 +218,6 @@ describe('/api/v2/results', () => {
         .send({ username, password })
 
       ;({ token } = res.body)
-
-      let user = await usersCol.findOne({ username: `${teacher.username}` })
-      // @ts-ignore
-      userId = user._id.toString()
-      // @ts-ignore
-      quizIds = user.quizzes.map((id) => id.toString())
     })
 
     it('if no auth token in request returns status 401', async () => {
@@ -245,28 +232,29 @@ describe('/api/v2/results', () => {
 
     it('if no answers are given returns status 400', async () => {
       // @ts-ignore
-      await post(quizIds[0], token).send({}).expect(400)
+      await post(teacherAQuizzes[0]._id, token).send({}).expect(400)
     })
 
     it('if answer choice sent are not numbers returns status 400', async () => {
       // @ts-ignore
-      await post(quizIds[0], token)
+      await post(teacherAQuizzes[0]._id, token)
         .send({ answers: [{ choice: 'str' }] })
         .expect(400)
     })
 
     it('if answers are valid returns status 200', async () => {
       // @ts-ignore
-      await post(quizIds[1], token)
+      await post(teacherAQuizzes[0]._id, token)
         .send({ answers: [{ choice: 0 }] })
         .expect(200)
     })
 
     it("if result for user exists returns status 400 and error 'duplicate'", async () => {
       // @ts-ignore
-      let res = await post(quizIds[1], token).send({
+      let res = await post(teacherAQuizzes[1]._id, token).send({
         answers: [{ choice: 0 }],
       })
+      expect(res.body.errors).toBeDefined()
       expect(
         res.body.errors.some((err: ValidationError) =>
           err.message!!.includes('already responded')

@@ -7,6 +7,7 @@ import { ObjectId } from 'mongodb'
 import { ServiceError, ValidationError } from 'services/v2/errors'
 import QuizRepository from 'repositories/quiz'
 import ResultRepository from 'repositories/result'
+import { Payload } from 'middleware/auth'
 
 export type UserRegistrationData = Omit<User,
   '_id' | 'date' | 'quizzes' | 'results'>
@@ -155,18 +156,17 @@ export default class UserServiceV2 extends Service() {
           },
         ]
       } else {
-        const userId = user._id
 
-        // the jwt will contain the user's id
-        const payload = {
-          user: {
-            id: userId,
-          },
+        // The JWT will contain the user's id, username, and role.
+        const payload: Payload = {
+            id: user._id.toString(),
+            name: user.username,
+            role: user.role
         }
 
-        // use jwt to sign the payload with the secret
+        // use jwt to sign the payload with the secret, expiring in 24 hours
         const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
-          expiresIn: 3600 * 24,
+          expiresIn: '24h',
         })
 
         return [token, null]
@@ -253,14 +253,15 @@ export default class UserServiceV2 extends Service() {
 
       const userId = await this.userRepo.repo.insert(user)
 
-      const payload = {
-        user: {
-          id: userId,
-        },
+      // The JWT will contain the user's id, username, and role.
+      const payload: Payload = {
+          id: userId.toString(),
+          name: user.username,
+          role: user.role
       }
 
       const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
-        expiresIn: 3600 * 24,
+        expiresIn: '24h',
       })
       return [token, null]
     } else {

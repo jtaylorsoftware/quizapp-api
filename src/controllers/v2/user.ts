@@ -12,6 +12,7 @@ import { ResultType } from 'models/result'
 import QuizService from 'services/v2/quiz'
 import ResultService from 'services/v2/result'
 import UserService from 'services/v2/user'
+import { ALLOWED_ROLES_ANY } from 'models/user'
 
 @Inject
 export default class UserControllerV2 extends Controller({
@@ -28,10 +29,10 @@ export default class UserControllerV2 extends Controller({
   /**
    * Returns an authenticated user's info without sensitive info.
    */
-  @Get('/me', [authenticate({ required: true })])
+  @Get('/me', [authenticate({ allowedRoles: ALLOWED_ROLES_ANY })])
   async getUserData(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await this.userService.getUserById(req.user.id)
+      const user = await this.userService.getUserById(req.user!.id)
       if (!user) {
         res.status(401).end()
         return next()
@@ -48,7 +49,7 @@ export default class UserControllerV2 extends Controller({
    * By default, returns full format if no query string supplied.
    */
   @Get('/me/quizzes', [
-    authenticate({ required: true }),
+    authenticate({ allowedRoles: ALLOWED_ROLES_ANY }),
     query('format', 'Valid formats: listing, full')
       .custom((format) => format === 'listing' || format === 'full')
       .optional(),
@@ -56,7 +57,7 @@ export default class UserControllerV2 extends Controller({
   ])
   async getUsersQuizzes(req: Request, res: Response, next: NextFunction) {
     const { format } = req.query
-    const { id: userId } = req.user
+    const { id: userId } = req.user!
     try {
       let quizzes: QuizType<'full'>[] | QuizType<'listing'>[] // list must be all same type
       if (!format || format === 'full') {
@@ -75,7 +76,7 @@ export default class UserControllerV2 extends Controller({
    * Returns the user's results for all quizzes as listing or full format.
    */
   @Get('/me/results', [
-    authenticate({ required: true }),
+    authenticate({ allowedRoles: ALLOWED_ROLES_ANY }),
     query('format', 'Valid formats: listing, full')
       .custom((format) => format === 'listing' || format === 'full')
       .optional(),
@@ -83,7 +84,7 @@ export default class UserControllerV2 extends Controller({
   ])
   async getUsersResults(req: Request, res: Response, next: NextFunction) {
     const { format } = req.query
-    const { id: userId } = req.user
+    const { id: userId } = req.user!
     const requestUser = userId
     try {
       let results: ResultType<'full'>[] | ResultType<'listing'>[] // list must be all same type
@@ -109,12 +110,12 @@ export default class UserControllerV2 extends Controller({
    * Updates the authenticated user's email
    */
   @Put('/me/email', [
-    authenticate({ required: true }),
+    authenticate({ allowedRoles: ALLOWED_ROLES_ANY }),
     validators.checkEmail,
     resolveErrors,
   ])
   async changeUserEmail(req: Request, res: Response, next: NextFunction) {
-    const user = req.user.id
+    const user = req.user!.id
     const { email } = req.body
     try {
       const [success, err] = await this.userService.changeUserEmail(user, email)
@@ -133,12 +134,12 @@ export default class UserControllerV2 extends Controller({
    * Updates the authenticated user's password
    */
   @Put('/me/password', [
-    authenticate({ required: true }),
+    authenticate({ allowedRoles: ALLOWED_ROLES_ANY }),
     validators.checkPassword,
     resolveErrors,
   ])
   async changeUserPassword(req: Request, res: Response, next: NextFunction) {
-    const user = req.user.id
+    const user = req.user!.id
     const { password } = req.body
     try {
       await this.userService.changeUserPassword(user, password)
@@ -152,9 +153,9 @@ export default class UserControllerV2 extends Controller({
   /**
    * Deletes a user
    */
-  @Delete('/me', [authenticate({ required: true })])
+  @Delete('/me', [authenticate({ allowedRoles: ALLOWED_ROLES_ANY })])
   async deleteUser(req: Request, res: Response, next: NextFunction) {
-    const userId = req.user.id
+    const userId = req.user!.id
     try {
       await this.userService.deleteUser(userId)
       res.status(204).end()
@@ -225,12 +226,13 @@ export default class UserControllerV2 extends Controller({
     resolveErrors,
   ])
   async registerUser(req: Request, res: Response, next: NextFunction) {
-    const { username, email, password } = req.body
+    const { username, email, password, role } = req.body
     try {
       const [token, errors] = await this.userService.registerUser({
         username,
         email,
         password,
+        role
       })
 
       if (token == null) {

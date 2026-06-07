@@ -9,6 +9,7 @@ import { Controller, Get, Inject, Post } from 'express-di'
 
 import { ResultType } from 'models/result'
 import ResultService from 'services/v2/result'
+import { ALLOWED_ROLES_ANY } from 'models/user'
 
 @Inject
 export default class ResultControllerV2 extends Controller({
@@ -22,16 +23,16 @@ export default class ResultControllerV2 extends Controller({
    * Gets a user's or all results for a quiz as listings or full
    */
   @Get('/', [
+    authenticate({ allowedRoles: ALLOWED_ROLES_ANY }),
     query('format', 'Valid formats: listing, full')
       .custom((format) => format === 'listing' || format === 'full')
       .optional(),
     query('quiz', 'Quiz id is required').exists(),
     query('user').exists().optional(),
-    resolveErrors,
-    authenticate({ required: true }),
+    resolveErrors
   ])
   async getResult(req: Request, res: Response, next: NextFunction) {
-    const { id: userId } = req.user
+    const { id: userId } = req.user!
     const { format, user: queryUser, quiz: quizId } = req.query
     const requestUser = userId
     if (
@@ -93,13 +94,13 @@ export default class ResultControllerV2 extends Controller({
    * Posts a response to a quiz
    */
   @Post('/', [
-    authenticate({ required: true }),
+    authenticate({ allowedRoles: ALLOWED_ROLES_ANY }),
     validators.checkAnswers,
     query('quiz', 'Quiz id is required').exists(),
     resolveErrors,
   ])
   async postResult(req: Request, res: Response, next: NextFunction) {
-    const { id: userId } = req.user
+    const { id: userId } = req.user!
     const { answers } = req.body
     const { quiz: quizId } = req.query
 

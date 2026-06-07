@@ -9,7 +9,7 @@ import Quiz from 'models/quiz'
 import moment from 'moment'
 import { MultipleChoiceQuestion } from 'models/questiontypes'
 import { ValidationError } from 'services/v2/errors'
-import { teacher, extraUser, loadTestData, clearTestData } from '../data'
+import { teacherA, studentB, loadTestData, clearTestData, teacherB } from '../data'
 
 describe('/api/v2/quizzes', () => {
   let dbClient: mongo.MongoClient
@@ -31,7 +31,7 @@ describe('/api/v2/quizzes', () => {
   })
 
   describe('GET /:id', () => {
-    const username = teacher.username
+    const username = teacherA.username
     const password = 'password'
     let token = ''
 
@@ -57,7 +57,7 @@ describe('/api/v2/quizzes', () => {
     it('if user does not own quiz returns status 403', async () => {
       let res = await request(app)
         .post('/api/v2/users/auth')
-        .send({ username: extraUser.username, password })
+        .send({ username: studentB.username, password })
       let { token } = res.body
 
       const quiz = await quizzes.findOne({ title: 'public quiz' })
@@ -142,7 +142,7 @@ describe('/api/v2/quizzes', () => {
       it('if quiz is public returns the quiz form for any user', async () => {
         let res = await request(app)
           .post('/api/v2/users/auth')
-          .send({ username: extraUser.username, password })
+          .send({ username: studentB.username, password })
 
         let { token } = res.body
         const quiz = await quizzes.findOne({ title: 'private quiz' })
@@ -154,7 +154,7 @@ describe('/api/v2/quizzes', () => {
       it('if user is in allowedUsers list of private quiz returns the quiz form', async () => {
         let res = await request(app)
           .post('/api/v2/users/auth')
-          .send({ username: extraUser.username, password })
+          .send({ username: studentB.username, password })
 
         let { token } = res.body
         const quiz = await quizzes.findOne({ title: 'private quiz' })
@@ -166,7 +166,7 @@ describe('/api/v2/quizzes', () => {
   })
 
   describe('POST /', () => {
-    const username = extraUser.username
+    const username = teacherB.username
     const password = 'password'
     let token = ''
 
@@ -319,7 +319,7 @@ describe('/api/v2/quizzes', () => {
   })
 
   describe('PUT :id/edit', () => {
-    const username = extraUser.username
+    const username = teacherB.username
     const password = 'password'
     let token = ''
 
@@ -345,9 +345,10 @@ describe('/api/v2/quizzes', () => {
     })
 
     it('if user does not own quiz returns status 403', async () => {
+      // Authenticate as a user that does not own the quiz (teacherB owns the quiz)
       let res = await request(app)
         .post('/api/v2/users/auth')
-        .send({ username: teacher.username, password })
+        .send({ username: teacherA.username, password })
 
       let { token } = res.body
       const quiz = await quizzes.findOne({ title: 'test quiz' })
@@ -503,7 +504,7 @@ describe('/api/v2/quizzes', () => {
   })
 
   describe('DELETE /:id', () => {
-    const username = extraUser.username
+    const username = teacherB.username
     const password = 'password'
     let token = ''
 
@@ -529,9 +530,10 @@ describe('/api/v2/quizzes', () => {
     })
 
     it('if user does not own quiz returns error 403', async () => {
+      // Authenticate as a user that does not own the quiz (teacherB owns the quiz)
       let res = await request(app)
         .post('/api/v2/users/auth')
-        .send({ username: teacher.username, password })
+        .send({ username: teacherA.username, password })
 
       let { token } = res.body
       const quiz = await quizzes.findOne({ title: 'test quiz' })

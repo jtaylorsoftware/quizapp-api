@@ -8,20 +8,20 @@ import bootstrap from 'bootstrap-app'
 
 import User from 'models/user'
 
-import { teacher, student, clearTestData, loadTestData, extraUser } from '../data'
+import { teacherA, studentA, clearTestData, loadTestData, studentB, users} from '../data'
 
 describe('/api/v2/users', () => {
   let dbClient: mongo.MongoClient
   let app: express.Express
 
   let db: mongo.Db
-  let users: mongo.Collection<User>
+  let usersCol: mongo.Collection<User>
 
   beforeAll(async () => {
     ;({ client: dbClient, app: app } = await bootstrap())
     db = await dbClient.db()
     await loadTestData(db)
-    users = db.collection('users')
+    usersCol = db.collection('users')
   })
 
   afterAll(async () => {
@@ -31,7 +31,7 @@ describe('/api/v2/users', () => {
 
   describe('POST /', () => {
     afterEach(async () => {
-      await users.deleteOne({ username: 'testuser' })
+      await usersCol.deleteOne({ username: 'testuser' })
     })
 
     it('with valid user registration returns status 200 and a jwt token', async () => {
@@ -43,17 +43,17 @@ describe('/api/v2/users', () => {
           password: 'password',
           email: 'testuseremail@email.com',
         })
-        .expect('Content-Type', /json/)
         .expect(200)
+        .expect('Content-Type', /json/)
       expect(res.body).toHaveProperty('token')
       const decodedToken: any = jwt.decode(res.body.token)
-      const user = await users.findOne({ username })
+      const user = await usersCol.findOne({ username })
       // @ts-ignore
-      expect(decodedToken.user.id).toEqual(`${user._id}`)
+      expect(decodedToken.id).toEqual(`${user._id}`)
     })
 
     it('if username is already in use returns status 409 and errors', async () => {
-      const username = teacher.username
+      const username = teacherA.username
       const res = await request(app)
         .post('/api/v2/users/')
         .send({
@@ -75,7 +75,7 @@ describe('/api/v2/users', () => {
         .send({
           username,
           password: 'password',
-          email: teacher.email,
+          email: teacherA.email,
         })
         .expect('Content-Type', /json/)
         .expect(409)
@@ -98,7 +98,7 @@ describe('/api/v2/users', () => {
 
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors[0].field).toEqual('username')
-      expect(await users.findOne({ username })).toBeNull()
+      expect(await usersCol.findOne({ username })).toBeNull()
     })
 
     it('if username is > 12 chars returns status 400 and errors', async () => {
@@ -115,7 +115,7 @@ describe('/api/v2/users', () => {
 
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors[0].field).toEqual('username')
-      expect(await users.findOne({ username })).toBeNull()
+      expect(await usersCol.findOne({ username })).toBeNull()
     })
 
     it('if password is < 7 chars returns status 400 and errors', async () => {
@@ -133,7 +133,7 @@ describe('/api/v2/users', () => {
 
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors[0].field).toEqual('password')
-      expect(await users.findOne({ username })).toBeNull()
+      expect(await usersCol.findOne({ username })).toBeNull()
     })
 
     it('if password is > 20 chars returns status 400 and errors', async () => {
@@ -151,7 +151,7 @@ describe('/api/v2/users', () => {
 
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors[0].field).toEqual('password')
-      expect(await users.findOne({ username })).toBeNull()
+      expect(await usersCol.findOne({ username })).toBeNull()
     })
 
     it('if email is invalid returns status 400 and errors', async () => {
@@ -169,12 +169,12 @@ describe('/api/v2/users', () => {
 
       expect(res.body).toHaveProperty('errors')
       expect(res.body.errors[0].field).toEqual('email')
-      expect(await users.findOne({ username })).toBeNull()
+      expect(await usersCol.findOne({ username })).toBeNull()
     })
   })
 
   describe('POST /auth', () => {
-    const username = teacher.username
+    const username = teacherA.username
     const password = 'password'
 
     it('with correct info returns status 200 and a jwt token', async () => {
@@ -189,9 +189,9 @@ describe('/api/v2/users', () => {
 
       expect(res.body).toHaveProperty('token')
       const decodedToken: any = jwt.decode(res.body.token)
-      const user = await users.findOne({ username })
+      const user = await usersCol.findOne({ username })
       // @ts-ignore
-      expect(decodedToken.user.id).toEqual(`${user._id}`)
+      expect(decodedToken.id).toEqual(`${user._id}`)
     })
 
     it('if username does not exist returns status 400 and errors', async () => {
@@ -224,7 +224,7 @@ describe('/api/v2/users', () => {
   })
 
   describe('GET /me', () => {
-    const username = teacher.username
+    const username = teacherA.username
     const password = 'password'
     let token = ''
     let user: User
@@ -235,7 +235,7 @@ describe('/api/v2/users', () => {
         .send({ username, password })
       ;({ token } = res.body)
       // @ts-ignore
-      user = await users.findOne({ username })
+      user = await usersCol.findOne({ username })
     })
 
     describe('/', () => {
@@ -306,7 +306,7 @@ describe('/api/v2/users', () => {
     })
 
     describe('/results', () => {
-      const username = student.username
+      const username = studentA.username
       const password = 'password'
       let token = ''
 
@@ -337,77 +337,77 @@ describe('/api/v2/users', () => {
       })
 
       it('by default or if format=full returns status 200 and full results', async () => {
-        // Authenticate as a user that has a graded quiz result with published results
-        let authRes = await request(app)
-          .post('/api/v2/users/auth')
-          .send({ username: extraUser.username, password })
-        const testToken = authRes.body.token
-
         // @ts-ignore
         const expectFullResult = (result) => {
           expect(result).toHaveProperty('answers')
           expect(result).toHaveProperty('score')
         }
 
-        let res = await get(testToken).expect(200)
-        expect(res.body).toHaveLength(user.results.length)
+        let res = await get(token).expect(200)
+        expect(res.body).toHaveLength(users.studentB.results.length)
         res.body.forEach(expectFullResult)
 
-        res = await get(testToken, 'full').expect(200)
-        expect(res.body).toHaveLength(user.results.length)
+        res = await get(token, 'full').expect(200)
+        expect(res.body).toHaveLength(users.studentB.results.length)
         res.body.forEach(expectFullResult)
       })
 
       it('returns status 200 and results without answers or score for full format when quiz results are not published', async () => {
+         // Get the token for studentB who has a graded quiz result where publishResults is false
+        let authRes = await request(app)
+          .post('/api/v2/users/auth')
+          .send({ username: studentB.username, password })
+        let { token: testToken } = authRes.body
+        
         // @ts-ignore
         const expectFullResult = (result) => {
           expect(result).not.toHaveProperty('answers')
           expect(result).not.toHaveProperty('score')
         }
 
-        let res = await get(token).expect(200)
-        expect(res.body).toHaveLength(user.results.length)
+        let res = await get(testToken).expect(200)
+        expect(res.body).toHaveLength(users.studentB.results.length)
         res.body.forEach(expectFullResult)
 
-        res = await get(token, 'full').expect(200)
-        expect(res.body).toHaveLength(user.results.length)
+        res = await get(testToken, 'full').expect(200)
+        expect(res.body).toHaveLength(users.studentB.results.length)
         res.body.forEach(expectFullResult)
       })
 
       it('if format=listing returns status 200 and listings', async () => {
-        // Authenticate as a user that has a graded quiz result with published results
-        let authRes = await request(app)
-          .post('/api/v2/users/auth')
-          .send({ username: extraUser.username, password })
-        const testToken = authRes.body.token
-        
         // @ts-ignore
         const expectResultListing = (result) => {
           expect(result).not.toHaveProperty('answers')
           expect(result).toHaveProperty('score')
         }
 
-        const res = await get(testToken, 'listing').expect(200)
-        expect(res.body).toHaveLength(user.results.length)
+        const res = await get(token, 'listing').expect(200)
+        expect(res.body).toHaveLength(users.studentA.results.length)
         res.body.forEach(expectResultListing)
       })
 
       it('returns status 200 and listings with no score when quiz results are not published', async () => {
+        // Get the token for a different user that doesn't own the quiz
+        let authRes = await request(app)
+          .post('/api/v2/users/auth')
+          .send({ username: studentB.username, password })
+        let { token: testToken } = authRes.body
+
         // @ts-ignore
         const expectResultListing = (result) => {
           expect(result).not.toHaveProperty('answers')
           expect(result).not.toHaveProperty('score')
         }
 
-        const res = await get(token, 'listing').expect(200)
-        expect(res.body).toHaveLength(user.results.length)
+        const res = await get(testToken, 'listing').expect(200)
+        expect(res.body).toHaveLength(users.studentB.results.length)
         res.body.forEach(expectResultListing)
       })
     })
   })
 
   describe('PUT /me', () => {
-    const username = student.username
+    const username = studentA.username
     const password = 'password'
     let token = ''
 
@@ -470,7 +470,7 @@ describe('/api/v2/users', () => {
       })
 
       it('if email is already taken returns status 409 and errors', async () => {
-        const res = await get(token).send({ email: teacher.email }).expect(409)
+        const res = await get(token).send({ email: teacherA.email }).expect(409)
         expect(res.body).toHaveProperty('errors')
         expect(res.body.errors[0].field).toEqual('email')
       })
@@ -482,7 +482,7 @@ describe('/api/v2/users', () => {
   })
 
   describe('DELETE /me', () => {
-    const username = student.username
+    const username = studentA.username
     const password = 'password'
     let user: User
     let token = ''
@@ -493,7 +493,7 @@ describe('/api/v2/users', () => {
         .send({ username, password })
       ;({ token } = res.body)
       // @ts-ignore
-      user = await users.findOne({ username })
+      user = await usersCol.findOne({ username })
     })
 
     it('removes the student user, their quizzes, and their results', async () => {
@@ -501,7 +501,7 @@ describe('/api/v2/users', () => {
         .delete('/api/v2/users/me')
         .set('x-auth-token', token)
         .expect(204)
-      expect(await users.findOne({ username })).toBeNull()
+      expect(await usersCol.findOne({ username })).toBeNull()
       await Promise.all(
         user.quizzes.map(async (quiz) => {
           expect(

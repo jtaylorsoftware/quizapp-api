@@ -9,6 +9,7 @@ import resolveErrors from 'middleware/validation/resolve-errors-v2'
 
 import { QuizUploadData } from 'models/quiz'
 import QuizService from 'services/v2/quiz'
+import { ALLOWED_ROLES_ANY } from 'models/user'
 
 @Inject
 export default class QuizControllerV2 extends Controller({
@@ -23,14 +24,14 @@ export default class QuizControllerV2 extends Controller({
    * owns the quiz.
    */
   @Get('/:id', [
+    authenticate({ allowedRoles: ['teacher'] }),
     query('format', 'Valid formats: listing, full')
       .custom((format) => format === 'listing' || format === 'full')
       .optional(),
-    resolveErrors,
-    authenticate({ required: true }),
+    resolveErrors
   ])
   async getQuiz(req: Request, res: Response, next: NextFunction) {
-    const { id: userId } = req.user
+    const { id: userId } = req.user!
     const { id: quizId } = req.params
     const { format } = req.query
     try {
@@ -58,9 +59,9 @@ export default class QuizControllerV2 extends Controller({
   /**
    * Returns a quiz as a form for a user to answer.
    */
-  @Get('/:id/form', [authenticate({ required: true })])
+  @Get('/:id/form', [authenticate({ allowedRoles: ALLOWED_ROLES_ANY })])
   async getQuizForm(req: Request, res: Response, next: NextFunction) {
-    const { id: userId } = req.user
+    const { id: userId } = req.user!
     const { id: quizId } = req.params
     try {
       const form = await this.quizService.getQuizForm(quizId, userId)
@@ -79,7 +80,7 @@ export default class QuizControllerV2 extends Controller({
    * Creates a new quiz
    */
   @Post('/', [
-    authenticate({ required: true }),
+    authenticate({ allowedRoles: ['teacher'] }),
     validators.checkTitle,
     validators.checkIsPublic,
     validators.checkPublishResults,
@@ -89,7 +90,7 @@ export default class QuizControllerV2 extends Controller({
     resolveErrors,
   ])
   async createQuiz(req: Request, res: Response, next: NextFunction) {
-    const { id: userId } = req.user
+    const { id: userId } = req.user!
     const {
       title,
       isPublic,
@@ -123,7 +124,7 @@ export default class QuizControllerV2 extends Controller({
    * Edits an existing quiz
    */
   @Put('/:id/edit', [
-    authenticate({ required: true }),
+    authenticate({ allowedRoles: ['teacher'] }),
     validators.checkTitle,
     validators.checkIsPublic,
     validators.checkPublishResults,
@@ -132,7 +133,7 @@ export default class QuizControllerV2 extends Controller({
     resolveErrors,
   ])
   async editQuiz(req: Request, res: Response, next: NextFunction) {
-    const { user } = req
+    const user = req.user!
     const { title, isPublic, publishResults, expiration, questions, allowedUsers, ...rest } =
       req.body
     const { id: quizId } = req.params
@@ -162,9 +163,9 @@ export default class QuizControllerV2 extends Controller({
   /**
    * Deletes a quiz
    */
-  @Delete('/:id', [authenticate({ required: true })])
+  @Delete('/:id', [authenticate({ allowedRoles: ['teacher'] })])
   async deleteQuiz(req: Request, res: Response, next: NextFunction) {
-    const { user } = req
+    const user = req.user!
     const { id: quizId } = req.params
 
     try {

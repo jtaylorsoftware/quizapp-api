@@ -2,52 +2,140 @@ import Quiz from 'models/quiz'
 import Result from 'models/result'
 import User from 'models/user'
 import moment from 'moment'
-import { OptionalId, ObjectId, Collection, MongoAPIError, Db } from 'mongodb'
+import { OptionalId, ObjectId, Collection, Db } from 'mongodb'
 import bcrypt from 'bcryptjs'
+import { UserRegistrationData } from 'services/v2/user'
 
-export const teacher = {
-  username: 'teacher',
-  email: 'teacher@email.com',
+export const teacherA: UserRegistrationData = {
+  username: 'teacherA',
+  email: 'teacherA@email.com',
   password: 'password',
+  role: 'teacher',
 }
 
-export const student = {
-  username: 'student',
-  email: 'student@email.com',
+export const teacherB: UserRegistrationData = {
+  username: 'teacherB',
+  email: 'teacherB@email.com',
   password: 'password',
+  role: 'teacher',
 }
 
-export const extraUser = {
-  username: 'extrauser',
-  email: 'extrauser@email.com',
+export const studentA: UserRegistrationData = {
+  username: 'studentA',
+  email: 'studentA@email.com',
   password: 'password',
+  role: 'student',
 }
 
-export const users: OptionalId<User>[] = [
-  {
-    ...teacher,
+export const studentB: UserRegistrationData = {
+  username: 'studentB',
+  email: 'studentB@email.com',
+  password: 'password',
+  role: 'student',
+}
+
+export const users: {
+  teacherA: OptionalId<User>
+  teacherB: OptionalId<User>
+  studentA: OptionalId<User>
+  studentB: OptionalId<User>
+} = {
+  teacherA: {
+    ...teacherA,
+    _id: new ObjectId(),
     date: moment().toISOString(),
-    quizzes: [] as ObjectId[],
+    quizzes: [new ObjectId(), new ObjectId()],
     results: [] as ObjectId[],
   },
-  {
-    ...student,
+  teacherB: {
+    ...teacherB,
+    _id: new ObjectId(),
     date: moment().toISOString(),
-    quizzes: [] as ObjectId[],
+    quizzes: [new ObjectId()],
     results: [] as ObjectId[],
   },
-  {
-    ...extraUser,
+  studentA: {
+    ...studentA,
+    _id: new ObjectId(),
     date: moment().toISOString(),
     quizzes: [] as ObjectId[],
-    results: [] as ObjectId[],
+    results: [new ObjectId()],
+  },
+  studentB: {
+    ...studentB,
+    _id: new ObjectId(),
+    date: moment().toISOString(),
+    quizzes: [] as ObjectId[],
+    results: [new ObjectId()],
+  },
+}
+
+export const teacherAQuizzes: OptionalId<Quiz>[] = [
+  // public quiz
+  {
+    _id: new ObjectId(),
+    user: users.teacherA._id!!,
+    title: 'public quiz',
+    expiration: moment().add(1, 'd').toISOString(),
+    isPublic: true,
+    questions: [
+      {
+        type: 'MultipleChoice',
+        text: 'q1',
+        correctAnswer: 0,
+        answers: [
+          {
+            text: 'answer 1',
+          },
+          {
+            text: 'answer 2',
+          },
+        ],
+      },
+    ],
+    results: [users.studentA.results[0]!!],
+    allowedUsers: [],
+    date: moment().toISOString(),
+    showCorrectAnswers: true,
+    allowMultipleResponses: false,
+    publishResults: true,
+  },
+  // private quiz
+  {
+    _id: new ObjectId(),
+    user: users.teacherA._id!!,
+    title: 'private quiz',
+    expiration: moment().add(1, 'd').toISOString(),
+    isPublic: false,
+    questions: [
+      {
+        type: 'MultipleChoice',
+        text: 'q1',
+        correctAnswer: 0,
+        answers: [
+          {
+            text: 'answer 1',
+          },
+          {
+            text: 'answer 2',
+          },
+        ],
+      },
+    ],
+    results: [users.studentB.results[0]!!],
+    allowedUsers: [users.studentB._id!!],
+    date: moment().toISOString(),
+    showCorrectAnswers: true,
+    allowMultipleResponses: false,
+    publishResults: false,
   },
 ]
 
-const teacherQuizzes: OptionalId<Quiz>[] = [
+export const teacherBQuizzes: OptionalId<Quiz>[] = [
   // public quiz
   {
-    user: new ObjectId(),
+    _id: new ObjectId(),
+    user: users.teacherB._id!!,
     title: 'public quiz',
     expiration: moment().add(1, 'd').toISOString(),
     isPublic: true,
@@ -72,109 +160,38 @@ const teacherQuizzes: OptionalId<Quiz>[] = [
     showCorrectAnswers: true,
     allowMultipleResponses: false,
     publishResults: true,
-  },
-  // private quiz
-  {
-    user: new ObjectId(),
-    title: 'private quiz',
-    expiration: moment().add(1, 'd').toISOString(),
-    isPublic: false,
-    questions: [
-      {
-        type: 'MultipleChoice',
-        text: 'q1',
-        correctAnswer: 0,
-        answers: [
-          {
-            text: 'answer 1',
-          },
-          {
-            text: 'answer 2',
-          },
-        ],
-      },
-    ],
-    results: [],
-    allowedUsers: [],
-    date: moment().toISOString(),
-    showCorrectAnswers: true,
-    allowMultipleResponses: false,
-    publishResults: false,
-  },
+  }
 ]
-
-const studentQuizzes: OptionalId<Quiz>[] = [
-  {
-    user: new ObjectId(),
-    title: 'student quiz',
-    expiration: moment().add(1, 'd').toISOString(),
-    isPublic: true,
-    questions: [
-      {
-        type: 'MultipleChoice',
-        text: 'q1',
-        correctAnswer: 0,
-        answers: [
-          {
-            text: 'answer 1',
-          },
-          {
-            text: 'answer 2',
-          },
-        ],
-      },
-    ],
-    results: [],
-    allowedUsers: [],
-    date: moment().toISOString(),
-    showCorrectAnswers: true,
-    allowMultipleResponses: false,
-    publishResults: true,
-  },
-]
-
-export const quizzes = [...teacherQuizzes, ...studentQuizzes]
 
 export const results: OptionalId<Result>[] = [
   {
-    user: new ObjectId(),
-    quiz: new ObjectId(),
-    quizOwner: new ObjectId(),
+    _id: users.studentA.results[0]!!,
+    user: users.studentA._id!!,
+    quiz: teacherAQuizzes[0]._id!!,
+    quizOwner: users.teacherA._id!!,
     answers: [
       {
         type: 'MultipleChoice',
         choice: 0,
       },
     ],
+    date: moment().toISOString(),
     score: 0,
-    date: moment().toISOString(),
   },
   {
-    user: new ObjectId(),
-    quiz: new ObjectId(),
-    quizOwner: new ObjectId(),
+    _id: users.studentB.results[0]!!,
+    user: users.studentB._id!!,
+    quiz: teacherAQuizzes[1]._id!!,
+    quizOwner: users.teacherA._id!!,
     answers: [
       {
         type: 'MultipleChoice',
         choice: 0,
       },
     ],
-    score: 1.0,
     date: moment().toISOString(),
-  },
-  {
-    user: new ObjectId(),
-    quiz: new ObjectId(),
-    quizOwner: new ObjectId(),
-    answers: [
-      {
-        type: 'MultipleChoice',
-        choice: 0,
-      },
-    ],
-    score: 1.0,
-    date: moment().toISOString(),
-  },
+    score: 1,
+  }
 ]
 
 /**
@@ -182,43 +199,14 @@ export const results: OptionalId<Result>[] = [
  */
 const addUsers = async (usersCol: Collection<User>) => {
   const salt = await bcrypt.genSalt(10)
-  const IDs: ObjectId[] = await Promise.all(
-    users.map(async (user) => {
+  const usersList = Object.values(users)
+  await Promise.all(
+    usersList.map(async (user) => {
       user.password = await bcrypt.hash(user.password, salt)
       const { insertedId } = await usersCol.insertOne(user)
       return insertedId
     })
   )
-
-  {
-    const id = users.find((user) => user.username === teacher.username)!!._id!!
-    const extraUserID = users.find(
-      (user) => user.username === extraUser.username
-    )!!._id!!
-    teacherQuizzes.forEach((quiz) => {
-      quiz.user = id
-      if (!quiz.isPublic) {
-        quiz.allowedUsers.push(extraUserID)
-      }
-    })
-  }
-
-  {
-    const id = users.find((user) => user.username === student.username)!!._id!!
-    studentQuizzes.forEach((quiz) => {
-      quiz.user = id
-    })
-  }
-
-  // Update results to have correct user IDs.
-  //
-  // This relies on the results array ordering, so that the first 
-  // result corresponds to the first user, etc.
-  results.forEach((result, ind) => {
-    const id = IDs[ind]
-    //@ts-ignore
-    result.user = id
-  })
 }
 
 /**
@@ -232,56 +220,13 @@ const addUsers = async (usersCol: Collection<User>) => {
  */
 const addQuizzes = async (
   quizzesCol: Collection<Quiz>,
-  usersCol: Collection<User>
 ) => {
-  {
     // add teacher quizzes
-    const promises = teacherQuizzes.map(async (quiz) => {
+    const promises = [...teacherAQuizzes, ...teacherBQuizzes].map(async (quiz) => {
       const { insertedId } = await quizzesCol.insertOne(quiz)
       return insertedId
     })
-    const ids = await Promise.all(promises)
-
-    await usersCol.updateOne(
-      { username: teacher.username },
-      {
-        $addToSet: {
-          quizzes: {
-            $each: ids,
-          },
-        },
-      }
-    )
-  }
-
-  {
-    // add student's quizzes
-    const promises = studentQuizzes.map(async (quiz) => {
-      const { insertedId } = await quizzesCol.insertOne(quiz)
-      return insertedId
-    })
-    const ids = await Promise.all(promises)
-
-    await usersCol.updateOne(
-      { username: student.username },
-      {
-        $addToSet: {
-          quizzes: {
-            $each: ids,
-          },
-        },
-      }
-    )
-  }
-
-  // Update results to have correct quiz IDs and quiz owner IDs.
-  //
-  // This relies on the quizzes and results array orderings, so that the first 
-  // quiz corresponds to the first result, etc.
-  results.forEach((result, ind) => {
-    result.quiz = quizzes[ind]._id!!
-    result.quizOwner = quizzes[ind].user
-  })
+    await Promise.all(promises)
 }
 
 /**
@@ -294,42 +239,12 @@ const addQuizzes = async (
  */
 const addResults = async (
   resultsCol: Collection<Result>,
-  usersCol: Collection<User>,
-  quizzesCol: Collection<Quiz>
 ) => {
   const promises = results.map(async (result) => {
     const { insertedId } = await resultsCol.insertOne(result)
     return insertedId
   })
-  const ids = await Promise.all(promises)
-
-  await Promise.all(
-    users.map(async (user, ind) => {
-      await usersCol.updateOne(
-        {
-          username: user.username,
-        },
-        {
-          $addToSet: {
-            results: ids[ind],
-          },
-        }
-      )
-    })
-  )
-
-  await Promise.all(
-    quizzes.map(async (quiz, ind) => {
-      await quizzesCol.updateOne(
-        { title: quiz.title },
-        {
-          $addToSet: {
-            results: results[ind]['_id'],
-          },
-        }
-      )
-    })
-  )
+  await Promise.all(promises)
 }
 
 export async function loadTestData(db: Db) {
@@ -337,8 +252,8 @@ export async function loadTestData(db: Db) {
   const users = db.collection<User>('users')
   const results = db.collection<Result>('results')
   await addUsers(users)
-  await addQuizzes(quizzes, users)
-  await addResults(results, users, quizzes)
+  await addQuizzes(quizzes)
+  await addResults(results)
 }
 
 export async function clearTestData(db: Db) {

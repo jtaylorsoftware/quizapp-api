@@ -8,6 +8,9 @@ export type PublicUserView = Omit<
   'email' | 'date' | 'results'
 >
 
+export type UserRole = 'teacher' | 'student'
+export const ALLOWED_ROLES_ANY: UserRole[] = ['teacher', 'student']
+
 /**
  * Represents a user document
  * @property username
@@ -21,7 +24,8 @@ export default class User extends Model {
   constructor(
     public username: string,
     public email: string,
-    public password: string
+    public password: string,
+    public role: UserRole = 'student'
   ) {
     super()
   }
