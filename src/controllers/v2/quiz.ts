@@ -10,6 +10,10 @@ import resolveErrors from 'middleware/validation/resolve-errors-v2'
 import { QuizUploadData } from 'models/quiz'
 import QuizService from 'services/v2/quiz'
 
+type QuizParams = {
+  id: string
+}
+
 @Inject
 export default class QuizControllerV2 extends Controller({
   root: '/api/v2/quizzes',
@@ -29,7 +33,7 @@ export default class QuizControllerV2 extends Controller({
     resolveErrors,
     authenticate({ required: true }),
   ])
-  async getQuiz(req: Request, res: Response, next: NextFunction) {
+  async getQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
     const { id: userId } = req.user
     const { id: quizId } = req.params
     const { format } = req.query
@@ -59,7 +63,7 @@ export default class QuizControllerV2 extends Controller({
    * Returns a quiz as a form for a user to answer.
    */
   @Get('/:id/form', [authenticate({ required: true })])
-  async getQuizForm(req: Request, res: Response, next: NextFunction) {
+  async getQuizForm(req: Request<QuizParams>, res: Response, next: NextFunction) {
     const { id: userId } = req.user
     const { id: quizId } = req.params
     try {
@@ -131,7 +135,7 @@ export default class QuizControllerV2 extends Controller({
     validators.checkQuestions,
     resolveErrors,
   ])
-  async editQuiz(req: Request, res: Response, next: NextFunction) {
+  async editQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
     const { user } = req
     const { title, isPublic, publishResults, expiration, questions, allowedUsers, ...rest } =
       req.body
@@ -163,7 +167,7 @@ export default class QuizControllerV2 extends Controller({
    * Deletes a quiz
    */
   @Delete('/:id', [authenticate({ required: true })])
-  async deleteQuiz(req: Request, res: Response, next: NextFunction) {
+  async deleteQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
     const { user } = req
     const { id: quizId } = req.params
 

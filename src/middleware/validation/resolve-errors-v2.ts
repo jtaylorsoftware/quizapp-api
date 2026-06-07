@@ -1,11 +1,19 @@
 import { validationResult, ValidationError } from 'express-validator'
 import { Request, Response, NextFunction } from 'express'
 
-function errorFormatter({ msg, param, value }: ValidationError) {
-  return {
-    field: param,
-    message: msg,
-    value: value,
+function errorFormatter(error: ValidationError) {
+  if (error.type === 'field') {
+    return {
+      field: error.path,
+      message: error.msg,
+      value: error.value,
+    }
+  } else {
+    return {
+      field: null,
+      message: error.msg,
+      value: null,
+    }
   }
 }
 

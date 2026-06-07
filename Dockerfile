@@ -24,7 +24,7 @@ ENV DEBUG=''
 ENTRYPOINT ["node", \
     "--inspect=0.0.0.0:9229", \
     "./node_modules/.bin/jest", \
-    "--testPathPattern=e2e", \
+    "--testPathPatterns=e2e", \
     "--config=e2e.jest.config.ts", \
     "--runInBand"]
 

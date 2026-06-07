@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "./build",
+    "rootDir": "./src",
     "allowJs": true,
     "target": "ES2017",
     "allowSyntheticDefaultImports": true,
@@ -8,8 +9,11 @@
     "experimentalDecorators": true,
     "module": "commonjs",
     "emitDecoratorMetadata": true,
-    "baseUrl": "src",
+    "paths": {
+      "*": ["./src/*"]
+    },
     "strict": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "build", "e2e", "src/**/*.test.ts"]
 }

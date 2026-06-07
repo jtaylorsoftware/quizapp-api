@@ -2,17 +2,21 @@
 {
   "compilerOptions": {
     "outDir": "./build",
+    "rootDir": ".",
     "allowJs": true,
     "target": "ES2017",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "module": "commonjs",
-    "baseUrl": "src",
+    "paths": {
+      "*": ["./src/*"]
+    },
     "emitDecoratorMetadata": true,
     "inlineSourceMap": true,
     "inlineSources": true,
-    "strict": true
+    "strict": true,
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*", "e2e/**/*"],
   "exclude": ["./client", "./build"]
