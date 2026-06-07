@@ -14,6 +14,10 @@ import ResultService from 'services/v2/result'
 import UserService from 'services/v2/user'
 import { ALLOWED_ROLES_ANY } from 'models/user'
 
+type UserParams = {
+  id: string
+}
+
 @Inject
 export default class UserControllerV2 extends Controller({
   root: '/api/v2/users',
@@ -170,7 +174,7 @@ export default class UserControllerV2 extends Controller({
    * TODO: change omission of date to omission of results (not sure why I omitted date - not really sensitive)
    */
   @Get('/:id')
-  async getUserById(req: Request, res: Response, next: NextFunction) {
+  async getUserById(req: Request<UserParams>, res: Response, next: NextFunction) {
     try {
       const userData = await this.userService.getPublicUserById(req.params.id)
       if (userData == null) {
@@ -225,7 +229,7 @@ export default class UserControllerV2 extends Controller({
     validators.checkPassword,
     resolveErrors,
   ])
-  async registerUser(req: Request, res: Response, next: NextFunction) {
+  async registerUser(req: Request<UserParams>, res: Response, next: NextFunction) {
     const { username, email, password, role } = req.body
     try {
       const [token, errors] = await this.userService.registerUser({

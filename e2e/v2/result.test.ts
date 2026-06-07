@@ -36,7 +36,6 @@ describe('/api/v2/results', () => {
     const username = teacherA.username
     const password = 'password'
     let token = ''
-    let userId = ''
     let quizIds: string[] = []
 
     const get = (
@@ -62,8 +61,7 @@ describe('/api/v2/results', () => {
         .send({ username, password })
       ;({ token } = res.body)
 
-      userId = users.teacherA._id!!.toString()
-      quizIds = teacherAQuizzes.map((quiz) => quiz._id!!.toString())
+      quizIds = teacherAQuizzes.map((quiz) => quiz._id!.toString())
     })
 
     it('if no auth token in request returns status 401', async () => {
@@ -85,6 +83,7 @@ describe('/api/v2/results', () => {
 
     it('if userId is not part of query, returns all results for quiz', async () => {
       let quiz = await quizzesCol.findOne({ title: 'public quiz' })
+      console.log(quiz)
       // @ts-ignore
       let resultCount = quiz.results.length
       expect(resultCount).toBeGreaterThanOrEqual(1)
@@ -95,8 +94,8 @@ describe('/api/v2/results', () => {
 
     it('if userId is in the query, returns just the result for the user', async () => {
       // @ts-ignore
-      let res = await get(quizIds[0], users.studentA._id!!.toString(), token).expect(200)
-      expect(res.body.user).toEqual(users.studentA._id!!.toString())
+      let res = await get(quizIds[0], users.studentA._id!.toString(), token).expect(200)
+      expect(res.body.user).toEqual(users.studentA._id!.toString())
     })
 
     it('returns status 200 and full quiz by default or if format=full ', async () => {
@@ -139,7 +138,7 @@ describe('/api/v2/results', () => {
         .send({ username: studentB.username, password })
       let { token: testToken } = authRes.body
 
-      const studentId = users.studentB._id!!.toString()
+      const studentId = users.studentB._id!.toString()
 
       // quizIds[1] has publishResults set to false
       let resultRes = await get(quizIds[1], studentId, testToken, 'full').expect(200)
@@ -185,7 +184,7 @@ describe('/api/v2/results', () => {
         .send({ username: studentB.username, password })
       let { token: testToken } = authRes.body
 
-      const studentId = users.studentB._id!!.toString()
+      const studentId = users.studentB._id!.toString()
 
       // quizIds[1] has publishResults set to false
       let resultRes = await get(quizIds[1], studentId, testToken, 'listing').expect(200)
@@ -257,7 +256,7 @@ describe('/api/v2/results', () => {
       expect(res.body.errors).toBeDefined()
       expect(
         res.body.errors.some((err: ValidationError) =>
-          err.message!!.includes('already responded')
+          err.message!.includes('already responded')
         )
       ).toBeTruthy()
     })

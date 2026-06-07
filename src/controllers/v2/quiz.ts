@@ -11,6 +11,10 @@ import { QuizUploadData } from 'models/quiz'
 import QuizService from 'services/v2/quiz'
 import { ALLOWED_ROLES_ANY } from 'models/user'
 
+type QuizParams = {
+  id: string
+}
+
 @Inject
 export default class QuizControllerV2 extends Controller({
   root: '/api/v2/quizzes',
@@ -30,7 +34,7 @@ export default class QuizControllerV2 extends Controller({
       .optional(),
     resolveErrors
   ])
-  async getQuiz(req: Request, res: Response, next: NextFunction) {
+  async getQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
     const { id: userId } = req.user!
     const { id: quizId } = req.params
     const { format } = req.query
@@ -60,7 +64,7 @@ export default class QuizControllerV2 extends Controller({
    * Returns a quiz as a form for a user to answer.
    */
   @Get('/:id/form', [authenticate({ allowedRoles: ALLOWED_ROLES_ANY })])
-  async getQuizForm(req: Request, res: Response, next: NextFunction) {
+  async getQuizForm(req: Request<QuizParams>, res: Response, next: NextFunction) {
     const { id: userId } = req.user!
     const { id: quizId } = req.params
     try {
@@ -132,8 +136,8 @@ export default class QuizControllerV2 extends Controller({
     validators.checkQuestions,
     resolveErrors,
   ])
-  async editQuiz(req: Request, res: Response, next: NextFunction) {
-    const user = req.user!
+  async editQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
+    const { user } = req
     const { title, isPublic, publishResults, expiration, questions, allowedUsers, ...rest } =
       req.body
     const { id: quizId } = req.params
@@ -147,7 +151,7 @@ export default class QuizControllerV2 extends Controller({
         questions,
         allowedUsers,
       }
-      const errors = await this.quizService.updateQuiz(quizId, user.id, edits)
+      const errors = await this.quizService.updateQuiz(quizId, user!.id, edits)
       if (errors.length === 0) {
         res.status(204).end()
       } else {
@@ -164,12 +168,12 @@ export default class QuizControllerV2 extends Controller({
    * Deletes a quiz
    */
   @Delete('/:id', [authenticate({ allowedRoles: ['teacher'] })])
-  async deleteQuiz(req: Request, res: Response, next: NextFunction) {
-    const user = req.user!
+  async deleteQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
+    const { user } = req
     const { id: quizId } = req.params
 
     try {
-      await this.quizService.deleteQuiz(quizId, user.id)
+      await this.quizService.deleteQuiz(quizId, user!.id)
       res.status(204).end()
     } catch (error) {
       return next(error)

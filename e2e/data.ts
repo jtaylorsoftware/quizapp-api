@@ -73,8 +73,8 @@ export const users: {
 export const teacherAQuizzes: OptionalId<Quiz>[] = [
   // public quiz
   {
-    _id: new ObjectId(),
-    user: users.teacherA._id!!,
+    _id: users.teacherA.quizzes[0],
+    user: users.teacherA._id!,
     title: 'public quiz',
     expiration: moment().add(1, 'd').toISOString(),
     isPublic: true,
@@ -93,7 +93,7 @@ export const teacherAQuizzes: OptionalId<Quiz>[] = [
         ],
       },
     ],
-    results: [users.studentA.results[0]!!],
+    results: [users.studentA.results[0]!],
     allowedUsers: [],
     date: moment().toISOString(),
     showCorrectAnswers: true,
@@ -102,8 +102,8 @@ export const teacherAQuizzes: OptionalId<Quiz>[] = [
   },
   // private quiz
   {
-    _id: new ObjectId(),
-    user: users.teacherA._id!!,
+    _id: users.teacherA.quizzes[1],
+    user: users.teacherA._id!,
     title: 'private quiz',
     expiration: moment().add(1, 'd').toISOString(),
     isPublic: false,
@@ -122,8 +122,8 @@ export const teacherAQuizzes: OptionalId<Quiz>[] = [
         ],
       },
     ],
-    results: [users.studentB.results[0]!!],
-    allowedUsers: [users.studentB._id!!],
+    results: [users.studentB.results[0]!],
+    allowedUsers: [users.studentB._id!],
     date: moment().toISOString(),
     showCorrectAnswers: true,
     allowMultipleResponses: false,
@@ -134,8 +134,8 @@ export const teacherAQuizzes: OptionalId<Quiz>[] = [
 export const teacherBQuizzes: OptionalId<Quiz>[] = [
   // public quiz
   {
-    _id: new ObjectId(),
-    user: users.teacherB._id!!,
+    _id: users.teacherB.quizzes[0],
+    user: users.teacherB._id!,
     title: 'public quiz',
     expiration: moment().add(1, 'd').toISOString(),
     isPublic: true,
@@ -165,10 +165,10 @@ export const teacherBQuizzes: OptionalId<Quiz>[] = [
 
 export const results: OptionalId<Result>[] = [
   {
-    _id: users.studentA.results[0]!!,
-    user: users.studentA._id!!,
-    quiz: teacherAQuizzes[0]._id!!,
-    quizOwner: users.teacherA._id!!,
+    _id: users.studentA.results[0]!,
+    user: users.studentA._id!,
+    quiz: teacherAQuizzes[0]._id!,
+    quizOwner: users.teacherA._id!,
     answers: [
       {
         type: 'MultipleChoice',
@@ -179,10 +179,10 @@ export const results: OptionalId<Result>[] = [
     score: 0,
   },
   {
-    _id: users.studentB.results[0]!!,
-    user: users.studentB._id!!,
-    quiz: teacherAQuizzes[1]._id!!,
-    quizOwner: users.teacherA._id!!,
+    _id: users.studentB.results[0]!,
+    user: users.studentB._id!,
+    quiz: teacherAQuizzes[1]._id!,
+    quizOwner: users.teacherA._id!,
     answers: [
       {
         type: 'MultipleChoice',
@@ -211,12 +211,6 @@ const addUsers = async (usersCol: Collection<User>) => {
 
 /**
  * Initializes the database with quiz data for end-to-end tests.
- * 
- * Also updates the related user documents to include references to the quizzes,
- * and updates the result documents to reference the quizzes correctly.
- * 
- * This function should be called after addUsers, since it relies on the users being present
- * in the database to set up the references correctly.
  */
 const addQuizzes = async (
   quizzesCol: Collection<Quiz>,
@@ -231,11 +225,6 @@ const addQuizzes = async (
 
 /**
  * Initializes the database with result data for end-to-end tests.
- * 
- * Also updates the related quiz and user documents to include references to the results.
- * 
- * This function should be called after addUsers and addQuizzes, since it relies on the 
- * users and quizzes being present in the database to set up the references correctly.
  */
 const addResults = async (
   resultsCol: Collection<Result>,
