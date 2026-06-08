@@ -29,7 +29,7 @@ export default class ResultControllerV2 extends Controller({
       .optional(),
     query('quiz', 'Quiz id is required').exists(),
     query('user').exists().optional(),
-    resolveErrors
+    resolveErrors,
   ])
   async getResult(req: Request, res: Response, next: NextFunction) {
     const { id: userId } = req.user!

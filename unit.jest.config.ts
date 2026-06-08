@@ -5,10 +5,10 @@ const config: Config.InitialOptions = {
   testPathIgnorePatterns: [
     '<rootDir>/build',
     '<rootDir>/client',
-    '<rootDir>/e2e'
+    '<rootDir>/e2e',
   ],
   transform: {
-    '^.+\\.ts$': 'ts-jest'
-  }
+    '^.+\\.ts$': 'ts-jest',
+  },
 }
 export default config

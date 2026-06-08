@@ -21,7 +21,10 @@ export type ValidationError = {
  * could absolutely not continue.
  */
 export class ServiceError extends Error {
-  constructor(public code: number, public reason?: string) {
+  constructor(
+    public code: number,
+    public reason?: string
+  ) {
     super(`status: ${code}, reason: ${reason ?? 'could not process request'}`)
     this.name = this.constructor.name
   }

@@ -1,6 +1,6 @@
 # QuizNow API
 
-"QuizNow" is a web app that allows users to create quizzes and share them with other users. This project (the REST API) is written 
+"QuizNow" is a web app that allows users to create quizzes and share them with other users. This project (the REST API) is written
 entirely in TypeScript and uses Express.js to serve requests.
 
 ## Features
@@ -11,12 +11,13 @@ entirely in TypeScript and uses Express.js to serve requests.
 
 ## Docker environment setup:
 
-The Docker image for the app requires certain environment variables at runtime. 
+The Docker image for the app requires certain environment variables at runtime.
 The included `docker-compose.yml` also assumes these are provided via the `.env` file.
 
 The required environment variables are:
-  - `DB_URL=<valid MongoDB URI>`
-  - `JWT_SECRET=<some generated secure string>`
+
+- `DB_URL=<valid MongoDB URI>`
+- `JWT_SECRET=<some generated secure string>`
 
 ## Related projects:
 

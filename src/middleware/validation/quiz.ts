@@ -14,34 +14,34 @@ export function isValidExpiration(expirationDateStr: string) {
 
 export const checkExpiration = body(
   'expiration',
-  'Expiration must be a date and time in the future',
+  'Expiration must be a date and time in the future'
 ).custom(isValidExpiration)
 
 export function isValidTitle(title?: string) {
   return title != null && title.length > 0
 }
 
-export const checkTitle = body('title', 'Title can\'t be empty')
+export const checkTitle = body('title', "Title can't be empty")
   .isString()
   .custom(isValidTitle)
 
 export const checkIsPublic = body(
   'isPublic',
-  'Public setting must be a boolean',
+  'Public setting must be a boolean'
 ).isBoolean()
 
 export const checkPublishResults = body(
   'publishResults',
-  'Publish results setting must be a boolean',
+  'Publish results setting must be a boolean'
 ).isBoolean()
 
 export function allowedUsersAreValid(allowedUsers: string[]) {
-  return allowedUsers.every(user => userValidation.isValidUsername(user))
+  return allowedUsers.every((user) => userValidation.isValidUsername(user))
 }
 
 export const checkAllowedUsers = body(
   'allowedUsers',
-  'Allowed users must be an array of usernames',
+  'Allowed users must be an array of usernames'
 )
   .isArray()
   .custom(allowedUsersAreValid)
@@ -55,7 +55,7 @@ export const MIN_ANSWER_COUNT = 2
 
 export const isValidCorrectAnswer = (
   answerStr: string,
-  answerCount: number,
+  answerCount: number
 ) => {
   const correctAnswer: number = Number.parseInt(answerStr)
   return (
@@ -70,7 +70,9 @@ export function isValidAnswerText(text: string) {
 export function isValidAnswer(answer: Answer) {
   switch (typeof answer) {
     case 'object':
-      return isValidAnswerText((answer as Partial<MultipleChoiceAnswer>)?.text ?? '')
+      return isValidAnswerText(
+        (answer as Partial<MultipleChoiceAnswer>)?.text ?? ''
+      )
     case 'string':
       return isValidAnswerText(answer ?? '')
   }
@@ -95,7 +97,9 @@ export function isValidQuestionBody(question?: Partial<Question>): boolean {
 
   switch (question.type) {
     case 'FillIn':
-      if (!(question.correctAnswer != null && question.correctAnswer.length > 0)) {
+      if (
+        !(question.correctAnswer != null && question.correctAnswer.length > 0)
+      ) {
         throw Error('One or more questions has empty answer text')
       }
       return true
@@ -111,18 +115,25 @@ export function isValidQuestionBody(question?: Partial<Question>): boolean {
         throw Error('One or more questions has too few answers')
       }
 
-      if (!(question.correctAnswer != null && isValidCorrectAnswer(
-        question.correctAnswer as unknown as string,
-        question.answers.length))
+      if (
+        !(
+          question.correctAnswer != null &&
+          isValidCorrectAnswer(
+            question.correctAnswer as unknown as string,
+            question.answers.length
+          )
+        )
       ) {
-        throw Error('One or more question has an answer index that is out of range')
+        throw Error(
+          'One or more question has an answer index that is out of range'
+        )
       }
 
       return true
   }
 }
 
-export const checkQuestions = body('questions').custom(questions => {
+export const checkQuestions = body('questions').custom((questions) => {
   if (!(questions instanceof Array)) {
     throw Error('Questions must be an array')
   }

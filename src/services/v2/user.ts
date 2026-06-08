@@ -9,15 +9,17 @@ import QuizRepository from 'repositories/quiz'
 import ResultRepository from 'repositories/result'
 import { Payload } from 'middleware/auth'
 
-export type UserRegistrationData = Omit<User,
-  '_id' | 'date' | 'quizzes' | 'results'>
+export type UserRegistrationData = Omit<
+  User,
+  '_id' | 'date' | 'quizzes' | 'results'
+>
 
 @Inject
 export default class UserServiceV2 extends Service() {
   constructor(
     private userRepo: UserRepository,
     private quizRepo: QuizRepository,
-    private resultRepo: ResultRepository,
+    private resultRepo: ResultRepository
   ) {
     super()
   }
@@ -26,7 +28,7 @@ export default class UserServiceV2 extends Service() {
    * Gets a user's data from their id
    */
   async getUserById(
-    userId: string | ObjectId,
+    userId: string | ObjectId
   ): Promise<UserWithoutPassword | null> {
     const user = await this.userRepo.repo.findById(userId)
     if (user) {
@@ -40,7 +42,7 @@ export default class UserServiceV2 extends Service() {
    * Gets a {@link PublicUserView user's public data}.
    */
   async getPublicUserById(
-    userId: string | ObjectId,
+    userId: string | ObjectId
   ): Promise<PublicUserView | null> {
     const user = await this.userRepo.repo.findById(userId)
     if (user) {
@@ -54,7 +56,7 @@ export default class UserServiceV2 extends Service() {
    * Returns a list of usernames with matching user ids
    */
   async getUsernamesFromIds(
-    userIds: Array<string | ObjectId>,
+    userIds: Array<string | ObjectId>
   ): Promise<string[]> {
     return await this.userRepo.getUsernames(userIds)
   }
@@ -87,7 +89,7 @@ export default class UserServiceV2 extends Service() {
    */
   async addQuiz(
     userId: string | ObjectId,
-    quizId: string | ObjectId,
+    quizId: string | ObjectId
   ): Promise<void> {
     await this.userRepo.addQuiz(userId, quizId)
   }
@@ -97,7 +99,7 @@ export default class UserServiceV2 extends Service() {
    */
   async removeQuiz(
     userId: string | ObjectId,
-    quizId: string | ObjectId,
+    quizId: string | ObjectId
   ): Promise<void> {
     await this.userRepo.removeQuiz(userId, quizId)
   }
@@ -107,7 +109,7 @@ export default class UserServiceV2 extends Service() {
    */
   async addResult(
     userId: string | ObjectId,
-    resultId: string | ObjectId,
+    resultId: string | ObjectId
   ): Promise<void> {
     await this.userRepo.addResult(userId, resultId)
   }
@@ -117,7 +119,7 @@ export default class UserServiceV2 extends Service() {
    */
   async removeResult(
     userId: string | ObjectId,
-    resultId: string | ObjectId,
+    resultId: string | ObjectId
   ): Promise<void> {
     await this.userRepo.removeResult(userId, resultId)
   }
@@ -130,7 +132,7 @@ export default class UserServiceV2 extends Service() {
    */
   async authorizeUser(
     username: string,
-    password: string,
+    password: string
   ): Promise<[string | null, ValidationError | null]> {
     // try to find a user with a matching username
     const user = await this.userRepo.findByUsername(username)
@@ -156,12 +158,11 @@ export default class UserServiceV2 extends Service() {
           },
         ]
       } else {
-
         // The JWT will contain the user's id, username, and role.
         const payload: Payload = {
-            id: user._id.toString(),
-            name: user.username,
-            role: user.role
+          id: user._id.toString(),
+          name: user.username,
+          role: user.role,
         }
 
         // use jwt to sign the payload with the secret, expiring in 24 hours
@@ -182,7 +183,7 @@ export default class UserServiceV2 extends Service() {
    */
   async changeUserEmail(
     userId: string | ObjectId,
-    email: string,
+    email: string
   ): Promise<[boolean, ValidationError | null]> {
     const existingUser = await this.userRepo.findByEmail(email)
     if (!existingUser) {
@@ -204,7 +205,7 @@ export default class UserServiceV2 extends Service() {
    */
   async changeUserPassword(
     userId: string | ObjectId,
-    password: string,
+    password: string
   ): Promise<void> {
     const salt = await bcrypt.genSalt(10)
     const encryptedPass = await bcrypt.hash(password, salt)
@@ -218,10 +219,10 @@ export default class UserServiceV2 extends Service() {
    * the second value being array of ValidationError if registration failed.
    */
   async registerUser({
-                       email,
-                       username,
-                       password,
-                     }: UserRegistrationData): Promise<[string | null, ValidationError[] | null]> {
+    email,
+    username,
+    password,
+  }: UserRegistrationData): Promise<[string | null, ValidationError[] | null]> {
     const errors: ValidationError[] = []
 
     // Check if email is already in use
@@ -255,9 +256,9 @@ export default class UserServiceV2 extends Service() {
 
       // The JWT will contain the user's id, username, and role.
       const payload: Payload = {
-          id: userId.toString(),
-          name: user.username,
-          role: user.role
+        id: userId.toString(),
+        name: user.username,
+        role: user.role,
       }
 
       const token = jwt.sign(payload, process.env.JWT_SECRET as string, {

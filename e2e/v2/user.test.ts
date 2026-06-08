@@ -8,7 +8,14 @@ import bootstrap from 'bootstrap-app'
 
 import User from 'models/user'
 
-import { teacherA, studentA, clearTestData, loadTestData, studentB, users} from '../data'
+import {
+  teacherA,
+  studentA,
+  clearTestData,
+  loadTestData,
+  studentB,
+  users,
+} from '../data'
 
 describe('/api/v2/users', () => {
   let dbClient: mongo.MongoClient
@@ -353,12 +360,12 @@ describe('/api/v2/users', () => {
       })
 
       it('returns status 200 and results without answers or score for full format when quiz results are not published', async () => {
-         // Get the token for studentB who has a graded quiz result where publishResults is false
+        // Get the token for studentB who has a graded quiz result where publishResults is false
         let authRes = await request(app)
           .post('/api/v2/users/auth')
           .send({ username: studentB.username, password })
         let { token: testToken } = authRes.body
-        
+
         // @ts-ignore
         const expectFullResult = (result) => {
           expect(result).not.toHaveProperty('answers')

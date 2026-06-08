@@ -32,7 +32,7 @@ export default class QuizControllerV2 extends Controller({
     query('format', 'Valid formats: listing, full')
       .custom((format) => format === 'listing' || format === 'full')
       .optional(),
-    resolveErrors
+    resolveErrors,
   ])
   async getQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
     const { id: userId } = req.user!
@@ -64,7 +64,11 @@ export default class QuizControllerV2 extends Controller({
    * Returns a quiz as a form for a user to answer.
    */
   @Get('/:id/form', [authenticate({ allowedRoles: ALLOWED_ROLES_ANY })])
-  async getQuizForm(req: Request<QuizParams>, res: Response, next: NextFunction) {
+  async getQuizForm(
+    req: Request<QuizParams>,
+    res: Response,
+    next: NextFunction
+  ) {
     const { id: userId } = req.user!
     const { id: quizId } = req.params
     try {
@@ -103,7 +107,8 @@ export default class QuizControllerV2 extends Controller({
       showCorrectAnswers,
       allowMultipleResponses,
       publishResults,
-      ...rest } = req.body
+      ...rest
+    } = req.body
     const expiration = new Date(req.body.expiration).toISOString()
     try {
       const quizData: QuizUploadData = {
@@ -114,7 +119,7 @@ export default class QuizControllerV2 extends Controller({
         allowedUsers,
         showCorrectAnswers,
         allowMultipleResponses,
-        publishResults
+        publishResults,
       }
       const quizId = await this.quizService.createQuiz(quizData, userId)
       res.json({ id: quizId })
@@ -138,8 +143,15 @@ export default class QuizControllerV2 extends Controller({
   ])
   async editQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
     const { user } = req
-    const { title, isPublic, publishResults, expiration, questions, allowedUsers, ...rest } =
-      req.body
+    const {
+      title,
+      isPublic,
+      publishResults,
+      expiration,
+      questions,
+      allowedUsers,
+      ...rest
+    } = req.body
     const { id: quizId } = req.params
 
     try {
@@ -168,7 +180,11 @@ export default class QuizControllerV2 extends Controller({
    * Deletes a quiz
    */
   @Delete('/:id', [authenticate({ allowedRoles: ['teacher'] })])
-  async deleteQuiz(req: Request<QuizParams>, res: Response, next: NextFunction) {
+  async deleteQuiz(
+    req: Request<QuizParams>,
+    res: Response,
+    next: NextFunction
+  ) {
     const { user } = req
     const { id: quizId } = req.params
 

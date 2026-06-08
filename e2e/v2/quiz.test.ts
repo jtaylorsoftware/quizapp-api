@@ -9,7 +9,13 @@ import Quiz from 'models/quiz'
 import moment from 'moment'
 import { MultipleChoiceQuestion } from 'models/questiontypes'
 import { ValidationError } from 'services/v2/errors'
-import { teacherA, studentB, loadTestData, clearTestData, teacherB } from '../data'
+import {
+  teacherA,
+  studentB,
+  loadTestData,
+  clearTestData,
+  teacherB,
+} from '../data'
 
 describe('/api/v2/quizzes', () => {
   let dbClient: mongo.MongoClient

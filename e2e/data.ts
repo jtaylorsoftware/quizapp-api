@@ -160,7 +160,7 @@ export const teacherBQuizzes: OptionalId<Quiz>[] = [
     showCorrectAnswers: true,
     allowMultipleResponses: false,
     publishResults: true,
-  }
+  },
 ]
 
 export const results: OptionalId<Result>[] = [
@@ -191,7 +191,7 @@ export const results: OptionalId<Result>[] = [
     ],
     date: moment().toISOString(),
     score: 1,
-  }
+  },
 ]
 
 /**
@@ -212,23 +212,21 @@ const addUsers = async (usersCol: Collection<User>) => {
 /**
  * Initializes the database with quiz data for end-to-end tests.
  */
-const addQuizzes = async (
-  quizzesCol: Collection<Quiz>,
-) => {
-    // add teacher quizzes
-    const promises = [...teacherAQuizzes, ...teacherBQuizzes].map(async (quiz) => {
+const addQuizzes = async (quizzesCol: Collection<Quiz>) => {
+  // add teacher quizzes
+  const promises = [...teacherAQuizzes, ...teacherBQuizzes].map(
+    async (quiz) => {
       const { insertedId } = await quizzesCol.insertOne(quiz)
       return insertedId
-    })
-    await Promise.all(promises)
+    }
+  )
+  await Promise.all(promises)
 }
 
 /**
  * Initializes the database with result data for end-to-end tests.
  */
-const addResults = async (
-  resultsCol: Collection<Result>,
-) => {
+const addResults = async (resultsCol: Collection<Result>) => {
   const promises = results.map(async (result) => {
     const { insertedId } = await resultsCol.insertOne(result)
     return insertedId

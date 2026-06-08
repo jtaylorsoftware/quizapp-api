@@ -12,7 +12,7 @@ export function DisableInjection<T extends { new (...args: any): {} }>(
   target: T
 ): T {
   Object.defineProperty(target.prototype, 'noinject', {
-    enumerable: true
+    enumerable: true,
   })
   return target
 }
@@ -51,7 +51,7 @@ export function resolveDependencyGraph(targets: Set<Constructor>) {
   const dependencies = new DefaultMap<string, Set<string>>(
     () => new Set<string>()
   )
-  targets.forEach(target => resolveDependencies(target, dependencies))
+  targets.forEach((target) => resolveDependencies(target, dependencies))
 
   return dependencies
 }
@@ -75,7 +75,7 @@ function injectImpl(target: Constructor, cache: {}) {
   })
   return {
     [target.name]: new target(...injections),
-    ...cache
+    ...cache,
   }
 }
 

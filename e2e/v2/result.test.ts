@@ -9,7 +9,14 @@ import User from 'models/user'
 import Quiz from 'models/quiz'
 
 import { ValidationError } from 'services/v2/errors'
-import { teacherA, studentB, clearTestData, loadTestData, users, teacherAQuizzes } from '../data'
+import {
+  teacherA,
+  studentB,
+  clearTestData,
+  loadTestData,
+  users,
+  teacherAQuizzes,
+} from '../data'
 
 describe('/api/v2/results', () => {
   let dbClient: mongo.MongoClient
@@ -83,7 +90,7 @@ describe('/api/v2/results', () => {
 
     it('if userId is not part of query, returns all results for quiz', async () => {
       let quiz = await quizzesCol.findOne({ title: 'public quiz' })
-      console.log(quiz)
+
       // @ts-ignore
       let resultCount = quiz.results.length
       expect(resultCount).toBeGreaterThanOrEqual(1)
@@ -94,7 +101,11 @@ describe('/api/v2/results', () => {
 
     it('if userId is in the query, returns just the result for the user', async () => {
       // @ts-ignore
-      let res = await get(quizIds[0], users.studentA._id!.toString(), token).expect(200)
+      let res = await get(
+        quizIds[0],
+        users.studentA._id!.toString(),
+        token
+      ).expect(200)
       expect(res.body.user).toEqual(users.studentA._id!.toString())
     })
 
@@ -141,7 +152,12 @@ describe('/api/v2/results', () => {
       const studentId = users.studentB._id!.toString()
 
       // quizIds[1] has publishResults set to false
-      let resultRes = await get(quizIds[1], studentId, testToken, 'full').expect(200)
+      let resultRes = await get(
+        quizIds[1],
+        studentId,
+        testToken,
+        'full'
+      ).expect(200)
 
       // A single result should be returned since userId is in query, so results should not be an array
       expect(resultRes.body.results).not.toBeDefined()
@@ -187,7 +203,12 @@ describe('/api/v2/results', () => {
       const studentId = users.studentB._id!.toString()
 
       // quizIds[1] has publishResults set to false
-      let resultRes = await get(quizIds[1], studentId, testToken, 'listing').expect(200)
+      let resultRes = await get(
+        quizIds[1],
+        studentId,
+        testToken,
+        'listing'
+      ).expect(200)
 
       // A single result should be returned since userId is in query, so results should not be an array
       expect(resultRes.body.results).not.toBeDefined()

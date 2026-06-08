@@ -166,7 +166,8 @@ export default class QuizServiceV2 extends Service() {
       allowedUsers,
       showCorrectAnswers,
       allowMultipleResponses,
-      publishResults } = quizData
+      publishResults,
+    } = quizData
     const allowedUserIds = await this.userRepo.getUserIds(allowedUsers ?? [])
 
     const quizId = await this.quizRepo.repo.insert(

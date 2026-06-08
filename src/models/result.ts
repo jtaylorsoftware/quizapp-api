@@ -6,7 +6,6 @@ import { GradedAnswer } from './answertypes'
  * Represents a quiz result document
  */
 export default class Result extends Model {
-
   /**
    * Creates a quiz result document
    * @param user ID of user submitting result
@@ -61,5 +60,5 @@ export type ResultFormat = 'full' | 'listing'
 export type ResultType<FormatType> = FormatType extends 'full'
   ? ResultWithExtras
   : FormatType extends 'listing'
-  ? ResultListing
-  : never
+    ? ResultListing
+    : never

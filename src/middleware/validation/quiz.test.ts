@@ -1,4 +1,7 @@
-import { FillInQuestion, MultipleChoiceQuestion } from '../../models/questiontypes'
+import {
+  FillInQuestion,
+  MultipleChoiceQuestion,
+} from '../../models/questiontypes'
 import { isValidQuestionBody } from './quiz'
 
 describe('quiz validators', () => {
@@ -37,10 +40,14 @@ describe('quiz validators', () => {
         ...validFillInQuestion,
         correctAnswer: '',
       }
-      expect(isValidQuestionBody.bind(null, invalid)).toThrow('empty answer text')
+      expect(isValidQuestionBody.bind(null, invalid)).toThrow(
+        'empty answer text'
+      )
       // @ts-ignore
       invalid.correctAnswer = undefined
-      expect(isValidQuestionBody.bind(null, invalid)).toThrow('empty answer text')
+      expect(isValidQuestionBody.bind(null, invalid)).toThrow(
+        'empty answer text'
+      )
     })
 
     it('should pass a correctly formatted MC Question', () => {
@@ -62,7 +69,9 @@ describe('quiz validators', () => {
         ...validMcQuestion,
         text: undefined,
       }
-      expect(isValidQuestionBody.bind(null, invalid)).toThrow('empty question text')
+      expect(isValidQuestionBody.bind(null, invalid)).toThrow(
+        'empty question text'
+      )
     })
 
     it('should throw error when mc question answers are empty', () => {
@@ -79,14 +88,19 @@ describe('quiz validators', () => {
     it('should throw error when any mc question answer.text are empty', () => {
       let invalid = {
         ...validMcQuestion,
-        answers: [{
-          text: 'text',
-        }, {
-          text: undefined,
-        }],
+        answers: [
+          {
+            text: 'text',
+          },
+          {
+            text: undefined,
+          },
+        ],
       }
       // @ts-ignore
-      expect(isValidQuestionBody.bind(null, invalid)).toThrow('empty answer text')
+      expect(isValidQuestionBody.bind(null, invalid)).toThrow(
+        'empty answer text'
+      )
     })
 
     it('should throw error when MC correctAnswer is negative', () => {

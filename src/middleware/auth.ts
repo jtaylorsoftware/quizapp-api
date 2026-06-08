@@ -3,9 +3,9 @@ import { NextFunction, Request, Response } from 'express'
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 import { UserRole } from 'models/user'
 
-export type Payload = { 
-  id: string,
-  name: string,
+export type Payload = {
+  id: string
+  name: string
   role: UserRole
 }
 
@@ -48,11 +48,11 @@ export interface AuthOptions {
  * to the request object as `req.user`.
  * If the token is missing, invalid, or the user's role is not allowed, an appropriate HTTP status code (401 or 403)
  * will be returned.
- * 
+ *
  * @param options - Auth configuration options object.
  * @returns An Express middleware function that performs authentication and authorization.
  */
-export default function(options: AuthOptions) {
+export default function (options: AuthOptions) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const token = req.header('x-auth-token')
     debug('authenticating user')

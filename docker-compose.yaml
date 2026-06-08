@@ -3,6 +3,6 @@ services:
   api:
     image: ghcr.io/jtaylorsoftware/quizapp-api:latest
     ports:
-      - "80:8080"
+      - '80:8080'
     env_file:
       - .env

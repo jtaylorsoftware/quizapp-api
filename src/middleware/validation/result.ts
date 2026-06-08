@@ -16,7 +16,7 @@ export function answerIsValid(answer: Partial<Answer>): boolean {
       }
       return true
     case 'MultipleChoice':
-      if (!(Number.isInteger(answer.choice)) || answer.choice! < 0) {
+      if (!Number.isInteger(answer.choice) || answer.choice! < 0) {
         throw Error('Answer choice must be a number')
       }
       return true
@@ -34,8 +34,4 @@ export function answersAreValid(answers?: Partial<Answer>[]) {
 
   return answers.every(answerIsValid)
 }
-export const checkAnswers = body(
-  'answers',
-)
-  .isArray()
-  .custom(answersAreValid)
+export const checkAnswers = body('answers').isArray().custom(answersAreValid)

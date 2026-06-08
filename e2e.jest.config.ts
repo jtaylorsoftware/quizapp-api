@@ -9,7 +9,7 @@ const config: Config.InitialOptions = {
   globalTeardown: '<rootDir>/e2e/teardown.ts',
   testPathIgnorePatterns: ['<rootDir>/build', '<rootDir>/client'],
   transform: {
-    '^.+\\.ts$': 'ts-jest'
-  }
+    '^.+\\.ts$': 'ts-jest',
+  },
 }
 export default config
