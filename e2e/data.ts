@@ -136,7 +136,7 @@ export const teacherBQuizzes: OptionalId<Quiz>[] = [
   {
     _id: users.teacherB.quizzes[0],
     user: users.teacherB._id!,
-    title: 'public quiz',
+    title: "teacherB's public quiz",
     expiration: moment().add(1, 'd').toISOString(),
     isPublic: true,
     questions: [
