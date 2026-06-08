@@ -8,7 +8,7 @@ const openApiOptions: OpenApiConfig | undefined =
   process.env.NODE_ENV !== 'production'
     ? {
         path: '/openapi',
-        documentPath: path.resolve('openapi', 'swagger.yaml'),
+        documentPath: path.resolve('openapi', 'openapi.yaml'),
       }
     : undefined
 

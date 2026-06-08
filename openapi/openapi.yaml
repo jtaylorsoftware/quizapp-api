@@ -11,9 +11,7 @@ info:
 components:
   securitySchemes:
     BearerToken:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+      type: apiKey
       in: header
       name: x-auth-token
 
@@ -80,6 +78,10 @@ components:
       type: string
       minLength: 8
       maxLength: 20
+    Role:
+      type: string
+      enum: [teacher, student]
+      description: A user's role, which controls permissions.
 
     Date:
       type: string
@@ -115,6 +117,8 @@ components:
           $ref: '#/components/schemas/Username'
         email:
           $ref: '#/components/schemas/Email'
+        role:
+          $ref: '#/components/schemas/Role'
         quizzes:
           type: array
           description: The ids of the user's created quizzes.
@@ -182,7 +186,7 @@ components:
             correctAnswer:
               type: string
               description: The exact text of the correct answer.
-          required: [correctAnsewr]
+          required: [correctAnswer]
 
     QuizListing:
       description: |
@@ -387,7 +391,7 @@ components:
       description: A multiple-choice response.
       type: object
       allOf:
-        - $ref: '#/components/schemas/QuizResponse'
+        - $ref: '#/components/schemas/Response'
         - properties:
             choice:
               type: integer
@@ -407,7 +411,6 @@ components:
       description: A user's responses ("answers") to a quiz form.
       type: object
       allOf:
-        - $ref: '#/components/schemas/ResponseAnswer'
         - properties:
             answers:
               type: array
@@ -439,11 +442,14 @@ paths:
                   $ref: '#/components/schemas/Email'
                 password:
                   $ref: '#/components/schemas/Password'
-              required: [username, email, password]
+                role:
+                  $ref: '#/components/schemas/Role'
+              required: [username, email, password, role]
               example:
                 username: 'user123'
                 email: 'user123@email.com'
                 password: 'password'
+                role: 'teacher'
       responses:
         '200':
           $ref: '#/components/responses/AuthToken'
@@ -857,12 +863,12 @@ paths:
           schema:
             $ref: '#/components/schemas/ObjectId'
           required: true
-        - in: path
+        - in: query
           name: quiz
           schema:
             $ref: '#/components/schemas/ObjectId'
           required: true
-        - in: path
+        - in: query
           name: user
           description: If present, gets results for just this user.
           schema:
@@ -892,7 +898,7 @@ paths:
         - BearerToken: []
       description: Upload a response to a quiz for grading. Each user can respond to a quiz once.
       parameters:
-        - in: path
+        - in: query
           name: quiz
           schema:
             $ref: '#/components/schemas/ObjectId'
