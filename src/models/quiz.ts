@@ -40,8 +40,8 @@ export type QuizFormat = 'full' | 'listing'
 export type QuizType<FormatType> = FormatType extends 'full'
   ? QuizWithAllowedUsernames
   : FormatType extends 'listing'
-  ? QuizListing
-  : never
+    ? QuizListing
+    : never
 
 /**
  * The data necessary to upload a new Quiz or edit an existing Quiz.

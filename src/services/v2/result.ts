@@ -46,7 +46,7 @@ export default class ResultServiceV2 extends Service() {
     const results = await this.resultRepo.findByUserId(userId)
     return Promise.all(
       results
-        .filter(result => this.canUserViewResult(requestUserId, result))
+        .filter((result) => this.canUserViewResult(requestUserId, result))
         .map(async (result) => {
           const extras = await this.getExtrasForResult(result)
 
@@ -86,7 +86,7 @@ export default class ResultServiceV2 extends Service() {
     const results = await this.resultRepo.findByUserId(userId)
     return Promise.all(
       results
-        .filter(result => this.canUserViewResult(requestUserId, result))
+        .filter((result) => this.canUserViewResult(requestUserId, result))
         .map(async (result) => {
           const extras = await this.getExtrasForResult(result)
 
@@ -234,14 +234,13 @@ export default class ResultServiceV2 extends Service() {
 
     const results = await this.resultRepo.findAllByQuizId(quizId)
     return Promise.all(
-      results
-        .map(async (result) => {
-          const extras = await this.getExtrasForResult(result)
-          return {
-            ...result,
-            ...extras,
-          }
-        })
+      results.map(async (result) => {
+        const extras = await this.getExtrasForResult(result)
+        return {
+          ...result,
+          ...extras,
+        }
+      })
     )
   }
 
@@ -265,15 +264,14 @@ export default class ResultServiceV2 extends Service() {
 
     const results = await this.resultRepo.findAllByQuizId(quizId)
     return Promise.all(
-      results
-        .map(async (result) => {
-          const extras = await this.getExtrasForResult(result)
-          const { answers, ...listing } = result
-          return {
-            ...listing,
-            ...extras,
-          }
-        })
+      results.map(async (result) => {
+        const extras = await this.getExtrasForResult(result)
+        const { answers, ...listing } = result
+        return {
+          ...listing,
+          ...extras,
+        }
+      })
     )
   }
 
@@ -419,13 +417,14 @@ export default class ResultServiceV2 extends Service() {
         case 'MultipleChoice':
           if (
             answer.choice >=
-            (question as MultipleChoiceQuestion).answers.length ||
+              (question as MultipleChoiceQuestion).answers.length ||
             answer.choice < 0
           ) {
             errors.push({
               field: 'answers',
-              message: `Answer choice must be between 0 and ${(question as MultipleChoiceQuestion).answers.length
-                }`,
+              message: `Answer choice must be between 0 and ${
+                (question as MultipleChoiceQuestion).answers.length
+              }`,
               index: i,
               value: answer.choice,
             })

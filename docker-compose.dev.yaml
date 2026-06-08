@@ -6,8 +6,8 @@ services:
       target: dev
     image: quizapp-api:dev
     ports:
-      - "31000:8080"
-      - "9229:9229"
+      - '31000:8080'
+      - '9229:9229'
     environment:
       JWT_SECRET: aGVsbG93b3JsZAo=
       DB_URL: mongodb://mongo:27017
@@ -16,4 +16,4 @@ services:
   mongo:
     image: mongo
     logging:
-      driver: "none"
+      driver: 'none'

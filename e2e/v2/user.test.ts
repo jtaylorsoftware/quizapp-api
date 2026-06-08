@@ -8,7 +8,13 @@ import bootstrap from 'bootstrap-app'
 
 import User from 'models/user'
 
-import { teacher, student, clearTestData, loadTestData, extraUser } from '../data'
+import {
+  teacher,
+  student,
+  clearTestData,
+  loadTestData,
+  extraUser,
+} from '../data'
 
 describe('/api/v2/users', () => {
   let dbClient: mongo.MongoClient
@@ -380,7 +386,7 @@ describe('/api/v2/users', () => {
           .post('/api/v2/users/auth')
           .send({ username: extraUser.username, password })
         const testToken = authRes.body.token
-        
+
         // @ts-ignore
         const expectResultListing = (result) => {
           expect(result).not.toHaveProperty('answers')

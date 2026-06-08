@@ -212,7 +212,7 @@ const addUsers = async (usersCol: Collection<User>) => {
 
   // Update results to have correct user IDs.
   //
-  // This relies on the results array ordering, so that the first 
+  // This relies on the results array ordering, so that the first
   // result corresponds to the first user, etc.
   results.forEach((result, ind) => {
     const id = IDs[ind]
@@ -223,10 +223,10 @@ const addUsers = async (usersCol: Collection<User>) => {
 
 /**
  * Initializes the database with quiz data for end-to-end tests.
- * 
+ *
  * Also updates the related user documents to include references to the quizzes,
  * and updates the result documents to reference the quizzes correctly.
- * 
+ *
  * This function should be called after addUsers, since it relies on the users being present
  * in the database to set up the references correctly.
  */
@@ -276,7 +276,7 @@ const addQuizzes = async (
 
   // Update results to have correct quiz IDs and quiz owner IDs.
   //
-  // This relies on the quizzes and results array orderings, so that the first 
+  // This relies on the quizzes and results array orderings, so that the first
   // quiz corresponds to the first result, etc.
   results.forEach((result, ind) => {
     result.quiz = quizzes[ind]._id!!
@@ -286,10 +286,10 @@ const addQuizzes = async (
 
 /**
  * Initializes the database with result data for end-to-end tests.
- * 
+ *
  * Also updates the related quiz and user documents to include references to the results.
- * 
- * This function should be called after addUsers and addQuizzes, since it relies on the 
+ *
+ * This function should be called after addUsers and addQuizzes, since it relies on the
  * users and quizzes being present in the database to set up the references correctly.
  */
 const addResults = async (

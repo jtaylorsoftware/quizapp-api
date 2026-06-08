@@ -14,7 +14,7 @@ interface ClientCache {
 
 function injectAll(dependencies: Set<Constructor<Client>>): ClientCache {
   let cache: ClientCache = {}
-  dependencies.forEach(Dep => {
+  dependencies.forEach((Dep) => {
     cache = inject(Dep, cache)
   })
   return cache
@@ -85,7 +85,7 @@ function bindRoutes(
   // @ts-ignore
   ;(application['bindRoutes'] as Function)(application)
 
-  controllers.forEach(controller => {
+  controllers.forEach((controller) => {
     // @ts-ignore
     ;(controller['bindRoutes'] as Function)(controller)
     application.ex.use(controller.config?.root ?? '', controller.router)
@@ -99,7 +99,7 @@ function isController(t: Client): t is ControllerBase {
 export default async function bootstrap<
   ApplicationType extends Constructor<ApplicationBase>,
   ControllerType extends Constructor<ControllerBase>,
-  ServiceType extends Constructor<ServiceBase>
+  ServiceType extends Constructor<ServiceBase>,
 >(
   Application: ApplicationType,
   controllers?: ControllerType[],
@@ -108,7 +108,7 @@ export default async function bootstrap<
   const dependencies = new Set<Constructor<Client>>([
     Application,
     ...(services ?? []),
-    ...(controllers ?? [])
+    ...(controllers ?? []),
   ])
   // Instantiate/inject all dependencices
   const clientCache = injectAll(dependencies)

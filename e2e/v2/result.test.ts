@@ -9,7 +9,15 @@ import User from 'models/user'
 import Quiz from 'models/quiz'
 
 import { ValidationError } from 'services/v2/errors'
-import { teacher, extraUser, clearTestData, loadTestData, users, student, quizzes } from '../data'
+import {
+  teacher,
+  extraUser,
+  clearTestData,
+  loadTestData,
+  users,
+  student,
+  quizzes,
+} from '../data'
 
 describe('/api/v2/results', () => {
   let dbClient: mongo.MongoClient
@@ -143,10 +151,17 @@ describe('/api/v2/results', () => {
         .send({ username: student.username, password })
       let { token: testToken } = authRes.body
 
-      const studentId = users.find((user) => user.username === student.username)!!._id!!.toString()
+      const studentId = users
+        .find((user) => user.username === student.username)!!
+        ._id!!.toString()
 
       // quizIds[1] has publishResults set to false
-      let resultRes = await get(quizIds[1], studentId, testToken, 'full').expect(200)
+      let resultRes = await get(
+        quizIds[1],
+        studentId,
+        testToken,
+        'full'
+      ).expect(200)
 
       // A single result should be returned since userId is in query, so results should not be an array
       expect(resultRes.body.results).not.toBeDefined()
@@ -189,10 +204,17 @@ describe('/api/v2/results', () => {
         .send({ username: student.username, password })
       let { token: testToken } = authRes.body
 
-      const studentId = users.find((user) => user.username === student.username)!!._id!!.toString()
+      const studentId = users
+        .find((user) => user.username === student.username)!!
+        ._id!!.toString()
 
       // quizIds[1] has publishResults set to false
-      let resultRes = await get(quizIds[1], studentId, testToken, 'listing').expect(200)
+      let resultRes = await get(
+        quizIds[1],
+        studentId,
+        testToken,
+        'listing'
+      ).expect(200)
 
       // A single result should be returned since userId is in query, so results should not be an array
       expect(resultRes.body.results).not.toBeDefined()

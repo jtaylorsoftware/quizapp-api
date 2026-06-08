@@ -24,7 +24,7 @@ export interface AuthOptions {
   required: boolean
 }
 
-export default function(options: AuthOptions) {
+export default function (options: AuthOptions) {
   return async (req: any, res: any, next: any) => {
     const token = req.header('x-auth-token')
     debug('authenticating user')

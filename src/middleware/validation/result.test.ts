@@ -1,13 +1,18 @@
-import { Answer, FillInAnswer, MultipleChoiceAnswer } from '../../models/answertypes'
+import {
+  Answer,
+  FillInAnswer,
+  MultipleChoiceAnswer,
+} from '../../models/answertypes'
 
 import { answersAreValid, answerIsValid } from './result'
 
 describe('result (answer) validators', () => {
   describe('answersAreValid', () => {
-
     it('should throw on non-array values', () => {
       expect(answersAreValid.bind(null)).toThrow('must be an array')
-      expect(answersAreValid.bind(null, {} as unknown as Partial<Answer>[])).toThrow('must be an array')
+      expect(
+        answersAreValid.bind(null, {} as unknown as Partial<Answer>[])
+      ).toThrow('must be an array')
     })
 
     it('should throw on empty array', () => {

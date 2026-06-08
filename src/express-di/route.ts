@@ -29,7 +29,7 @@ function registerRoute(
     target['routes'].push({
       method,
       url,
-      callbacks: [...(before ?? []), descriptor.value, ...(after ?? [])]
+      callbacks: [...(before ?? []), descriptor.value, ...(after ?? [])],
     })
   }
 }

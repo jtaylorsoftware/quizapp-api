@@ -13,7 +13,7 @@ jobs:
             docker build
             -t quizapp-api:test 
             --target test .
-            
+
             docker-compose -f docker-compose.test.yaml up --abort-on-container-exit --exit-code-from api
       - run:
           name: Build and persist the production Docker image
@@ -55,4 +55,3 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\d+$/
-
