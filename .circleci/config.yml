@@ -44,7 +44,12 @@ jobs:
 workflows:
   test_build_push:
     jobs:
-      - test_and_build
+      - test_and_build:
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
       - push_ghcr:
           requires:
             - test_and_build
