@@ -11,7 +11,7 @@ import { QuizType } from 'models/quiz'
 import { ResultType } from 'models/result'
 import QuizService from 'services/v2/quiz'
 import ResultService from 'services/v2/result'
-import UserService from 'services/v2/user'
+import UserService, { UserRegistrationData } from 'services/v2/user'
 import { ALLOWED_ROLES_ANY } from 'models/user'
 
 type UserParams = {
@@ -234,7 +234,7 @@ export default class UserControllerV2 extends Controller({
     resolveErrors,
   ])
   async registerUser(
-    req: Request<UserParams>,
+    req: Request<{}, {}, UserRegistrationData>,
     res: Response,
     next: NextFunction
   ) {

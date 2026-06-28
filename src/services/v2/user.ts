@@ -222,6 +222,7 @@ export default class UserServiceV2 extends Service() {
     email,
     username,
     password,
+    role
   }: UserRegistrationData): Promise<[string | null, ValidationError[] | null]> {
     const errors: ValidationError[] = []
 
@@ -247,7 +248,7 @@ export default class UserServiceV2 extends Service() {
 
     // Present user with a JWT on successful registration (no conflicts)
     if (errors.length === 0) {
-      let user = new User(username, email, password)
+      let user = new User(username, email, password, role)
 
       const salt = await bcrypt.genSalt(10)
       user.password = await bcrypt.hash(password, salt)
