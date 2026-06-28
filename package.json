@@ -2,16 +2,14 @@
   "name": "quizapp",
   "version": "1.0.0",
   "description": "",
-  "main": "build/src/start.js",
+  "main": "build/start.js",
   "private": true,
   "scripts": {
     "test": "jest --watchAll --config=unit.jest.config.ts",
     "test:e2e": "jest --testPathPatterns=e2e --config=e2e.jest.config.ts --runInBand",
     "build": "npx tsc -p build.tsconfig.json",
-    "start": "NODE_PATH=./build/src node build/src/start.js",
-    "server": "npx tsc && NODE_PATH=./build/src DEBUG=routes:*,middleware:*,express:router nodemon build/src/start.js",
-    "client": "npm start --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "start": "NODE_PATH=./build/ node build/start.js",
+    "dev": "npx tsc && NODE_PATH=./build/src/ DEBUG=routes:*,middleware:*,express:router nodemon build/src/start.js"
   },
   "keywords": [],
   "author": "",
